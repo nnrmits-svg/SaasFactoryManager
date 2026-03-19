@@ -1,4 +1,7 @@
-/** Represents a scanned project that contains a .claude/ directory */
+/** How the project was detected */
+export type ProjectType = 'sf-managed' | 'nextjs' | 'manual';
+
+/** Represents a scanned project */
 export interface ScannedProject {
   /** Absolute path to the project directory */
   path: string;
@@ -10,6 +13,8 @@ export interface ScannedProject {
   hasClaudeMd: boolean;
   /** Whether a .claude/ directory exists */
   hasClaudeDir: boolean;
+  /** How this project was detected */
+  projectType: ProjectType;
 }
 
 /** Result of a full scan operation */
