@@ -38,6 +38,12 @@ export function Navbar() {
             Skills
           </Link>
           <Link
+            href="/reports"
+            className="px-3 py-1.5 text-sm text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-all duration-300"
+          >
+            Reports
+          </Link>
+          <Link
             href="/settings"
             className="px-3 py-1.5 text-sm text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-all duration-300"
           >
