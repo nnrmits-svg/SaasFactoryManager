@@ -22,10 +22,14 @@ export async function syncProjectGitData(
 ): Promise<GitSyncResult> {
   try {
     const supabase = await createClient();
-    const scanned = await ScannerService.scanSingle(projectPath);
+    // Try scanner first, fallback to manual detection
+    let scanned = await ScannerService.scanSingle(projectPath);
+    if (!scanned) {
+      scanned = await ScannerService.scanManual(projectPath);
+    }
 
     if (!scanned) {
-      return { success: false, commitsAdded: 0, sessionsCalculated: 0, error: 'Not a SaaS Factory project.' };
+      return { success: false, commitsAdded: 0, sessionsCalculated: 0, error: 'No es un proyecto valido (sin package.json).' };
     }
 
     // 1. Upsert project
@@ -241,4 +245,27 @@ export async function deleteProject(projectId: string): Promise<{ success: boole
   const supabase = await createClient();
   const { error } = await supabase.from('projects').delete().eq('id', projectId);
   return { success: !error };
+}
+
+/**
+ * Manually registers a project by path. Validates it exists and syncs git data.
+ */
+export async function registerProject(
+  projectPath: string,
+): Promise<{ success: boolean; error?: string }> {
+  if (!projectPath?.trim()) {
+    return { success: false, error: 'Path vacio' };
+  }
+
+  const scanned = await ScannerService.scanManual(projectPath.trim());
+  if (!scanned) {
+    return { success: false, error: 'No es un directorio valido o no tiene package.json' };
+  }
+
+  const result = await syncProjectGitData(scanned.path);
+  if (!result.success) {
+    return { success: false, error: result.error };
+  }
+
+  return { success: true };
 }

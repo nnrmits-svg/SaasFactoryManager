@@ -1,7 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getApplicableSkills, type SkillInfo } from '@/features/factory-manager/services/skill-catalog-action';
+import {
+  getApplicableSkills,
+  getProjectSkills,
+  installSkillToProject,
+  type SkillInfo,
+} from '@/features/factory-manager/services/skill-catalog-action';
+import Link from 'next/link';
 
 interface Props {
   projectName: string;
@@ -28,16 +34,38 @@ const CATEGORY_COLORS: Record<string, string> = {
 
 export function SkillPanel({ projectName, projectPath }: Props) {
   const [skills, setSkills] = useState<SkillInfo[]>([]);
+  const [installedSkills, setInstalledSkills] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [installing, setInstalling] = useState<string | null>(null);
+  const [installMsg, setInstallMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
   useEffect(() => {
     async function load() {
-      const data = await getApplicableSkills();
-      setSkills(data);
+      const [allSkills, projSkills] = await Promise.all([
+        getApplicableSkills(),
+        getProjectSkills(projectPath),
+      ]);
+      setSkills(allSkills);
+      setInstalledSkills(projSkills);
       setIsLoading(false);
     }
     load();
-  }, []);
+  }, [projectPath]);
+
+  async function handleInstall(skillName: string) {
+    setInstalling(skillName);
+    setInstallMsg(null);
+
+    const result = await installSkillToProject(skillName, projectPath);
+    setInstalling(null);
+
+    if (result.success) {
+      setInstalledSkills((prev) => [...prev, skillName]);
+      setInstallMsg({ ok: true, text: `"${skillName}" instalado` });
+    } else {
+      setInstallMsg({ ok: false, text: result.error ?? 'Error' });
+    }
+  }
 
   if (isLoading) {
     return (
@@ -47,7 +75,6 @@ export function SkillPanel({ projectName, projectPath }: Props) {
     );
   }
 
-  // Group by category
   const grouped = skills.reduce<Record<string, SkillInfo[]>>((acc, skill) => {
     const cat = skill.category;
     if (!acc[cat]) acc[cat] = [];
@@ -55,13 +82,21 @@ export function SkillPanel({ projectName, projectPath }: Props) {
     return acc;
   }, {});
 
+  const installedCount = skills.filter((s) => installedSkills.includes(s.name)).length;
+
   return (
     <div className="mb-8">
-      <h2 className="text-lg font-semibold text-white mb-4">Skills Disponibles</h2>
-      <p className="text-xs text-gray-500 mb-4">
-        Estos skills se aplican abriendo el proyecto en el IDE y ejecutando el comando correspondiente.
-        El Factory Manager los detecta y trackea.
-      </p>
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h2 className="text-lg font-semibold text-white">Skills</h2>
+          <p className="text-xs text-gray-500">
+            {installedCount}/{skills.length} instalados &bull;{' '}
+            <Link href="/skills" className="text-fluya-purple hover:underline">
+              Ver Registry
+            </Link>
+          </p>
+        </div>
+      </div>
 
       <div className="space-y-4">
         {Object.entries(grouped).map(([category, categorySkills]) => (
@@ -70,24 +105,57 @@ export function SkillPanel({ projectName, projectPath }: Props) {
               {CATEGORY_LABELS[category] ?? category}
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {categorySkills.map((skill) => (
-                <div
-                  key={skill.name}
-                  className="flex items-center justify-between p-3 bg-white/5 border border-white/10 rounded-xl hover:border-white/20 transition-all duration-300"
-                >
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-white">{skill.label}</p>
-                    <p className="text-xs text-gray-500 truncate">{skill.description}</p>
+              {categorySkills.map((skill) => {
+                const isInstalled = installedSkills.includes(skill.name);
+                const isInstalling = installing === skill.name;
+
+                return (
+                  <div
+                    key={skill.name}
+                    className={`flex items-center justify-between p-3 rounded-xl border transition-all duration-300 ${
+                      isInstalled
+                        ? 'bg-fluya-green/5 border-fluya-green/20'
+                        : 'bg-white/5 border-white/10 hover:border-white/20'
+                    }`}
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5">
+                        {isInstalled && (
+                          <span className="w-1.5 h-1.5 rounded-full bg-fluya-green shrink-0" />
+                        )}
+                        <p className="text-sm font-medium text-white">{skill.label}</p>
+                      </div>
+                      <p className="text-xs text-gray-500 truncate">{skill.description}</p>
+                    </div>
+                    <div className="ml-2 shrink-0">
+                      {isInstalled ? (
+                        <span className="px-2 py-1 text-[10px] bg-fluya-green/10 text-fluya-green rounded-lg">
+                          Instalado
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleInstall(skill.name)}
+                          disabled={isInstalling}
+                          className="px-2 py-1 text-[10px] bg-fluya-purple/10 text-fluya-purple border border-fluya-purple/20 rounded-lg hover:bg-fluya-purple/20 disabled:opacity-40 transition-all"
+                        >
+                          {isInstalling ? '...' : 'Instalar'}
+                        </button>
+                      )}
+                    </div>
                   </div>
-                  <span className="ml-2 px-2 py-1 text-xs bg-white/5 text-gray-400 border border-white/10 rounded-lg font-mono shrink-0">
-                    /{skill.name}
-                  </span>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         ))}
       </div>
+
+      {installMsg && (
+        <p className={`mt-3 text-xs ${installMsg.ok ? 'text-fluya-green' : 'text-red-400'}`}>
+          {installMsg.text}
+        </p>
+      )}
     </div>
   );
 }

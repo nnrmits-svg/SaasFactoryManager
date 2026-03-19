@@ -14,18 +14,11 @@ const DEFAULT_IGNORE_DIRS = [
 
 const VERSION_PATTERN = /SaaS Factory\s+(V\d+(?:\.\d+)*)/i;
 
-/**
- * Extracts the SaaS Factory version from CLAUDE.md content.
- * Looks for patterns like "SaaS Factory V3" or "SaaS Factory V3.1".
- */
 function extractVersion(content: string): string | null {
   const match = content.match(VERSION_PATTERN);
   return match ? match[1] : null;
 }
 
-/**
- * Checks if a path exists and is a directory.
- */
 async function isDirectory(dirPath: string): Promise<boolean> {
   try {
     const stat = await fs.stat(dirPath);
@@ -35,9 +28,6 @@ async function isDirectory(dirPath: string): Promise<boolean> {
   }
 }
 
-/**
- * Reads file content safely, returning null on failure.
- */
 async function readFileSafe(filePath: string): Promise<string | null> {
   try {
     return await fs.readFile(filePath, 'utf-8');
@@ -46,32 +36,68 @@ async function readFileSafe(filePath: string): Promise<string | null> {
   }
 }
 
+async function fileExists(filePath: string): Promise<boolean> {
+  try {
+    await fs.access(filePath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Check if package.json has "next" as a dependency */
+async function isNextJsProject(projectPath: string): Promise<boolean> {
+  const content = await readFileSafe(path.join(projectPath, 'package.json'));
+  if (!content) return false;
+  try {
+    const pkg = JSON.parse(content);
+    const deps = { ...pkg.dependencies, ...pkg.devDependencies };
+    return 'next' in deps;
+  } catch {
+    return false;
+  }
+}
+
 /**
- * Scans a single project directory and extracts its metadata.
+ * Scans a single project directory.
+ * Detects SF-managed projects (.claude/) AND Next.js projects (package.json with next).
  */
 async function scanProject(projectPath: string): Promise<ScannedProject | null> {
   const claudeDir = path.join(projectPath, '.claude');
   const claudeMdPath = path.join(projectPath, 'CLAUDE.md');
 
   const hasClaudeDir = await isDirectory(claudeDir);
-  if (!hasClaudeDir) return null;
-
   const claudeMdContent = await readFileSafe(claudeMdPath);
   const hasClaudeMd = claudeMdContent !== null;
   const version = hasClaudeMd ? extractVersion(claudeMdContent) : null;
 
-  return {
-    path: projectPath,
-    name: path.basename(projectPath),
-    version,
-    hasClaudeMd,
-    hasClaudeDir,
-  };
+  if (hasClaudeDir) {
+    return {
+      path: projectPath,
+      name: path.basename(projectPath),
+      version,
+      hasClaudeMd,
+      hasClaudeDir,
+      projectType: 'sf-managed',
+    };
+  }
+
+  // Not SF-managed — check if it's a Next.js project
+  const isNextJs = await isNextJsProject(projectPath);
+  if (isNextJs) {
+    return {
+      path: projectPath,
+      name: path.basename(projectPath),
+      version: null,
+      hasClaudeMd,
+      hasClaudeDir: false,
+      projectType: 'nextjs',
+    };
+  }
+
+  return null;
 }
 
-/**
- * Recursively collects directories up to a given depth.
- */
 async function collectDirectories(
   dirPath: string,
   currentDepth: number,
@@ -114,15 +140,9 @@ async function collectDirectories(
 }
 
 /**
- * ScannerService - Scans a root directory for projects managed by SaaS Factory.
- *
- * A project is considered "managed" if it contains a `.claude/` directory.
- * For each managed project, the service extracts the version from CLAUDE.md.
+ * ScannerService - Scans for SF-managed AND Next.js projects.
  */
 export const ScannerService = {
-  /**
-   * Scans the configured root directory and returns all SaaS Factory projects.
-   */
   async scan(config: ScannerConfig): Promise<ScanResult> {
     const { rootDir, maxDepth = 1, ignoreDirs = DEFAULT_IGNORE_DIRS } = config;
 
@@ -149,19 +169,36 @@ export const ScannerService = {
     };
   },
 
-  /**
-   * Scans a single directory to check if it's a SaaS Factory project.
-   */
   async scanSingle(projectPath: string): Promise<ScannedProject | null> {
     return scanProject(projectPath);
   },
 
-  /**
-   * Extracts version from a CLAUDE.md file path.
-   */
   async getVersion(claudeMdPath: string): Promise<string | null> {
     const content = await readFileSafe(claudeMdPath);
     if (!content) return null;
     return extractVersion(content);
+  },
+
+  /** Register a project manually by path */
+  async scanManual(projectPath: string): Promise<ScannedProject | null> {
+    const exists = await isDirectory(projectPath);
+    if (!exists) return null;
+
+    // Try normal scan first
+    const scanned = await scanProject(projectPath);
+    if (scanned) return scanned;
+
+    // If not detected by scan, check if it has package.json at least
+    const hasPkg = await fileExists(path.join(projectPath, 'package.json'));
+    if (!hasPkg) return null;
+
+    return {
+      path: projectPath,
+      name: path.basename(projectPath),
+      version: null,
+      hasClaudeMd: false,
+      hasClaudeDir: false,
+      projectType: 'manual',
+    };
   },
 };
