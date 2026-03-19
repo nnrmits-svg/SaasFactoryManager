@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useActionState } from 'react';
+import { useState, useEffect, useActionState } from 'react';
 import { scanDirectory, type ScanActionResult } from '../services/scan-action';
 import { syncProject } from '../services/sync-action';
 import { createApp, type CreateResult } from '../services/create-action';
@@ -8,8 +8,7 @@ import { openInIDE } from '../services/open-action';
 import type { ProjectStatus } from '../types';
 import type { SyncResult } from '../services/sync-service';
 import { DirectoryPicker } from './directory-picker';
-
-const DEFAULT_PARENT_DIR = '/Users/ricardomarchetti/ProyectosIA/AplicacionesSaas';
+import { getConfig } from '@/shared/lib/config';
 
 function getStatus(version: string | null, latestVersion: string | null): ProjectStatus {
   if (!version) return 'Desconocida';
@@ -19,13 +18,13 @@ function getStatus(version: string | null, latestVersion: string | null): Projec
 
 function StatusBadge({ status }: { status: ProjectStatus }) {
   const styles: Record<ProjectStatus, string> = {
-    OK: 'bg-green-900/50 text-green-400 border-green-700',
-    Desactualizada: 'bg-yellow-900/50 text-yellow-400 border-yellow-700',
-    Desconocida: 'bg-gray-900/50 text-gray-400 border-gray-700',
+    OK: 'bg-fluya-green/10 text-fluya-green border-fluya-green/30',
+    Desactualizada: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30',
+    Desconocida: 'bg-white/5 text-gray-400 border-white/10',
   };
 
   return (
-    <span className={`px-2 py-1 text-xs font-medium rounded border ${styles[status]}`}>
+    <span className={`px-2 py-1 text-xs font-medium rounded-lg border ${styles[status]}`}>
       {status}
     </span>
   );
@@ -39,11 +38,16 @@ export function FactoryDashboard() {
   const [syncingPath, setSyncingPath] = useState<string | null>(null);
   const [syncResult, setSyncResult] = useState<SyncResult | null>(null);
 
-  // Create app state
   const [newAppName, setNewAppName] = useState('');
-  const [newAppParentDir, setNewAppParentDir] = useState(DEFAULT_PARENT_DIR);
+  const [newAppParentDir, setNewAppParentDir] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const [createResult, setCreateResult] = useState<CreateResult | null>(null);
+
+  useEffect(() => {
+    setFactorySource(getConfig('FACTORY_SOURCE_DIR'));
+    setRootDir(getConfig('PROJECTS_ROOT_DIR'));
+    setNewAppParentDir(getConfig('NEW_APP_PARENT_DIR'));
+  }, []);
 
   const [state, formAction, isPending] = useActionState(
     async (_prev: ScanActionResult, formData: FormData) => {
@@ -102,18 +106,18 @@ export function FactoryDashboard() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <h1 className="text-2xl font-bold text-white mb-2">Factory Manager</h1>
-      <p className="text-gray-400 mb-6">
+    <div className="max-w-4xl mx-auto px-6">
+      <h1 className="text-2xl font-bold text-white mb-1">Factory</h1>
+      <p className="text-gray-400 mb-8">
         Crea, escanea y gestiona tus proyectos SaaS Factory.
       </p>
 
       {/* Factory Source Config */}
-      <div className="mb-6 p-4 bg-gray-800/50 border border-gray-700 rounded-lg">
-        <label className="block text-sm font-medium text-gray-400 mb-2">
+      <div className="mb-6 p-5 bg-white/5 border border-white/10 rounded-2xl hover:border-fluya-purple/30 transition-all duration-300">
+        <label className="block text-sm font-medium text-gray-300 mb-2">
           Directorio fuente de SaaS Factory
           {state.latestVersion && (
-            <span className="ml-2 px-2 py-0.5 text-xs bg-purple-900/50 text-purple-400 border border-purple-700 rounded">
+            <span className="ml-2 px-2 py-0.5 text-xs bg-fluya-purple/20 text-fluya-purple border border-fluya-purple/30 rounded-lg">
               {state.latestVersion} detectada
             </span>
           )}
@@ -123,14 +127,14 @@ export function FactoryDashboard() {
           onChange={setFactorySource}
           placeholder="/Users/.../saas-factory-setup/saas-factory"
         />
-        <p className="mt-1 text-xs text-gray-500">
+        <p className="mt-2 text-xs text-gray-500">
           Ruta a la carpeta que contiene el template (.claude/, CLAUDE.md). La version se detecta automaticamente.
         </p>
       </div>
 
       {/* Create New App */}
-      <div className="mb-6 p-4 bg-emerald-950/30 border border-emerald-800 rounded-lg">
-        <h2 className="text-sm font-medium text-emerald-400 mb-3">Crear Nueva App</h2>
+      <div className="mb-6 p-5 bg-fluya-green/5 border border-fluya-green/20 rounded-2xl hover:border-fluya-green/40 transition-all duration-300">
+        <h2 className="text-sm font-semibold text-fluya-green mb-4">Crear Nueva App</h2>
         <div className="space-y-3">
           <div>
             <label className="block text-xs text-gray-400 mb-1">Nombre de la app (kebab-case)</label>
@@ -139,7 +143,7 @@ export function FactoryDashboard() {
               value={newAppName}
               onChange={(e) => setNewAppName(e.target.value.toLowerCase().replace(/\s+/g, '-'))}
               placeholder="mi-nueva-app"
-              className="w-full px-4 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500"
+              className="w-full px-4 py-2.5 bg-fluya-bg border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-fluya-green/50 transition-colors"
             />
           </div>
           <div>
@@ -147,24 +151,24 @@ export function FactoryDashboard() {
             <DirectoryPicker
               value={newAppParentDir}
               onChange={setNewAppParentDir}
-              placeholder={DEFAULT_PARENT_DIR}
+              placeholder="/Users/.../AplicacionesSaas"
             />
           </div>
           <button
             type="button"
             disabled={isCreating || !newAppName.trim() || !factorySource.trim()}
             onClick={handleCreate}
-            className="w-full px-4 py-2.5 bg-emerald-700 text-white rounded-lg font-medium hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="w-full px-4 py-2.5 bg-gradient-to-r from-fluya-purple to-fluya-blue text-white rounded-xl font-medium hover:-translate-y-0.5 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0 transition-all duration-300 shadow-lg shadow-fluya-purple/20"
           >
             {isCreating ? 'Creando app + instalando dependencias...' : 'Crear App'}
           </button>
         </div>
 
         {createResult && (
-          <div className={`mt-3 p-3 rounded-lg border text-sm ${
+          <div className={`mt-3 p-3 rounded-xl border text-sm ${
             createResult.success
-              ? 'bg-green-900/30 border-green-700 text-green-400'
-              : 'bg-red-900/30 border-red-700 text-red-400'
+              ? 'bg-fluya-green/10 border-fluya-green/30 text-fluya-green'
+              : 'bg-red-500/10 border-red-500/20 text-red-400'
           }`}>
             {createResult.success
               ? `"${createResult.appName}" creada en ${createResult.appPath}. Antigravity abierto.`
@@ -175,8 +179,8 @@ export function FactoryDashboard() {
       </div>
 
       {/* Scan Directory */}
-      <div className="mb-6 p-4 bg-gray-800/50 border border-gray-700 rounded-lg">
-        <label className="block text-sm font-medium text-gray-400 mb-2">
+      <div className="mb-6 p-5 bg-white/5 border border-white/10 rounded-2xl hover:border-fluya-purple/30 transition-all duration-300">
+        <label className="block text-sm font-medium text-gray-300 mb-2">
           Directorio de proyectos a escanear
         </label>
         <DirectoryPicker
@@ -193,7 +197,7 @@ export function FactoryDashboard() {
         <button
           type="submit"
           disabled={isPending || !rootDir.trim()}
-          className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="w-full px-6 py-3 bg-fluya-purple text-white rounded-xl font-medium hover:shadow-[0_0_20px_rgba(139,92,246,0.3)] disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-300"
         >
           {isPending ? 'Escaneando...' : 'Escanear proyectos'}
         </button>
@@ -201,10 +205,10 @@ export function FactoryDashboard() {
 
       {/* Sync Result */}
       {syncResult && (
-        <div className={`mb-6 p-4 rounded-lg border ${
+        <div className={`mb-6 p-4 rounded-xl border ${
           syncResult.success
-            ? 'bg-green-900/30 border-green-700 text-green-400'
-            : 'bg-red-900/30 border-red-700 text-red-400'
+            ? 'bg-fluya-green/10 border-fluya-green/30 text-fluya-green'
+            : 'bg-red-500/10 border-red-500/20 text-red-400'
         }`}>
           {syncResult.success
             ? `"${syncResult.projectName}" sincronizado a ${syncResult.toVersion}. Re-escanea para verificar.`
@@ -215,7 +219,7 @@ export function FactoryDashboard() {
 
       {/* Scan Error */}
       {state.error && (
-        <div className="mb-6 p-4 bg-red-900/30 border border-red-700 rounded-lg text-red-400">
+        <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400">
           {state.error}
         </div>
       )}
@@ -228,9 +232,9 @@ export function FactoryDashboard() {
             {state.latestVersion && ` — version fuente: ${state.latestVersion}`}
           </p>
 
-          <div className="overflow-hidden rounded-lg border border-gray-700">
+          <div className="overflow-hidden rounded-2xl border border-white/10">
             <table className="w-full text-left">
-              <thead className="bg-gray-800/80">
+              <thead className="bg-white/5">
                 <tr>
                   <th className="px-4 py-3 text-xs font-medium text-gray-400 uppercase">Nombre</th>
                   <th className="px-4 py-3 text-xs font-medium text-gray-400 uppercase">Version</th>
@@ -238,12 +242,12 @@ export function FactoryDashboard() {
                   <th className="px-4 py-3 text-xs font-medium text-gray-400 uppercase">Acciones</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-700">
+              <tbody className="divide-y divide-white/5">
                 {state.projects.map((project) => {
                   const status = getStatus(project.version, state.latestVersion);
                   const isSyncing = syncingPath === project.path;
                   return (
-                    <tr key={project.path} className="bg-gray-900/50 hover:bg-gray-800/50 transition-colors">
+                    <tr key={project.path} className="hover:bg-white/5 transition-colors">
                       <td className="px-4 py-3">
                         <div className="text-white font-medium">{project.name}</div>
                         <div className="text-xs text-gray-500 truncate max-w-xs">{project.path}</div>
@@ -259,7 +263,7 @@ export function FactoryDashboard() {
                           <button
                             type="button"
                             onClick={() => handleOpen(project.path)}
-                            className="px-3 py-1 text-sm bg-indigo-700 text-white rounded hover:bg-indigo-600 transition-colors"
+                            className="px-3 py-1.5 text-sm bg-fluya-purple/20 text-fluya-purple border border-fluya-purple/30 rounded-lg hover:bg-fluya-purple/30 transition-all duration-300"
                           >
                             Abrir
                           </button>
@@ -267,7 +271,7 @@ export function FactoryDashboard() {
                             type="button"
                             disabled={status === 'OK' || isSyncing}
                             onClick={() => handleSync(project.path)}
-                            className="px-3 py-1 text-sm bg-gray-700 text-gray-300 rounded hover:bg-gray-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                            className="px-3 py-1.5 text-sm bg-white/5 text-gray-300 border border-white/10 rounded-lg hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-300"
                           >
                             {isSyncing ? 'Sync...' : 'Sync'}
                           </button>
@@ -285,7 +289,7 @@ export function FactoryDashboard() {
       {/* Empty state */}
       {!state.error && state.totalScanned > 0 && state.projects.length === 0 && (
         <div className="text-center py-12 text-gray-500">
-          No se encontraron proyectos con <code className="text-gray-400">.claude/</code> en ese directorio.
+          No se encontraron proyectos con <code className="text-fluya-purple/60">.claude/</code> en ese directorio.
         </div>
       )}
     </div>

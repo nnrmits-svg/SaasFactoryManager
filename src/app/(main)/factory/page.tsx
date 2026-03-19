@@ -2,8 +2,8 @@ import { FactoryDashboard } from '@/features/factory-manager/components/factory-
 
 export default function FactoryPage() {
   return (
-    <main className="min-h-screen bg-gray-950 py-12">
+    <div className="py-8">
       <FactoryDashboard />
-    </main>
+    </div>
   );
 }
