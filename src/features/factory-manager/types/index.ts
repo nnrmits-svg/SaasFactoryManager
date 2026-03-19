@@ -36,3 +36,68 @@ export interface ScannerConfig {
 
 /** Project status based on version comparison */
 export type ProjectStatus = 'OK' | 'Desactualizada' | 'Desconocida';
+
+/** Project stored in Supabase with git metadata */
+export interface Project {
+  id: string;
+  name: string;
+  path: string;
+  sfVersion: string | null;
+  designSystem: string;
+  status: 'active' | 'archived' | 'paused';
+  createdAt: string;
+  updatedAt: string;
+  // Computed from relations
+  totalWorkMinutes?: number;
+  lastCommit?: CommitInfo | null;
+  commitCount?: number;
+}
+
+/** A single git commit */
+export interface CommitInfo {
+  id: string;
+  projectId: string;
+  hash: string;
+  message: string;
+  author: string;
+  committedAt: string;
+}
+
+/** A calculated work session (gap > 2h = new session) */
+export interface WorkSession {
+  id: string;
+  projectId: string;
+  startedAt: string;
+  endedAt: string;
+  durationMinutes: number;
+  commitCount: number;
+}
+
+/** Raw git log entry parsed from filesystem */
+export interface RawGitCommit {
+  hash: string;
+  message: string;
+  author: string;
+  date: string;
+}
+
+/** Auto-commit tracking session */
+export interface TrackingSession {
+  id: string;
+  projectId: string;
+  startedAt: string;
+  endedAt: string | null;
+  status: 'active' | 'stopped';
+  pid: number | null;
+  autoCommits: number;
+}
+
+/** Status response for tracking API */
+export interface TrackingStatus {
+  projectPath: string;
+  projectName: string;
+  isTracking: boolean;
+  sessionId: string | null;
+  autoCommits: number;
+  startedAt: string | null;
+}

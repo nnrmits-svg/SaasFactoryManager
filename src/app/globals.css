@@ -2,7 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
-/*
- * Personaliza tu tema aquí
- * Documentación: https://tailwindcss.com/docs/theme
- */
+@layer base {
+  body {
+    @apply bg-fluya-bg text-white antialiased;
+  }
+}

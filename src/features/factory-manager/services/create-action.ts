@@ -5,6 +5,7 @@ import path from 'node:path';
 import { exec } from 'node:child_process';
 import { promisify } from 'node:util';
 import { resolveActualPath, resolveFactorySource } from './resolve-path';
+import { injectFluyaDesignSystem } from './design-system-service';
 
 const execAsync = promisify(exec);
 
@@ -77,6 +78,9 @@ export async function createApp(
 
     // Create directory and copy full template
     await copyDir(resolvedSource, appPath);
+
+    // Inject Fluya design system (dark theme, navbar, footer, colors)
+    await injectFluyaDesignSystem(appPath);
 
     // Run npm install
     await execAsync('npm install', { cwd: appPath, timeout: 120_000 });
