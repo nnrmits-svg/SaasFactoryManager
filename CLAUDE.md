@@ -75,35 +75,43 @@ Usuario dice algo
     ├── "Configura mi entorno / setup workstation / entorno pro / primera vez"
     |       → Ejecutar skill SETUP-WORKSTATION (terminal + editor + Claude Code + alias)
     |
+    ├── "Necesito seguridad / roles / permisos / 2FA / audit log / rate limit"
+    |       → Ejecutar skill ADD-SECURITY (4 capas enterprise, requiere /add-login)
+    |
+    ├── "Como fue el performance / metricas / como trabajaste / agent stats"
+    |       → Ejecutar skill AGENT-PERFORMANCE (reporte de rendimiento)
+    |
     └── No encaja en nada
             → Usar tu juicio. Leer el codebase, entender patrones, ejecutar.
 ```
 
 ---
 
-## Skills: 16 Herramientas Especializadas
+## Skills: 18 Herramientas Especializadas
 
 | # | Skill | Cuando usarlo |
 |---|-------|---------------|
-| 1 | `new-app` | Empezar proyecto desde cero. Entrevista de negocio → BUSINESS_LOGIC.md |
+| 1 | `new-app` | Entrevista de negocio → PROJECT_BRIEF.md (exportable) + BUSINESS_LOGIC.md. Soporta brief del Sensei |
 | 2 | `add-login` | Auth completa: Email/Password + Google OAuth + profiles + RLS |
-| 3 | `add-payments` | Pagos con Polar (MoR): checkout, webhooks, suscripciones, acceso |
-| 4 | `add-emails` | Emails transaccionales: Resend + React Email + batch + unsubscribe |
-| 5 | `add-mobile` | PWA instalable + notificaciones push (iOS compatible, 14 commits de gotchas) |
-| 6 | `website-3d` | Landing cinematica Apple-style: scroll-driven video + copy AIDA/PAS |
-| 4 | `prp` | Plan de feature compleja antes de implementar. Siempre antes de bucle-agentico |
-| 5 | `bucle-agentico` | Features complejas: multiples fases coordinadas (DB + API + UI) |
-| 6 | `ai` | Capacidades de IA: chat, RAG, vision, tools, web search |
-| 7 | `supabase` | Todo BD: crear tablas, RLS, migraciones, queries, metricas, CRUD |
-| 8 | `playwright-cli` | Testing automatizado con browser real |
-| 9 | `primer` | Cargar contexto completo del proyecto al inicio de sesion |
-| 10 | `update-sf` | Actualizar SaaS Factory a la ultima version |
-| 11 | `eject-sf` | Remover SaaS Factory del proyecto. DESTRUCTIVO. Confirmar siempre |
-| 12 | `memory-manager` | Memoria persistente POR PROYECTO en `.claude/memory/` (git-versioned) |
-| 13 | `image-generation` | Generar y editar imagenes con OpenRouter + Gemini |
-| 14 | `autoresearch` | Auto-optimizar skills con loop autonomo (patron Karpathy) |
-| 15 | `skill-creator` | Crear nuevos skills para extender la fabrica |
-| 16 | `setup-workstation` | Entorno pro: terminal + editor + Claude Code + SaaS Factory alias |
+| 3 | `add-security` | Seguridad enterprise: roles+RLS, 2FA/MFA, sessions, rate limiting, audit logs. Requiere /add-login |
+| 4 | `add-payments` | Pagos con Polar (MoR): checkout, webhooks, suscripciones, acceso |
+| 5 | `add-emails` | Emails transaccionales: Resend + React Email + batch + unsubscribe |
+| 6 | `add-mobile` | PWA instalable + notificaciones push (iOS compatible) |
+| 7 | `website-3d` | Landing cinematica Apple-style: scroll-driven video + copy AIDA/PAS |
+| 8 | `prp` | Plan de feature compleja antes de implementar. Siempre antes de bucle-agentico |
+| 9 | `bucle-agentico` | Features complejas: multiples fases coordinadas (DB + API + UI) |
+| 10 | `ai` | Capacidades de IA: chat, RAG, vision, tools, web search |
+| 11 | `supabase` | Todo BD: crear tablas, RLS, migraciones, queries, metricas, CRUD |
+| 12 | `playwright-cli` | Testing automatizado con browser real |
+| 13 | `primer` | Cargar contexto completo del proyecto al inicio de sesion |
+| 14 | `update-sf` | Actualizar SaaS Factory (preserva skills-custom + memory + PRPs) |
+| 15 | `eject-sf` | Remover SaaS Factory del proyecto. DESTRUCTIVO. Confirmar siempre |
+| 16 | `memory-manager` | Memoria persistente POR PROYECTO en `.claude/memory/` (git-versioned) |
+| 17 | `image-generation` | Generar y editar imagenes con OpenRouter + Gemini |
+| 18 | `autoresearch` | Auto-optimizar skills con loop autonomo (patron Karpathy) |
+| 19 | `skill-creator` | Crear nuevos skills para extender la fabrica |
+| 20 | `setup-workstation` | Entorno pro: terminal + editor + Claude Code + SaaS Factory alias |
+| 21 | `agent-performance` | Metricas de rendimiento: velocidad, calidad, proceso, seguridad |
 
 ---
 
@@ -121,13 +129,15 @@ Usuario dice algo
 ### Flujo 1: Proyecto Nuevo (de cero)
 
 ```
-1. NEW-APP → Entrevista de negocio → BUSINESS_LOGIC.md
-2. Preguntar diseño visual (design system)
-3. ADD-LOGIN → Auth completo
+1. NEW-APP → Entrevista → PROJECT_BRIEF.md + BUSINESS_LOGIC.md
+   (Opcional: exportar brief al Sensei, traer refinado, re-ejecutar en Modo B)
+2. ADD-LOGIN → Auth completo
+3. ADD-SECURITY → Seguridad enterprise (si es B2B o requiere roles)
 4. ADD-PAYMENTS → Pagos con Polar (si el proyecto cobra)
 5. PRP → Plan de primera feature
-5. BUCLE-AGENTICO → Implementar fase por fase
-6. PLAYWRIGHT-CLI → Verificar que todo funciona
+6. BUCLE-AGENTICO → Implementar fase por fase
+7. PLAYWRIGHT-CLI → Verificar que todo funciona
+8. AGENT-PERFORMANCE → Reporte de como trabajo el agente
 ```
 
 ### Flujo 2: Feature Compleja
@@ -271,7 +281,7 @@ npm run lint         # ESLint
 
 ---
 
-## Estructura de la Fabrica
+## Estructura de la Fabrica (2 carpetas de skills)
 
 ```
 .claude/
@@ -282,22 +292,29 @@ npm run lint         # ESLint
 │   ├── project/              # Decisiones y estado de iniciativas
 │   └── reference/            # Patrones, soluciones, donde encontrar cosas
 │
-├── skills/                    # 15 skills especializados
+├── skills/                    # Skills del TEMPLATE (se actualizan con /update-sf)
 │   ├── new-app/              # Entrevista de negocio
 │   ├── add-login/            # Auth completo
+│   ├── add-payments/         # Pagos con Polar
+│   ├── add-emails/           # Emails con Resend
+│   ├── add-mobile/           # PWA + push notifications
 │   ├── website-3d/           # Landing pages cinematicas
+│   ├── setup-workstation/    # Setup de maquina completo
 │   ├── prp/                  # Generar PRPs
 │   ├── bucle-agentico/       # Bucle Agentico BLUEPRINT
 │   ├── ai/                   # AI Templates hub
 │   ├── supabase/             # BD completa: estructura + datos + metricas
 │   ├── playwright-cli/       # Testing automatizado
 │   ├── primer/               # Context initialization
-│   ├── update-sf/            # Actualizar SF
+│   ├── update-sf/            # Actualizar SF (preserva skills-custom)
 │   ├── eject-sf/             # Remover SF
 │   ├── memory-manager/       # Memoria persistente por proyecto
-│   ├── image-generation/     # Generacion de imagenes (OpenRouter + Gemini)
+│   ├── image-generation/     # Generacion de imagenes
 │   ├── autoresearch/         # Auto-optimizacion de skills
 │   └── skill-creator/        # Crear nuevos skills
+│
+├── skills-custom/             # Skills del PROYECTO (NUNCA se tocan en update)
+│   └── [project-specific]/   # Skills creados para este proyecto
 │
 ├── PRPs/                      # Product Requirements Proposals
 │   └── prp-base.md           # Template base
@@ -309,6 +326,11 @@ npm run lint         # ESLint
     ├── bento-grid/
     └── neumorphism/
 ```
+
+### Regla de 2 carpetas
+- **`skills/`** = Genericos, viajan con el template, se actualizan con `/update-sf`
+- **`skills-custom/`** = Especificos del proyecto, NUNCA se tocan en update
+- Al crear un skill nuevo, decidir: es generico? → `skills/`. Es solo para este proyecto? → `skills-custom/`
 
 ---
 
