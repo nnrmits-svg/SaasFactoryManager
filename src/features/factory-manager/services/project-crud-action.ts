@@ -10,6 +10,7 @@ export interface CreateProjectInput {
   sfVersion?: string;
   designSystem?: string;
   status?: 'active' | 'archived' | 'paused';
+  businessBrief?: Record<string, string>;
 }
 
 export interface UpdateProjectInput {
@@ -51,6 +52,7 @@ export async function createProject(input: CreateProjectInput): Promise<ProjectA
       status: input.status || 'active',
       path: input.repoUrl?.trim() || input.name.trim(),
       user_id: user.id,
+      business_brief: input.businessBrief || {},
     })
     .select('id')
     .single();

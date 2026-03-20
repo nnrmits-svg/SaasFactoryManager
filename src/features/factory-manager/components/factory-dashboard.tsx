@@ -7,9 +7,9 @@ import {
   updateProject,
   deleteProject,
   getProjects,
-  type CreateProjectInput,
   type UpdateProjectInput,
 } from '../services/project-crud-action';
+import { ProjectWizard, type BusinessBrief } from './project-wizard';
 
 interface ProjectRow {
   id: string;
@@ -56,13 +56,14 @@ function formatMinutes(minutes: number): string {
 export function FactoryDashboard() {
   const [projects, setProjects] = useState<ProjectRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
+  const [showWizard, setShowWizard] = useState(false);
+  const [showEditForm, setShowEditForm] = useState(false);
   const [editingProject, setEditingProject] = useState<ProjectRow | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  // Form state
+  // Edit form state
   const [formName, setFormName] = useState('');
   const [formDescription, setFormDescription] = useState('');
   const [formRepoUrl, setFormRepoUrl] = useState('');
@@ -80,14 +81,14 @@ export function FactoryDashboard() {
     setLoading(false);
   }
 
-  function resetForm() {
+  function resetEditForm() {
     setFormName('');
     setFormDescription('');
     setFormRepoUrl('');
     setFormSfVersion('');
     setFormStatus('active');
     setEditingProject(null);
-    setShowForm(false);
+    setShowEditForm(false);
   }
 
   function openEditForm(project: ProjectRow) {
@@ -97,47 +98,54 @@ export function FactoryDashboard() {
     setFormSfVersion(project.sfVersion || '');
     setFormStatus(project.status);
     setEditingProject(project);
-    setShowForm(true);
+    setShowEditForm(true);
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleWizardComplete(data: { name: string; description: string; brief: BusinessBrief }) {
     setSaving(true);
     setMessage(null);
 
-    if (editingProject) {
-      const input: UpdateProjectInput = {
-        id: editingProject.id,
-        name: formName,
-        description: formDescription,
-        repoUrl: formRepoUrl,
-        sfVersion: formSfVersion,
-        status: formStatus,
-      };
-      const result = await updateProject(input);
-      if (result.success) {
-        setMessage({ type: 'success', text: `"${formName}" actualizado` });
-        resetForm();
-        await loadProjects();
-      } else {
-        setMessage({ type: 'error', text: result.error || 'Error al actualizar' });
-      }
+    const result = await createProject({
+      name: data.name,
+      description: data.description,
+      sfVersion: 'V4',
+      businessBrief: data.brief as unknown as Record<string, string>,
+    });
+
+    if (result.success) {
+      setMessage({ type: 'success', text: `"${data.name}" creado con brief de negocio` });
+      setShowWizard(false);
+      await loadProjects();
     } else {
-      const input: CreateProjectInput = {
-        name: formName,
-        description: formDescription,
-        repoUrl: formRepoUrl,
-        sfVersion: formSfVersion,
-        status: formStatus,
-      };
-      const result = await createProject(input);
-      if (result.success) {
-        setMessage({ type: 'success', text: `"${formName}" creado` });
-        resetForm();
-        await loadProjects();
-      } else {
-        setMessage({ type: 'error', text: result.error || 'Error al crear' });
-      }
+      setMessage({ type: 'error', text: result.error || 'Error al crear' });
+    }
+
+    setSaving(false);
+  }
+
+  async function handleEditSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editingProject) return;
+
+    setSaving(true);
+    setMessage(null);
+
+    const input: UpdateProjectInput = {
+      id: editingProject.id,
+      name: formName,
+      description: formDescription,
+      repoUrl: formRepoUrl,
+      sfVersion: formSfVersion,
+      status: formStatus,
+    };
+
+    const result = await updateProject(input);
+    if (result.success) {
+      setMessage({ type: 'success', text: `"${formName}" actualizado` });
+      resetEditForm();
+      await loadProjects();
+    } else {
+      setMessage({ type: 'error', text: result.error || 'Error al actualizar' });
     }
 
     setSaving(false);
@@ -165,10 +173,10 @@ export function FactoryDashboard() {
           <h1 className="text-2xl font-bold text-white mb-1">Factory</h1>
           <p className="text-gray-400">Crea y gestiona tus proyectos SaaS.</p>
         </div>
-        {!showForm && (
+        {!showWizard && !showEditForm && (
           <button
             type="button"
-            onClick={() => { resetForm(); setShowForm(true); }}
+            onClick={() => setShowWizard(true)}
             className="px-4 py-2 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 text-white rounded-xl font-medium transition-all duration-300 shadow-lg shadow-purple-500/20"
           >
             + Nuevo Proyecto
@@ -187,21 +195,31 @@ export function FactoryDashboard() {
         </div>
       )}
 
-      {/* Create/Edit Form */}
-      {showForm && (
-        <form onSubmit={handleSubmit} className="mb-8 p-6 bg-white/5 border border-white/10 rounded-2xl">
+      {/* Create Wizard */}
+      {showWizard && (
+        <div className="mb-8">
+          <ProjectWizard
+            onComplete={handleWizardComplete}
+            onCancel={() => setShowWizard(false)}
+            saving={saving}
+          />
+        </div>
+      )}
+
+      {/* Edit Form */}
+      {showEditForm && editingProject && (
+        <form onSubmit={handleEditSubmit} className="mb-8 p-6 bg-white/5 border border-white/10 rounded-2xl">
           <h2 className="text-lg font-semibold text-white mb-4">
-            {editingProject ? `Editar: ${editingProject.name}` : 'Nuevo Proyecto'}
+            Editar: {editingProject.name}
           </h2>
 
           <div className="space-y-4">
             <div>
-              <label className="block text-sm text-gray-400 mb-1">Nombre *</label>
+              <label className="block text-sm text-gray-400 mb-1">Nombre</label>
               <input
                 type="text"
                 value={formName}
                 onChange={(e) => setFormName(e.target.value)}
-                placeholder="Mi Proyecto SaaS"
                 required
                 className="w-full px-4 py-2.5 bg-black/30 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50 transition-colors"
               />
@@ -212,7 +230,6 @@ export function FactoryDashboard() {
               <textarea
                 value={formDescription}
                 onChange={(e) => setFormDescription(e.target.value)}
-                placeholder="Breve descripcion del proyecto..."
                 rows={2}
                 className="w-full px-4 py-2.5 bg-black/30 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50 transition-colors resize-none"
               />
@@ -235,7 +252,6 @@ export function FactoryDashboard() {
                   type="text"
                   value={formSfVersion}
                   onChange={(e) => setFormSfVersion(e.target.value)}
-                  placeholder="V4"
                   className="w-full px-4 py-2.5 bg-black/30 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50 transition-colors"
                 />
               </div>
@@ -261,11 +277,11 @@ export function FactoryDashboard() {
               disabled={saving || !formName.trim()}
               className="px-6 py-2.5 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 text-white rounded-xl font-medium disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-300 shadow-lg shadow-purple-500/20"
             >
-              {saving ? 'Guardando...' : editingProject ? 'Guardar Cambios' : 'Crear Proyecto'}
+              {saving ? 'Guardando...' : 'Guardar Cambios'}
             </button>
             <button
               type="button"
-              onClick={resetForm}
+              onClick={resetEditForm}
               className="px-6 py-2.5 bg-white/5 text-gray-300 border border-white/10 rounded-xl hover:bg-white/10 transition-all duration-300"
             >
               Cancelar
@@ -362,7 +378,7 @@ export function FactoryDashboard() {
           <p className="text-gray-400 mb-6">Crea tu primer proyecto SaaS para empezar.</p>
           <button
             type="button"
-            onClick={() => { resetForm(); setShowForm(true); }}
+            onClick={() => setShowWizard(true)}
             className="px-6 py-2.5 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 text-white rounded-xl font-medium transition-all duration-300 shadow-lg shadow-purple-500/20"
           >
             + Crear Primer Proyecto
