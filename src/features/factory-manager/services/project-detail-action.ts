@@ -62,6 +62,8 @@ export async function getProjectDetail(name: string): Promise<ProjectDetail | nu
       sfVersion: project.sf_version,
       designSystem: project.design_system ?? 'fluya',
       status: project.status ?? 'active',
+      description: project.description ?? null,
+      repoUrl: project.repo_url ?? null,
       createdAt: project.created_at,
       updatedAt: project.updated_at,
       totalWorkMinutes,

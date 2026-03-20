@@ -50,6 +50,8 @@ export interface Project {
   sfVersion: string | null;
   designSystem: string;
   status: 'active' | 'archived' | 'paused';
+  description: string | null;
+  repoUrl: string | null;
   createdAt: string;
   updatedAt: string;
   // Computed from relations
