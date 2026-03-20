@@ -210,6 +210,8 @@ export async function getPortfolioProjects(): Promise<Project[]> {
       sfVersion: p.sf_version,
       designSystem: p.design_system ?? 'fluya',
       status: p.status ?? 'active',
+      description: (p as Record<string, unknown>).description as string | null ?? null,
+      repoUrl: (p as Record<string, unknown>).repo_url as string | null ?? null,
       createdAt: p.created_at,
       updatedAt: p.updated_at,
       totalWorkMinutes,
