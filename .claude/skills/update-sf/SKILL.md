@@ -7,6 +7,7 @@ allowed-tools: Read, Bash
 # Update SaaS Factory
 
 Este skill actualiza las herramientas de desarrollo (carpeta `.claude/`) a la ultima version disponible.
+**Preserva los skills custom del proyecto** (carpeta `.claude/skills-custom/`).
 
 ## Proceso
 
@@ -43,37 +44,105 @@ git pull origin main
 
 Si hay errores de git (cambios locales, etc.), informa al usuario y sugiere solucion.
 
-### Paso 3: Reemplazar .claude/
+### Paso 3: Preservar skills-custom y memory
 
-Elimina la carpeta `.claude/` actual del proyecto y copia la nueva:
+**ANTES** de reemplazar, respalda lo que NO debe perderse:
 
 ```bash
 # En el directorio del proyecto actual
+BACKUP_DIR=$(mktemp -d)
+
+# Preservar skills-custom (skills especificos del proyecto)
+if [ -d .claude/skills-custom ]; then
+  cp -r .claude/skills-custom "$BACKUP_DIR/skills-custom"
+fi
+
+# Preservar memory (memoria persistente del proyecto)
+if [ -d .claude/memory ]; then
+  cp -r .claude/memory "$BACKUP_DIR/memory"
+fi
+
+# Preservar PRPs del proyecto (tienen historial de features)
+if [ -d .claude/PRPs ]; then
+  cp -r .claude/PRPs "$BACKUP_DIR/PRPs"
+fi
+```
+
+### Paso 4: Reemplazar .claude/
+
+Elimina la carpeta `.claude/` actual y copia la nueva:
+
+```bash
 rm -rf .claude/
 cp -r [RUTA_REPO_SF]/saas-factory/.claude/ .claude/
 ```
 
-### Paso 4: Confirmar actualizacion
+### Paso 5: Restaurar lo preservado
+
+```bash
+# Restaurar skills-custom
+if [ -d "$BACKUP_DIR/skills-custom" ]; then
+  cp -r "$BACKUP_DIR/skills-custom" .claude/skills-custom
+fi
+
+# Restaurar memory
+if [ -d "$BACKUP_DIR/memory" ]; then
+  cp -r "$BACKUP_DIR/memory" .claude/memory
+fi
+
+# Restaurar PRPs (merge: mantener PRPs del proyecto, agregar nuevos templates)
+if [ -d "$BACKUP_DIR/PRPs" ]; then
+  cp -rn "$BACKUP_DIR/PRPs/"* .claude/PRPs/ 2>/dev/null
+fi
+
+# Limpiar backup
+rm -rf "$BACKUP_DIR"
+```
+
+### Paso 6: Confirmar actualizacion
 
 Informa al usuario:
 
 ```
 SaaS Factory actualizado correctamente.
 
-Cambios aplicados:
-- .claude/skills/ (skills actualizados)
-- .claude/PRPs/ (templates PRP actualizados)
-- .claude/skills/ai/references/ (AI templates actualizados)
-- .claude/design-systems/ (sistemas de diseno actualizados)
+Actualizado:
+  - .claude/skills/ (skills de la fabrica actualizados)
+  - .claude/design-systems/ (sistemas de diseno actualizados)
 
-Archivos NO modificados:
-- CLAUDE.md (tu configuracion de proyecto)
-- .mcp.json (tus tokens y credenciales)
-- src/ (tu codigo)
+Preservado:
+  - .claude/skills-custom/ (tus skills del proyecto)
+  - .claude/memory/ (memoria persistente del proyecto)
+  - .claude/PRPs/ (tus PRPs existentes + nuevos templates)
+
+NO modificado:
+  - CLAUDE.md (tu configuracion de proyecto)
+  - .mcp.json (tus tokens y credenciales)
+  - src/ (tu codigo)
+```
+
+## Estructura de Skills (2 carpetas)
+
+```
+.claude/
+├── skills/            # Del template (se actualiza con /update-sf)
+│   ├── new-app/
+│   ├── add-login/
+│   ├── add-payments/
+│   └── ...
+│
+├── skills-custom/     # Del proyecto (NUNCA se toca en update)
+│   ├── add-admin/
+│   ├── add-alerts/
+│   └── ...
+│
+└── memory/            # Memoria persistente (NUNCA se toca en update)
 ```
 
 ## Notas
 
 - Este skill NO modifica `CLAUDE.md`, `.mcp.json` ni el codigo fuente
-- Solo actualiza la "toolbox" de desarrollo
+- `skills-custom/` NUNCA se toca - son skills especificos de este proyecto
+- `memory/` NUNCA se toca - es la memoria persistente del proyecto
+- PRPs del proyecto se preservan, templates nuevos se agregan
 - Si necesitas actualizar `CLAUDE.md` manualmente, revisa el template en el repo SF
