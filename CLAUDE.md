@@ -72,13 +72,16 @@ Usuario dice algo
     ├── "Optimiza este skill / mejora el skill / autoresearch"
     |       → Ejecutar skill AUTORESEARCH (loop autonomo de mejora)
     |
+    ├── "Configura mi entorno / setup workstation / entorno pro / primera vez"
+    |       → Ejecutar skill SETUP-WORKSTATION (terminal + editor + Claude Code + alias)
+    |
     └── No encaja en nada
             → Usar tu juicio. Leer el codebase, entender patrones, ejecutar.
 ```
 
 ---
 
-## Skills: 15 Herramientas Especializadas
+## Skills: 16 Herramientas Especializadas
 
 | # | Skill | Cuando usarlo |
 |---|-------|---------------|
@@ -100,10 +103,20 @@ Usuario dice algo
 | 13 | `image-generation` | Generar y editar imagenes con OpenRouter + Gemini |
 | 14 | `autoresearch` | Auto-optimizar skills con loop autonomo (patron Karpathy) |
 | 15 | `skill-creator` | Crear nuevos skills para extender la fabrica |
+| 16 | `setup-workstation` | Entorno pro: terminal + editor + Claude Code + SaaS Factory alias |
 
 ---
 
 ## Flujos Principales
+
+### Flujo 0: Primera Vez (setup de maquina)
+
+```
+1. SETUP-WORKSTATION → Terminal + Editor + Claude Code + SaaS Factory alias
+2. Cerrar y abrir terminal para que .zshrc surta efecto
+3. mkdir mi-app && cd mi-app && saas-factory && npm install
+4. claude . → /new-app
+```
 
 ### Flujo 1: Proyecto Nuevo (de cero)
 
