@@ -3,6 +3,16 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 
+function getSiteUrl() {
+  let url =
+    process.env.NEXT_PUBLIC_SITE_URL ??
+    process.env.NEXT_PUBLIC_VERCEL_URL ??
+    'http://localhost:3000';
+  url = url.startsWith('http') ? url : `https://${url}`;
+  url = url.endsWith('/') ? url.slice(0, -1) : url;
+  return url;
+}
+
 export async function loginWithEmail(formData: FormData) {
   const supabase = await createClient();
   const email = formData.get('email') as string;
@@ -23,7 +33,7 @@ export async function signupWithEmail(formData: FormData) {
   const password = formData.get('password') as string;
   const fullName = formData.get('full_name') as string;
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+  const siteUrl = getSiteUrl();
 
   const { error } = await supabase.auth.signUp({
     email,
@@ -43,7 +53,7 @@ export async function signupWithEmail(formData: FormData) {
 
 export async function loginWithGoogle() {
   const supabase = await createClient();
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+  const siteUrl = getSiteUrl();
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
@@ -68,7 +78,7 @@ export async function logout() {
 export async function resetPassword(formData: FormData) {
   const supabase = await createClient();
   const email = formData.get('email') as string;
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+  const siteUrl = getSiteUrl();
 
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: `${siteUrl}/auth/callback?next=/settings`,
