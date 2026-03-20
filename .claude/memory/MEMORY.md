@@ -7,7 +7,7 @@
 (vacio)
 
 ## project/ — Proyectos y decisiones activas
-(vacio)
+- [factory-manager-status.md](project/factory-manager-status.md) — Estado general del FM: features implementadas, paginas, git
 
 ## feedback/ — Correcciones y preferencias
 (vacio)
