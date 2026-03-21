@@ -265,6 +265,30 @@ Fase 8: Backup y Replica .............. (seguridad, SharePoint)
 
 ---
 
+## Fase 9: Roles de Usuario (Admin / Manager / Developer)
+**Objetivo**: Control de acceso por rol
+**Que incluye**:
+- Columna `role` en tabla profiles (admin, manager, developer)
+- Admin: ve todos los proyectos de todos los usuarios + dashboard global
+- Manager: ve proyectos de su equipo
+- Developer: ve solo sus proyectos
+- RLS policies filtran segun rol
+- Dashboard Admin con KPIs globales
+**Validacion**: Admin ve todo, developer ve solo lo suyo
+
+## Fase 10: Business OS — Integracion entre Apps (FUTURO)
+**Objetivo**: Dashboard unificado que agrega datos de todas las apps del portfolio
+**Estado**: PENDIENTE DE DEFINICION — retomar cuando el Business OS este mas claro
+**Concepto**:
+- Cada app existente (con su propia DB) expone un endpoint `/api/business-os/status`
+- Factory Manager consume esos endpoints y muestra metricas agregadas
+- Tabla `app_connections` almacena URL + API key de cada app
+- No se comparte auth (cada app tiene su login propio)
+- SSO posible en el futuro con Supabase como identity provider central
+**Nota**: Las apps existentes ya tienen su propia DB, no se unifica
+
+---
+
 ## Gotchas
 
 - [ ] `showDirectoryPicker()` no funciona en Safari/Firefox — necesita fallback
