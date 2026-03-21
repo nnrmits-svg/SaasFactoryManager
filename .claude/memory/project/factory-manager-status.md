@@ -1,53 +1,59 @@
 # SaaS Factory Manager — Estado del Proyecto
 
 ## Que es
-Business OS para gestionar un portfolio de proyectos SaaS. Control center centralizado.
+Business OS + Fabrica de Software as a Service. Control center para gestionar portfolio de SaaS + pipeline completo de idea a producto construido.
 
-## Implementado (actualizado 2026-03-20)
+## Vision (PRP-004)
+Convertir el Factory Manager en plataforma donde cualquier usuario define su SaaS, genera arquitectura (CLAUDE.md + skills), pasa por Sensei, y obtiene todo listo para que Claude Code construya en Antigravity.
+
+Pipeline: Consulting Engine (Strategy) → Design Labs (Product) → Sensei (Refine) → Claude Code (Build)
+
+## Implementado (actualizado 2026-03-21)
 - PRP-001: Portfolio Dashboard (proyectos, commits, tiempo efectivo)
 - PRP-002: Remote Management + Auto-Commit tracking
 - PRP-003: Skill Registry Central + deteccion de proyectos
 - Cost Reports con tarifa por hora y export CSV
-- Setup-workstation skill
-- Security + Performance skills
-- Auth/Login completo: email/password, Google OAuth, forgot password, middleware, UserMenu en navbar
-- RLS policies aseguradas: solo usuarios autenticados acceden a datos
-- Tabla profiles con trigger auto-creacion al signup
+- Auth/Login completo: email/password, Google OAuth, forgot password, middleware
+- RLS policies: solo usuarios autenticados
+- Tabla profiles con trigger auto-creacion
 - Deploy a Vercel (produccion)
+- Factory page rediseñada: CRUD web-native (sin filesystem)
+- Wizard de negocio: 9 preguntas guiadas para definir un SaaS
+- business_brief JSONB en tabla projects
+- Columnas description y repo_url en projects
+
+## PRP-004 Roadmap (8 fases)
+1. AI Agent en el wizard (asistencia IA para responder preguntas)
+2. Generador de Setup (CLAUDE.md + skills + zip descargable)
+3. Export/Import Sensei (ciclo de refinamiento)
+4. Pipeline visual (Strategy → Build → Live)
+5. Importacion de proyectos (GitHub OAuth, file picker, upload)
+6. Settings por usuario (repos, SharePoint, AI keys, equipo)
+7. Upgrade de version SF
+8. Backup y replica (SharePoint + export)
+
+## Decisiones arquitectonicas (2026-03-21)
+- GitHub NO es obligatorio — es una opcion mas de conexion
+- Cada usuario puede tener multiples repos (GitHub, GitLab, etc.)
+- SharePoint solo para docs/exports, NO para codigo fuente
+- File picker del browser para importar sin CLI (showDirectoryPicker)
+- Fallback: upload de CLAUDE.md para browsers sin soporte
+- No se puede modificar la terminal del usuario desde la web (seguridad del browser)
+- AI Agent usa Vercel AI SDK v5 + OpenRouter
 
 ## URLs
-- Dominio custom: https://saasfactory.grupo-its.com.ar (redirect 308 → vercel)
+- Dominio: https://saasfactory.grupo-its.com.ar
 - Vercel: https://saas-factory-manager.vercel.app
 - Local: http://localhost:3002
 - Vercel team: saas-fluyaia
-- Vercel project: saas-factory-manager
-
-## Paginas
-- /dashboard — Portfolio con stats
-- /factory — Crear proyectos
-- /project/[name] — Detalle de proyecto
-- /skills — Registro central de skills
-- /reports — Reportes de costos
-- /settings — Configuracion
-- /login — Login (email + Google)
-- /signup — Registro
-- /forgot-password — Reset de password
 
 ## Supabase
 - Tablas: projects, commits, work_sessions, tracking_sessions, profiles
-- RLS: policies por auth.role() = 'authenticated' (no allow_all)
-- Trigger: on_auth_user_created → crea profile automaticamente
-- Column user_id agregada a projects (para multi-tenant futuro)
-
-## Pendiente (requiere accion del usuario en Dashboard)
-- Supabase Dashboard > Auth > URL Configuration:
-  - Site URL: https://saasfactory.grupo-its.com.ar
-  - Redirect URLs: agregar https://saasfactory.grupo-its.com.ar/** y http://localhost:3002/**
-- Google OAuth: Supabase Dashboard > Auth > Providers > Google (necesita Google Cloud Console)
-- Settings page (placeholder, sin funcionalidad aun)
+- Nuevas tablas planificadas: user_connections, brief_versions, user_settings
+- RLS: policies por auth.role() = 'authenticated'
 
 ## Git
 - Branch desarrollo: master
-- Branch produccion: main (up to date, pushed 2026-03-20)
+- Branch produccion: main
 - Repo: github.com/nnrmits-svg/SaasFactoryManager
-- GitHub conectado a Vercel (auto-deploy en push a main)
+- Auto-deploy: push a main → Vercel
