@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { AiAssistant } from './ai-assistant';
 
 export interface BusinessBrief {
   dolor: string;
@@ -133,6 +134,26 @@ export function ProjectWizard({ onComplete, onCancel, saving }: ProjectWizardPro
     ? projectName.trim().length > 0
     : (answers[currentStep?.id] || '').trim().length > 0;
 
+  function getStepContext() {
+    if (!currentStep) return null;
+    const previousPairs = STEPS.slice(0, step)
+      .map((s) => `${s.title}: ${answers[s.id] || '(sin respuesta)'}`)
+      .join('\n');
+    return {
+      title: currentStep.title,
+      question: currentStep.question,
+      hint: currentStep.hint,
+      previousAnswers: previousPairs || undefined,
+    };
+  }
+
+  function handleSuggestionAccept(text: string) {
+    if (!currentStep) return;
+    const current = answers[currentStep.id] || '';
+    const newValue = current ? `${current}\n${text}` : text;
+    setAnswers({ ...answers, [currentStep.id]: newValue });
+  }
+
   return (
     <div className="p-6 bg-white/5 border border-white/10 rounded-2xl">
       {/* Progress */}
@@ -197,6 +218,14 @@ export function ProjectWizard({ onComplete, onCancel, saving }: ProjectWizardPro
           )}
 
           <p className="mt-2 text-xs text-gray-500">{currentStep.hint}</p>
+
+          {/* AI Assistant */}
+          {getStepContext() && (
+            <AiAssistant
+              stepContext={getStepContext()!}
+              onSuggestionAccept={handleSuggestionAccept}
+            />
+          )}
         </>
       )}
 
