@@ -1,8 +1,6 @@
 'use client';
 
-import { useChat } from '@ai-sdk/react';
-import { DefaultChatTransport } from 'ai';
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
 interface StepContext {
   title: string;
@@ -16,27 +14,32 @@ interface AiAssistantProps {
   onSuggestionAccept: (text: string) => void;
 }
 
+interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+let msgCounter = 0;
+function genId() {
+  return `msg-${++msgCounter}-${Date.now()}`;
+}
+
 export function AiAssistant({ stepContext, onSuggestionAccept }: AiAssistantProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-
-  const transport = useMemo(
-    () => new DefaultChatTransport({ api: '/api/ai/wizard', body: { stepContext } }),
-    [stepContext]
-  );
-
-  const { messages, sendMessage, status, setMessages } = useChat({
-    transport,
-  });
-
-  const isLoading = status === 'streaming' || status === 'submitted';
+  const abortRef = useRef<AbortController | null>(null);
 
   // Reset messages when step changes
   useEffect(() => {
+    abortRef.current?.abort();
     setMessages([]);
-  }, [stepContext.title, setMessages]);
+    setIsLoading(false);
+  }, [stepContext.title]);
 
   // Scroll to bottom on new messages
   useEffect(() => {
@@ -50,11 +53,65 @@ export function AiAssistant({ stepContext, onSuggestionAccept }: AiAssistantProp
     }
   }, [isOpen]);
 
-  function handleSend(text?: string) {
+  async function handleSend(text?: string) {
     const msg = text || inputValue.trim();
     if (!msg || isLoading) return;
-    sendMessage({ text: msg });
     setInputValue('');
+
+    const userMsg: ChatMessage = { id: genId(), role: 'user', content: msg };
+    const allMessages = [...messages, userMsg];
+    setMessages(allMessages);
+    setIsLoading(true);
+
+    const assistantId = genId();
+
+    try {
+      abortRef.current = new AbortController();
+
+      const res = await fetch('/api/ai/wizard', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: allMessages.map((m) => ({ role: m.role, content: m.content })),
+          stepContext,
+        }),
+        signal: abortRef.current.signal,
+      });
+
+      if (!res.ok) {
+        throw new Error(`API error: ${res.status}`);
+      }
+
+      // Add empty assistant message for streaming
+      setMessages((prev) => [...prev, { id: assistantId, role: 'assistant', content: '' }]);
+
+      // Read plain text stream
+      const reader = res.body!.getReader();
+      const decoder = new TextDecoder();
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value, { stream: true });
+        setMessages((prev) => {
+          const idx = prev.findIndex((m) => m.id === assistantId);
+          if (idx === -1) return prev;
+          const updated = [...prev];
+          updated[idx] = { ...updated[idx], content: updated[idx].content + chunk };
+          return updated;
+        });
+      }
+    } catch (err) {
+      if ((err as Error).name !== 'AbortError') {
+        console.error('AI error:', err);
+        setMessages((prev) => [
+          ...prev.filter((m) => m.id !== assistantId),
+          { id: assistantId, role: 'assistant', content: 'Error al obtener respuesta. Intenta de nuevo.' },
+        ]);
+      }
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   if (!isOpen) {
@@ -110,22 +167,11 @@ export function AiAssistant({ stepContext, onSuggestionAccept }: AiAssistantProp
                   : 'bg-white/5 text-gray-300'
               }`}
             >
-              <p className="whitespace-pre-wrap">
-                {msg.parts
-                  ?.filter((p): p is { type: 'text'; text: string } => p.type === 'text')
-                  .map((p) => p.text)
-                  .join('') || ''}
-              </p>
-              {msg.role === 'assistant' && (
+              <p className="whitespace-pre-wrap">{msg.content}</p>
+              {msg.role === 'assistant' && msg.content && (
                 <button
                   type="button"
-                  onClick={() => {
-                    const text = msg.parts
-                      ?.filter((p): p is { type: 'text'; text: string } => p.type === 'text')
-                      .map((p) => p.text)
-                      .join('') || '';
-                    if (text) onSuggestionAccept(text.trim());
-                  }}
+                  onClick={() => onSuggestionAccept(msg.content.trim())}
                   className="mt-1.5 flex items-center gap-1 text-[10px] text-purple-400 hover:text-purple-300 transition-colors"
                 >
                   <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -138,7 +184,7 @@ export function AiAssistant({ stepContext, onSuggestionAccept }: AiAssistantProp
           </div>
         ))}
 
-        {isLoading && messages.length > 0 && messages[messages.length - 1].role === 'user' && (
+        {isLoading && (messages.length === 0 || messages[messages.length - 1].role === 'user') && (
           <div className="flex justify-start">
             <div className="px-3 py-2 rounded-lg bg-white/5 text-xs text-gray-400">
               <span className="animate-pulse">Pensando...</span>
