@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { AiAssistant } from './ai-assistant';
 
 export interface BusinessBrief {
@@ -134,7 +134,7 @@ export function ProjectWizard({ onComplete, onCancel, saving }: ProjectWizardPro
     ? projectName.trim().length > 0
     : (answers[currentStep?.id] || '').trim().length > 0;
 
-  function getStepContext() {
+  const stepContext = useMemo(() => {
     if (!currentStep) return null;
     const previousPairs = STEPS.slice(0, step)
       .map((s) => `${s.title}: ${answers[s.id] || '(sin respuesta)'}`)
@@ -145,7 +145,7 @@ export function ProjectWizard({ onComplete, onCancel, saving }: ProjectWizardPro
       hint: currentStep.hint,
       previousAnswers: previousPairs || undefined,
     };
-  }
+  }, [currentStep, step, answers]);
 
   function handleSuggestionAccept(text: string) {
     if (!currentStep) return;
@@ -220,9 +220,9 @@ export function ProjectWizard({ onComplete, onCancel, saving }: ProjectWizardPro
           <p className="mt-2 text-xs text-gray-500">{currentStep.hint}</p>
 
           {/* AI Assistant */}
-          {getStepContext() && (
+          {stepContext && (
             <AiAssistant
-              stepContext={getStepContext()!}
+              stepContext={stepContext}
               onSuggestionAccept={handleSuggestionAccept}
             />
           )}

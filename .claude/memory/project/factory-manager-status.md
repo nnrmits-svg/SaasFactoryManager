@@ -21,9 +21,10 @@ Pipeline: Consulting Engine (Strategy) → Design Labs (Product) → Sensei (Ref
 - Wizard de negocio: 9 preguntas guiadas para definir un SaaS
 - business_brief JSONB en tabla projects
 - Columnas description y repo_url en projects
+- PRP-004 Fase 1: AI Agent en wizard (Vercel AI SDK v5 + OpenRouter, chat embebido por paso)
 
-## PRP-004 Roadmap (8 fases)
-1. AI Agent en el wizard (asistencia IA para responder preguntas)
+## PRP-004 Roadmap (10 fases)
+1. ~~AI Agent en el wizard~~ COMPLETADO 2026-03-21
 2. Generador de Setup (CLAUDE.md + skills + zip descargable)
 3. Export/Import Sensei (ciclo de refinamiento)
 4. Pipeline visual (Strategy → Build → Live)
@@ -31,6 +32,8 @@ Pipeline: Consulting Engine (Strategy) → Design Labs (Product) → Sensei (Ref
 6. Settings por usuario (repos, SharePoint, AI keys, equipo)
 7. Upgrade de version SF
 8. Backup y replica (SharePoint + export)
+9. Roles de usuario (Admin/Manager/Developer)
+10. Business OS inter-app (DIFERIDO)
 
 ## Decisiones arquitectonicas (2026-03-21)
 - GitHub NO es obligatorio — es una opcion mas de conexion
