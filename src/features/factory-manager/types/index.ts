@@ -108,3 +108,30 @@ export interface TrackingStatus {
   autoCommits: number;
   startedAt: string | null;
 }
+
+/** Desktop agent instance registered in Supabase */
+export interface AgentInstance {
+  id: string;
+  userId: string;
+  machineName: string;
+  machineId: string;
+  osType: string;
+  agentVersion: string;
+  status: 'active' | 'offline';
+  lastHeartbeat: string;
+}
+
+/** Command sent from web to agent */
+export type AgentCommandType = 'scan' | 'sync' | 'apply-skill' | 'push-projects';
+
+export interface AgentCommand {
+  id: string;
+  userId: string;
+  instanceId: string | null;
+  command: AgentCommandType;
+  payload: Record<string, unknown>;
+  status: 'pending' | 'running' | 'done' | 'error';
+  result: Record<string, unknown> | null;
+  createdAt: string;
+  updatedAt: string;
+}
