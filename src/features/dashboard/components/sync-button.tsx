@@ -25,10 +25,13 @@ export function SyncButton({ onSyncComplete }: Props) {
     setIsSyncing(true);
     setResult(null);
 
-    const syncResult = await syncAllProjects(rootDir);
-    setResult(syncResult);
-    setIsSyncing(false);
-    onSyncComplete();
+    try {
+      const syncResult = await syncAllProjects(rootDir);
+      setResult(syncResult);
+      onSyncComplete();
+    } finally {
+      setIsSyncing(false);
+    }
   }
 
   async function handleAddProject() {
@@ -36,15 +39,17 @@ export function SyncButton({ onSyncComplete }: Props) {
     setIsAdding(true);
     setAddError('');
 
-    const res = await registerProject(newPath.trim());
-    setIsAdding(false);
-
-    if (res.success) {
-      setNewPath('');
-      setShowAddForm(false);
-      onSyncComplete();
-    } else {
-      setAddError(res.error ?? 'Error desconocido');
+    try {
+      const res = await registerProject(newPath.trim());
+      if (res.success) {
+        setNewPath('');
+        setShowAddForm(false);
+        onSyncComplete();
+      } else {
+        setAddError(res.error ?? 'Error desconocido');
+      }
+    } finally {
+      setIsAdding(false);
     }
   }
 
