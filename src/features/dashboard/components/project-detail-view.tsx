@@ -6,6 +6,7 @@ import { openInIDE } from '@/features/factory-manager/services/open-action';
 import { syncProjectGitData } from '@/features/factory-manager/services/git-sync-action';
 import { useState } from 'react';
 import { useTracking } from '@/features/factory-manager/hooks/use-tracking';
+import { AgentControlPanel } from '@/features/factory-manager/components/agent-control-panel';
 import { SkillPanel } from './skill-panel';
 
 interface Props {
@@ -117,6 +118,11 @@ export function ProjectDetailView({ detail }: Props) {
         {tracking.error && (
           <p className="mt-2 text-xs text-red-400">{tracking.error}</p>
         )}
+      </div>
+
+      {/* Agent Control */}
+      <div className="mb-6">
+        <AgentControlPanel projectPath={project.path} />
       </div>
 
       {/* Stats */}
