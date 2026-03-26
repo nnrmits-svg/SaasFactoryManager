@@ -1,22 +1,18 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAgentStatus } from '../hooks/use-agent-status';
+import { getApplicableSkills } from '../services/skill-catalog-action';
 import type { AgentCommandType } from '../types';
 
 interface Props {
   projectPath: string;
 }
 
-const AVAILABLE_SKILLS = [
-  { id: 'add-login', label: 'Auth (Login/Signup)' },
-  { id: 'add-security', label: 'Seguridad Enterprise' },
-  { id: 'add-payments', label: 'Pagos (Polar)' },
-  { id: 'add-emails', label: 'Emails (Resend)' },
-  { id: 'add-mobile', label: 'PWA + Push' },
-  { id: 'website-3d', label: 'Landing Cinematica' },
-  { id: 'ai', label: 'AI Engine' },
-];
+interface SkillOption {
+  id: string;
+  label: string;
+}
 
 const COMMAND_LABELS: Record<AgentCommandType, string> = {
   scan: 'Escanear',
@@ -44,6 +40,13 @@ export function AgentControlPanel({ projectPath }: Props) {
   const isRunning = agent.activeCommand?.status === 'pending' || agent.activeCommand?.status === 'running';
   const [selectedSkill, setSelectedSkill] = useState('');
   const [showSkillPicker, setShowSkillPicker] = useState(false);
+  const [skills, setSkills] = useState<SkillOption[]>([]);
+
+  useEffect(() => {
+    getApplicableSkills().then((list) =>
+      setSkills(list.map((s) => ({ id: s.name, label: s.label })))
+    );
+  }, []);
 
   function sendCommand(command: AgentCommandType) {
     const payload: Record<string, unknown> = {};
@@ -72,15 +75,15 @@ export function AgentControlPanel({ projectPath }: Props) {
           <div>
             <p className="text-sm font-medium text-white">
               {agent.isAgentOnline
-                ? `Agent · ${agent.activeInstance!.machineName}`
+                ? `Agent \u00B7 ${agent.activeInstance!.machineName}`
                 : 'SF Agent Desktop'}
             </p>
             <p className="text-xs text-gray-500">
               {agent.loading
                 ? 'Verificando...'
                 : agent.isAgentOnline
-                  ? `v${agent.activeInstance!.agentVersion} · ${formatHeartbeat(agent.activeInstance!.lastHeartbeat)}`
-                  : 'Sin agente detectado — instala SF Agent en tu Mac'}
+                  ? `v${agent.activeInstance!.agentVersion} \u00B7 ${formatHeartbeat(agent.activeInstance!.lastHeartbeat)}`
+                  : 'Sin agente detectado \u2014 instala SF Agent en tu Mac'}
             </p>
           </div>
         </div>
@@ -173,8 +176,8 @@ export function AgentControlPanel({ projectPath }: Props) {
                 onChange={(e) => setSelectedSkill(e.target.value)}
                 className="flex-1 bg-transparent border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white appearance-none focus:outline-none focus:border-blue-500/50"
               >
-                <option value="" className="bg-gray-900">Seleccionar skill...</option>
-                {AVAILABLE_SKILLS.map((skill) => (
+                <option value="" className="bg-gray-900">Seleccionar skill ({skills.length})...</option>
+                {skills.map((skill) => (
                   <option key={skill.id} value={skill.id} className="bg-gray-900">
                     {skill.label}
                   </option>
