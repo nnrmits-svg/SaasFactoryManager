@@ -39,9 +39,12 @@ export function ProjectDetailView({ detail }: Props) {
 
   async function handleSync() {
     setIsSyncing(true);
-    await syncProjectGitData(project.path);
-    setIsSyncing(false);
-    window.location.reload();
+    try {
+      await syncProjectGitData(project.path);
+      window.location.reload();
+    } finally {
+      setIsSyncing(false);
+    }
   }
 
   return (
