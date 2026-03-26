@@ -27,6 +27,7 @@ export function useAgentStatus() {
     error: null,
   });
   const channelRef = useRef<ReturnType<ReturnType<typeof createClient>['channel']> | null>(null);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const loadInstances = useCallback(async () => {
     const instances = await getAgentInstances();
@@ -39,6 +40,49 @@ export function useAgentStatus() {
     const interval = setInterval(loadInstances, 30_000);
     return () => clearInterval(interval);
   }, [loadInstances]);
+
+  function stopPolling() {
+    if (pollRef.current) {
+      clearInterval(pollRef.current);
+      pollRef.current = null;
+    }
+  }
+
+  // Poll command status as fallback (catches race condition with Realtime)
+  function startPolling(commandId: string) {
+    stopPolling();
+    const supabase = createClient();
+
+    const check = async () => {
+      const { data } = await supabase
+        .from('agent_commands')
+        .select('status, result')
+        .eq('id', commandId)
+        .single();
+
+      if (!data) return;
+
+      const status = data.status as CommandState['status'];
+      const result = data.result as Record<string, unknown> | null;
+
+      setState((prev) => {
+        if (!prev.activeCommand || prev.activeCommand.commandId !== commandId) return prev;
+        if (prev.activeCommand.status === status) return prev;
+        return {
+          ...prev,
+          activeCommand: { ...prev.activeCommand, status, result },
+        };
+      });
+
+      if (status === 'done' || status === 'error') {
+        stopPolling();
+      }
+    };
+
+    // Check immediately, then every 2s
+    check();
+    pollRef.current = setInterval(check, 2000);
+  }
 
   // Subscribe to agent_commands updates via Supabase Realtime
   function subscribeToCommand(commandId: string, command: AgentCommandType) {
@@ -69,6 +113,9 @@ export function useAgentStatus() {
               ? { ...prev.activeCommand, status: updated.status, result: updated.result }
               : null,
           }));
+          if (updated.status === 'done' || updated.status === 'error') {
+            stopPolling();
+          }
         },
       )
       .subscribe();
@@ -78,6 +125,9 @@ export function useAgentStatus() {
       activeCommand: { commandId, command, status: 'pending', result: null },
       error: null,
     }));
+
+    // Start polling fallback to catch race conditions
+    startPolling(commandId);
   }
 
   const sendCommand = useCallback(
@@ -96,12 +146,13 @@ export function useAgentStatus() {
     [],
   );
 
-  // Cleanup realtime channel on unmount
+  // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (channelRef.current) {
         createClient().removeChannel(channelRef.current);
       }
+      stopPolling();
     };
   }, []);
 
