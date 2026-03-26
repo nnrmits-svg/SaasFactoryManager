@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getConfig, setConfig } from '@/shared/lib/config';
 import { deleteArchivedProjects, getPortfolioProjects } from '@/features/factory-manager/services/git-sync-action';
 import { getAgentInstances } from '@/features/factory-manager/services/agent-command-action';
 import type { AgentInstance } from '@/features/factory-manager/types';
@@ -14,11 +13,6 @@ function formatHeartbeat(iso: string): string {
 }
 
 export function SettingsPage() {
-  const [projectsRootDir, setProjectsRootDir] = useState('');
-  const [factorySourceDir, setFactorySourceDir] = useState('');
-  const [newAppParentDir, setNewAppParentDir] = useState('');
-  const [saved, setSaved] = useState(false);
-
   const [archivedCount, setArchivedCount] = useState(0);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteResult, setDeleteResult] = useState<string | null>(null);
@@ -27,9 +21,6 @@ export function SettingsPage() {
   const [loadingAgents, setLoadingAgents] = useState(true);
 
   useEffect(() => {
-    setProjectsRootDir(getConfig('PROJECTS_ROOT_DIR'));
-    setFactorySourceDir(getConfig('FACTORY_SOURCE_DIR'));
-    setNewAppParentDir(getConfig('NEW_APP_PARENT_DIR'));
     loadArchivedCount();
     loadAgents();
   }, []);
@@ -40,26 +31,22 @@ export function SettingsPage() {
   }
 
   async function loadAgents() {
+    setLoadingAgents(true);
     const instances = await getAgentInstances();
     setAgents(instances);
     setLoadingAgents(false);
   }
 
-  function handleSave() {
-    setConfig('PROJECTS_ROOT_DIR', projectsRootDir);
-    setConfig('FACTORY_SOURCE_DIR', factorySourceDir);
-    setConfig('NEW_APP_PARENT_DIR', newAppParentDir);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
-  }
-
   async function handleDeleteArchived() {
     setIsDeleting(true);
     setDeleteResult(null);
-    const result = await deleteArchivedProjects();
-    setDeleteResult(`${result.deleted} proyecto(s) eliminado(s)`);
-    setIsDeleting(false);
-    setArchivedCount(0);
+    try {
+      const result = await deleteArchivedProjects();
+      setDeleteResult(`${result.deleted} proyecto(s) eliminado(s)`);
+      setArchivedCount(0);
+    } finally {
+      setIsDeleting(false);
+    }
   }
 
   return (
@@ -125,61 +112,7 @@ export function SettingsPage() {
         )}
       </section>
 
-      {/* Directorios */}
-      <section className="mb-8">
-        <h2 className="text-lg font-semibold text-white mb-4">Directorios por Defecto</h2>
-        <div className="space-y-4">
-          <div className="p-4 bg-white/5 border border-white/10 rounded-2xl">
-            <label className="block text-sm font-medium text-gray-300 mb-1">
-              Directorio de proyectos (scan/sync)
-            </label>
-            <input
-              type="text"
-              value={projectsRootDir}
-              onChange={(e) => setProjectsRootDir(e.target.value)}
-              className="w-full px-3 py-2 bg-fluya-bg border border-white/10 rounded-xl text-white text-sm placeholder-gray-500 focus:outline-none focus:border-fluya-purple/50 transition-colors"
-            />
-            <p className="mt-1 text-xs text-gray-600">Usado en Dashboard (sync) y Factory (scan).</p>
-          </div>
-
-          <div className="p-4 bg-white/5 border border-white/10 rounded-2xl">
-            <label className="block text-sm font-medium text-gray-300 mb-1">
-              Directorio fuente SaaS Factory
-            </label>
-            <input
-              type="text"
-              value={factorySourceDir}
-              onChange={(e) => setFactorySourceDir(e.target.value)}
-              className="w-full px-3 py-2 bg-fluya-bg border border-white/10 rounded-xl text-white text-sm placeholder-gray-500 focus:outline-none focus:border-fluya-purple/50 transition-colors"
-              placeholder="/Users/.../saas-factory-setup/saas-factory"
-            />
-            <p className="mt-1 text-xs text-gray-600">Ruta al template de SaaS Factory (contiene .claude/ y CLAUDE.md).</p>
-          </div>
-
-          <div className="p-4 bg-white/5 border border-white/10 rounded-2xl">
-            <label className="block text-sm font-medium text-gray-300 mb-1">
-              Directorio padre para nuevas apps
-            </label>
-            <input
-              type="text"
-              value={newAppParentDir}
-              onChange={(e) => setNewAppParentDir(e.target.value)}
-              className="w-full px-3 py-2 bg-fluya-bg border border-white/10 rounded-xl text-white text-sm placeholder-gray-500 focus:outline-none focus:border-fluya-purple/50 transition-colors"
-            />
-            <p className="mt-1 text-xs text-gray-600">Donde se crean las nuevas apps por defecto.</p>
-          </div>
-
-          <button
-            type="button"
-            onClick={handleSave}
-            className="px-5 py-2.5 bg-gradient-to-r from-fluya-purple to-fluya-blue text-white rounded-xl font-medium hover:-translate-y-0.5 transition-all duration-300 shadow-lg shadow-fluya-purple/20"
-          >
-            {saved ? 'Guardado' : 'Guardar Directorios'}
-          </button>
-        </div>
-      </section>
-
-      {/* Limpiar archivados */}
+      {/* Limpieza de Datos */}
       <section className="mb-8">
         <h2 className="text-lg font-semibold text-white mb-4">Limpieza de Datos</h2>
         <div className="p-4 bg-white/5 border border-white/10 rounded-2xl">
