@@ -5,6 +5,7 @@ import {
   getApplicableSkills,
   getProjectSkillsById,
   registerProjectSkill,
+  unregisterProjectSkill,
   type SkillInfo,
 } from '@/features/factory-manager/services/skill-catalog-action';
 import { useAgentStatus } from '@/features/factory-manager/hooks/use-agent-status';
@@ -39,6 +40,7 @@ export function SkillPanel({ projectId, projectName, projectPath }: Props) {
   const [installedSkills, setInstalledSkills] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [installing, setInstalling] = useState<string | null>(null);
+  const [uninstalling, setUninstalling] = useState<string | null>(null);
   const [installMsg, setInstallMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
   // Agent integration
@@ -75,6 +77,19 @@ export function SkillPanel({ projectId, projectName, projectPath }: Props) {
       agentInstallRef.current = null;
     }
   }, [agent.activeCommand?.status, agent.activeCommand?.result]);
+
+  async function handleUninstall(skillName: string) {
+    setUninstalling(skillName);
+    setInstallMsg(null);
+    const result = await unregisterProjectSkill(projectId, skillName);
+    setUninstalling(null);
+    if (result.success) {
+      setInstalledSkills((prev) => prev.filter((s) => s !== skillName));
+      setInstallMsg({ ok: true, text: `"${skillName}" desinstalado` });
+    } else {
+      setInstallMsg({ ok: false, text: result.error ?? 'Error al desinstalar' });
+    }
+  }
 
   async function handleInstall(skillName: string) {
     setInstalling(skillName);
@@ -153,9 +168,14 @@ export function SkillPanel({ projectId, projectName, projectPath }: Props) {
                     </div>
                     <div className="ml-2 shrink-0">
                       {isInstalled ? (
-                        <span className="px-2 py-1 text-[10px] bg-fluya-green/10 text-fluya-green rounded-lg">
-                          Instalado
-                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleUninstall(skill.name)}
+                          disabled={uninstalling === skill.name}
+                          className="px-2 py-1 text-[10px] bg-fluya-green/10 text-fluya-green rounded-lg hover:bg-red-500/10 hover:text-red-400 disabled:opacity-40 transition-all"
+                        >
+                          {uninstalling === skill.name ? '...' : 'Instalado'}
+                        </button>
                       ) : (
                         <button
                           type="button"

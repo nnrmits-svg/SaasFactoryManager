@@ -274,6 +274,26 @@ export async function registerProjectSkill(
   }
 }
 
+/** Remove a skill registration from a project */
+export async function unregisterProjectSkill(
+  projectId: string,
+  skillName: string,
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase
+      .from('project_skills')
+      .delete()
+      .eq('project_id', projectId)
+      .eq('skill_name', skillName);
+
+    if (error) return { success: false, error: error.message };
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: String(err) };
+  }
+}
+
 /** Copy a skill from FM to a target project */
 export async function installSkillToProject(
   skillName: string,
