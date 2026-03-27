@@ -4,7 +4,8 @@ import { useState, useEffect, useRef } from 'react';
 import {
   discoverAllSkills,
   getSkillContent,
-  getProjectSkills,
+  getProjectSkillsById,
+  registerProjectSkill,
   type SkillInfo,
 } from '@/features/factory-manager/services/skill-catalog-action';
 import { getPortfolioProjects } from '@/features/factory-manager/services/git-sync-action';
@@ -68,7 +69,7 @@ export function SkillRegistryDashboard() {
       const skillsMap: Record<string, string[]> = {};
       await Promise.all(
         allProjects.map(async (p) => {
-          const pSkills = await getProjectSkills(p.path);
+          const pSkills = await getProjectSkillsById(p.id);
           skillsMap[p.id] = pSkills;
         }),
       );
@@ -86,10 +87,12 @@ export function SkillRegistryDashboard() {
     if (agent.activeCommand?.status === 'done') {
       setInstalling(false);
       setInstallResult({ skill: target.skill, success: true });
-      // Refresh installed skills for the project
-      getProjectSkills(target.projectPath).then((pSkills) => {
-        setProjectSkillsMap((prev) => ({ ...prev, [target.projectId]: pSkills }));
-      });
+      // Register in Supabase and refresh
+      registerProjectSkill(target.projectId, target.skill).then(() =>
+        getProjectSkillsById(target.projectId).then((pSkills) => {
+          setProjectSkillsMap((prev) => ({ ...prev, [target.projectId]: pSkills }));
+        }),
+      );
       agentInstallRef.current = null;
     } else if (agent.activeCommand?.status === 'error') {
       setInstalling(false);

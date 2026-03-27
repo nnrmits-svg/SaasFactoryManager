@@ -1,0 +1,16 @@
+[     838ms] [ERROR] Error: Route "/login": Runtime data such as `cookies()`, `headers()`, `params`, or `searchParams` was accessed outside of `<Suspense>`. This delays the entire page from rendering, resulting in a slow user experience. Learn more: https://nextjs.org/docs/messages/blocking-route
+    at createClient (about://React/Server/file:///Users/ricardomarchetti/ProyectosIA/AplicacionesSaas/SaasFactoryManager/.next/dev/server/chunks/ssr/%5Broot-of-the-server%5D__e09ba147._.js?8:114:216)
+    at getProfile (about://React/Server/file:///Users/ricardomarchetti/ProyectosIA/AplicacionesSaas/SaasFactoryManager/.next/dev/server/chunks/ssr/%5Broot-of-the-server%5D__e09ba147._.js?9:247:219)
+    at RootLayout (about://React/Server/file:///Users/ricardomarchetti/ProyectosIA/AplicacionesSaas/SaasFactoryManager/.next/dev/server/chunks/ssr/%5Broot-of-the-server%5D__e09ba147._.js?10:296:238)
+    at resolveErrorDev (http://localhost:3001/_next/static/chunks/8b06d_next_dist_compiled_react-server-dom-turbopack_ac66f558._.js:1894:106)
+    at getOutlinedModel (http://localhost:3001/_next/static/chunks/8b06d_next_dist_compiled_react-server-dom-turbopack_ac66f558._.js:1447:28)
+    at parseModelString (http://localhost:3001/_next/static/chunks/8b06d_next_dist_compiled_react-server-dom-turbopack_ac66f558._.js:1561:50)
+    at Array.<anonymous> (http://localhost:3001/_next/static/chunks/8b06d_next_dist_compiled_react-server-dom-turbopack_ac66f558._.js:2486:55)
+    at JSON.parse (<anonymous>)
+    at initializeModelChunk (http://localhost:3001/_next/static/chunks/8b06d_next_dist_compiled_react-server-dom-turbopack_ac66f558._.js:1064:30)
+    at resolveModelChunk (http://localhost:3001/_next/static/chunks/8b06d_next_dist_compiled_react-server-dom-turbopack_ac66f558._.js:969:43)
+    at processFullStringRow (http://localhost:3001/_next/static/chunks/8b06d_next_dist_compiled_react-server-dom-turbopack_ac66f558._.js:2441:126)
+    at processFullBinaryRow (http://localhost:3001/_next/static/chunks/8b06d_next_dist_compiled_react-server-dom-turbopack_ac66f558._.js:2361:9)
+    at processBinaryChunk (http://localhost:3001/_next/static/chunks/8b06d_next_dist_compiled_react-server-dom-turbopack_ac66f558._.js:2470:221)
+    at progress (http://localhost:3001/_next/static/chunks/8b06d_next_dist_compiled_react-server-dom-turbopack_ac66f558._.js:2640:13) @ http://localhost:3001/_next/static/chunks/8b06d_next_dist_d9ecd7c9._.js:3127
+[     892ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3001/favicon.ico:0
