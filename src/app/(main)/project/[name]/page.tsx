@@ -1,4 +1,5 @@
 import { Suspense } from 'react';
+import { connection } from 'next/server';
 import { getProjectDetail } from '@/features/factory-manager/services/project-detail-action';
 import { ProjectDetailView } from '@/features/dashboard/components/project-detail-view';
 import Link from 'next/link';
@@ -8,6 +9,7 @@ interface Props {
 }
 
 async function ProjectContent({ params }: Props) {
+  await connection();
   const { name } = await params;
   const decodedName = decodeURIComponent(name);
   const detail = await getProjectDetail(decodedName);
