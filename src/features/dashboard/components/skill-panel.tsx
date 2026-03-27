@@ -3,13 +3,15 @@
 import { useState, useEffect, useRef } from 'react';
 import {
   getApplicableSkills,
-  getProjectSkills,
+  getProjectSkillsById,
+  registerProjectSkill,
   type SkillInfo,
 } from '@/features/factory-manager/services/skill-catalog-action';
 import { useAgentStatus } from '@/features/factory-manager/hooks/use-agent-status';
 import Link from 'next/link';
 
 interface Props {
+  projectId: string;
   projectName: string;
   projectPath: string;
 }
@@ -32,7 +34,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   ai: 'text-fluya-purple',
 };
 
-export function SkillPanel({ projectName, projectPath }: Props) {
+export function SkillPanel({ projectId, projectName, projectPath }: Props) {
   const [skills, setSkills] = useState<SkillInfo[]>([]);
   const [installedSkills, setInstalledSkills] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -47,7 +49,7 @@ export function SkillPanel({ projectName, projectPath }: Props) {
     async function load() {
       const [allSkills, projSkills] = await Promise.all([
         getApplicableSkills(),
-        getProjectSkills(projectPath),
+        getProjectSkillsById(projectId),
       ]);
       setSkills(allSkills);
       setInstalledSkills(projSkills);
@@ -65,6 +67,7 @@ export function SkillPanel({ projectName, projectPath }: Props) {
       setInstalling(null);
       setInstalledSkills((prev) => [...prev, skillName]);
       setInstallMsg({ ok: true, text: `"${skillName}" instalado via Agent` });
+      registerProjectSkill(projectId, skillName);
       agentInstallRef.current = null;
     } else if (agent.activeCommand?.status === 'error') {
       setInstalling(null);
