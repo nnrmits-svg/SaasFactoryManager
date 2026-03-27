@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import { Navbar } from '@/shared/components/navbar'
 import { Footer } from '@/shared/components/footer'
+import { getProfile } from '@/features/auth/services/auth-service'
 import './globals.css'
 
 const inter = Inter({ subsets: ['latin'] })
@@ -11,15 +12,17 @@ export const metadata: Metadata = {
   description: 'Business OS para gestionar tu fabrica de software',
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const profile = await getProfile()
+
   return (
     <html lang="es">
       <body className={`${inter.className} flex flex-col min-h-screen`}>
-        <Navbar />
+        <Navbar serverProfile={profile} />
         <main className="flex-1 pt-16">{children}</main>
         <Footer />
       </body>

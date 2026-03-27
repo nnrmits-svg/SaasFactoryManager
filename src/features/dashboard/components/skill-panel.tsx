@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   getApplicableSkills,
   getProjectSkills,
-  installSkillToProject,
   type SkillInfo,
 } from '@/features/factory-manager/services/skill-catalog-action';
+import { useAgentStatus } from '@/features/factory-manager/hooks/use-agent-status';
 import Link from 'next/link';
 
 interface Props {
@@ -39,6 +39,10 @@ export function SkillPanel({ projectName, projectPath }: Props) {
   const [installing, setInstalling] = useState<string | null>(null);
   const [installMsg, setInstallMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
+  // Agent integration
+  const agent = useAgentStatus();
+  const agentInstallRef = useRef<string | null>(null);
+
   useEffect(() => {
     async function load() {
       const [allSkills, projSkills] = await Promise.all([
@@ -52,18 +56,35 @@ export function SkillPanel({ projectName, projectPath }: Props) {
     load();
   }, [projectPath]);
 
+  // Watch agent command completion
+  useEffect(() => {
+    const skillName = agentInstallRef.current;
+    if (!skillName) return;
+
+    if (agent.activeCommand?.status === 'done') {
+      setInstalling(null);
+      setInstalledSkills((prev) => [...prev, skillName]);
+      setInstallMsg({ ok: true, text: `"${skillName}" instalado via Agent` });
+      agentInstallRef.current = null;
+    } else if (agent.activeCommand?.status === 'error') {
+      setInstalling(null);
+      setInstallMsg({ ok: false, text: String(agent.activeCommand.result?.error ?? 'Error del agente') });
+      agentInstallRef.current = null;
+    }
+  }, [agent.activeCommand?.status, agent.activeCommand?.result]);
+
   async function handleInstall(skillName: string) {
     setInstalling(skillName);
     setInstallMsg(null);
 
-    const result = await installSkillToProject(skillName, projectPath);
-    setInstalling(null);
-
-    if (result.success) {
-      setInstalledSkills((prev) => [...prev, skillName]);
-      setInstallMsg({ ok: true, text: `"${skillName}" instalado` });
+    if (agent.isAgentOnline) {
+      // Route through Agent (same as desktop app)
+      agentInstallRef.current = skillName;
+      agent.sendCommand('apply-skill', { skillId: skillName, projectPath }, agent.activeInstance?.id);
     } else {
-      setInstallMsg({ ok: false, text: result.error ?? 'Error' });
+      // Agent offline — can't install remotely
+      setInstalling(null);
+      setInstallMsg({ ok: false, text: 'El SF Agent no esta conectado. Inicia el agente de escritorio para instalar skills.' });
     }
   }
 

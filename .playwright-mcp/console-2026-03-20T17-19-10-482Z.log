@@ -1,0 +1,3 @@
+[    1171ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://saas-factory-manager.vercel.app/favicon.ico:0
+[  206974ms] [ERROR] Failed to load resource: the server responded with a status of 400 () @ https://fxlvexilnrfkkcbzwskr.supabase.co/auth/v1/authorize?provider=google&redirect_to=https%3A%2F%2Fsaasfactory.grupo-its.com.ar%0A%2Fauth%2Fcallback&code_challenge=xkROE8itc5n8TE7ILYFOM4DbjFSsRMIzrMSQzKW4EGw&code_challenge_method=s256:0
+[  207043ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://fxlvexilnrfkkcbzwskr.supabase.co/favicon.ico:0
