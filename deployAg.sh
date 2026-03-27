@@ -36,11 +36,22 @@ git add .
 # Paso 2: Commit
 git commit -m "$commit_message"
 
-# Paso 3: Push (usa la rama actual)
+# Paso 3: Push (usa la rama actual + sincroniza main para Vercel)
 BRANCH=$(git branch --show-current)
 if git push origin "$BRANCH"; then
     echo -e "\n${GREEN}🎉 ¡Éxito! Los cambios están en GitHub (rama: ${BRANCH}).${NC}"
-    echo -e "${GREEN}📦 Vercel detectará el cambio y comenzará el deploy automáticamente en unos segundos.${NC}"
+
+    # Vercel despliega desde main — sincronizar si estamos en otra rama
+    if [ "$BRANCH" != "main" ]; then
+        echo -e "${BLUE}🔄 Sincronizando rama main para Vercel...${NC}"
+        if git push origin "$BRANCH:main"; then
+            echo -e "${GREEN}📦 Vercel detectará el cambio en main y comenzará el deploy automáticamente.${NC}"
+        else
+            echo -e "${YELLOW}⚠️ No se pudo sincronizar main. Vercel no se actualizará.${NC}"
+        fi
+    else
+        echo -e "${GREEN}📦 Vercel detectará el cambio y comenzará el deploy automáticamente en unos segundos.${NC}"
+    fi
 else
     echo -e "\n${YELLOW}❌ Error al subir los cambios. Revisa tu conexión o configuración de Git.${NC}"
 fi
