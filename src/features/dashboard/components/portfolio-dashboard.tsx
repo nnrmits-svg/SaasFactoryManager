@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { getPortfolioProjects } from '@/features/factory-manager/services/git-sync-action';
-import { getProjectSkillsById } from '@/features/factory-manager/services/skill-catalog-action';
+import { getAllProjectSkillsMap } from '@/features/factory-manager/services/skill-catalog-action';
 import type { Project } from '@/features/factory-manager/types';
 import { StatsBar } from './stats-bar';
 import { PortfolioGrid } from './portfolio-grid';
@@ -18,19 +18,9 @@ export function PortfolioDashboard() {
     const data = await getPortfolioProjects();
     setProjects(data);
 
-    // Load installed skills per project (from Supabase)
-    const map: Record<string, string[]> = {};
-    await Promise.all(
-      data.map(async (p) => {
-        try {
-          const skills = await getProjectSkillsById(p.id);
-          map[p.id] = skills;
-        } catch {
-          map[p.id] = [];
-        }
-      }),
-    );
-    setProjectSkillsMap(map);
+    // Load all installed skills in a single query
+    const skillsMap = await getAllProjectSkillsMap();
+    setProjectSkillsMap(skillsMap);
     setIsLoading(false);
   }, []);
 
