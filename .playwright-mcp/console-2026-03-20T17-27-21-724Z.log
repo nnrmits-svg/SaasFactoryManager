@@ -1,0 +1,12 @@
+[ 2502172ms] [ERROR] Failed to load resource: the server responded with a status of 500 () @ https://saas-factory-manager.vercel.app/dashboard:0
+[ 2502176ms] An error occurred in the Server Components render. The specific message is omitted in production builds to avoid leaking sensitive details. A digest property is included on this error instance which may provide additional details about the nature of the error.
+[ 2523116ms] Error: Minified React error #418; visit https://react.dev/errors/418?args[]=text&args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.
+    at rK (https://saas-factory-manager.vercel.app/_next/static/chunks/396f90e8b7ccb31f.js:1:46764)
+    at rX (https://saas-factory-manager.vercel.app/_next/static/chunks/396f90e8b7ccb31f.js:1:47797)
+    at https://saas-factory-manager.vercel.app/_next/static/chunks/396f90e8b7ccb31f.js:1:141516
+    at sp (https://saas-factory-manager.vercel.app/_next/static/chunks/396f90e8b7ccb31f.js:1:146677)
+    at sc (https://saas-factory-manager.vercel.app/_next/static/chunks/396f90e8b7ccb31f.js:1:138017)
+    at https://saas-factory-manager.vercel.app/_next/static/chunks/396f90e8b7ccb31f.js:1:132846
+    at u9 (https://saas-factory-manager.vercel.app/_next/static/chunks/396f90e8b7ccb31f.js:1:132947)
+    at sV (https://saas-factory-manager.vercel.app/_next/static/chunks/396f90e8b7ccb31f.js:1:159329)
+    at MessagePort.O (https://saas-factory-manager.vercel.app/_next/static/chunks/396f90e8b7ccb31f.js:1:8295)

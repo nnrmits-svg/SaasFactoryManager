@@ -1,14 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   discoverAllSkills,
   getSkillContent,
   getProjectSkills,
-  installSkillToProject,
   type SkillInfo,
 } from '@/features/factory-manager/services/skill-catalog-action';
 import { getPortfolioProjects } from '@/features/factory-manager/services/git-sync-action';
+import { useAgentStatus } from '@/features/factory-manager/hooks/use-agent-status';
 import type { Project } from '@/features/factory-manager/types';
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -45,9 +45,12 @@ export function SkillRegistryDashboard() {
   const [loadingContent, setLoadingContent] = useState(false);
 
   // Install state
-  const [installTarget, setInstallTarget] = useState<string | null>(null);
   const [installing, setInstalling] = useState(false);
   const [installResult, setInstallResult] = useState<{ skill: string; success: boolean; error?: string } | null>(null);
+
+  // Agent integration
+  const agent = useAgentStatus();
+  const agentInstallRef = useRef<{ skill: string; projectId: string; projectPath: string } | null>(null);
 
   // Project skills cache
   const [projectSkillsMap, setProjectSkillsMap] = useState<Record<string, string[]>>({});
@@ -75,6 +78,30 @@ export function SkillRegistryDashboard() {
     load();
   }, []);
 
+  // Watch agent command completion to refresh installed skills
+  useEffect(() => {
+    const target = agentInstallRef.current;
+    if (!target) return;
+
+    if (agent.activeCommand?.status === 'done') {
+      setInstalling(false);
+      setInstallResult({ skill: target.skill, success: true });
+      // Refresh installed skills for the project
+      getProjectSkills(target.projectPath).then((pSkills) => {
+        setProjectSkillsMap((prev) => ({ ...prev, [target.projectId]: pSkills }));
+      });
+      agentInstallRef.current = null;
+    } else if (agent.activeCommand?.status === 'error') {
+      setInstalling(false);
+      setInstallResult({
+        skill: target.skill,
+        success: false,
+        error: String(agent.activeCommand.result?.error ?? 'Error del agente'),
+      });
+      agentInstallRef.current = null;
+    }
+  }, [agent.activeCommand?.status, agent.activeCommand?.result]);
+
   async function handleSkillClick(skillName: string) {
     if (selectedSkill === skillName) {
       setSelectedSkill(null);
@@ -93,14 +120,18 @@ export function SkillRegistryDashboard() {
     setInstalling(true);
     setInstallResult(null);
 
-    const result = await installSkillToProject(skillName, projectPath);
-    setInstallResult({ skill: skillName, ...result });
-    setInstalling(false);
-
-    if (result.success) {
-      // Refresh project skills
-      const pSkills = await getProjectSkills(projectPath);
-      setProjectSkillsMap((prev) => ({ ...prev, [projectId]: pSkills }));
+    if (agent.isAgentOnline) {
+      // Route through the Agent (same as desktop app)
+      agentInstallRef.current = { skill: skillName, projectId, projectPath };
+      agent.sendCommand('apply-skill', { skillId: skillName, projectPath }, agent.activeInstance?.id);
+    } else {
+      // Agent offline — can't install remotely
+      setInstallResult({
+        skill: skillName,
+        success: false,
+        error: 'El SF Agent no esta conectado. Inicia el agente de escritorio para instalar skills en proyectos.',
+      });
+      setInstalling(false);
     }
   }
 
@@ -130,10 +161,26 @@ export function SkillRegistryDashboard() {
     <div className="max-w-6xl mx-auto px-6">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-white">Skill Registry</h1>
-        <p className="text-gray-400 mt-1">
-          {injectableCount} skills instalables &bull; {metaCount} skills de proceso &bull; {projects.length} proyecto(s)
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-white">Skill Registry</h1>
+            <p className="text-gray-400 mt-1">
+              {injectableCount} skills instalables &bull; {metaCount} skills de proceso &bull; {projects.length} proyecto(s)
+            </p>
+          </div>
+          <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs ${
+            agent.isAgentOnline
+              ? 'bg-blue-500/10 border-blue-500/20 text-blue-400'
+              : 'bg-white/5 border-white/10 text-gray-500'
+          }`}>
+            <span className={`w-2 h-2 rounded-full ${
+              agent.isAgentOnline ? 'bg-blue-400 animate-pulse' : 'bg-gray-600'
+            }`} />
+            {agent.isAgentOnline
+              ? `Agent: ${agent.activeInstance!.machineName}`
+              : 'Agent offline'}
+          </div>
+        </div>
       </div>
 
       {/* Tabs */}
@@ -255,7 +302,7 @@ export function SkillRegistryDashboard() {
                                 disabled={installing}
                                 className="text-[10px] px-2 py-0.5 bg-fluya-purple/10 text-fluya-purple border border-fluya-purple/20 rounded hover:bg-fluya-purple/20 disabled:opacity-40 transition-all"
                               >
-                                {installing && installTarget === project.id ? '...' : 'Instalar'}
+                                {installing && agentInstallRef.current?.projectId === project.id ? '...' : 'Instalar'}
                               </button>
                             )}
                           </div>
@@ -265,7 +312,7 @@ export function SkillRegistryDashboard() {
                     {installResult && (
                       <p className={`mt-2 text-xs ${installResult.success ? 'text-fluya-green' : 'text-red-400'}`}>
                         {installResult.success
-                          ? `"${installResult.skill}" instalado correctamente`
+                          ? `"${installResult.skill}" instalado ${agent.isAgentOnline ? 'via Agent' : ''}`
                           : installResult.error
                         }
                       </p>

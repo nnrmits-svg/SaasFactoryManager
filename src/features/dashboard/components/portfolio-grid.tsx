@@ -6,7 +6,26 @@ import type { Project } from '@/features/factory-manager/types';
 
 interface Props {
   projects: Project[];
+  projectSkillsMap: Record<string, string[]>;
 }
+
+/** Badge colors per skill category */
+const SKILL_BADGE_COLORS: Record<string, string> = {
+  'add-login': 'bg-yellow-500/20 text-yellow-400',
+  'add-payments': 'bg-blue-500/20 text-blue-400',
+  'add-emails': 'bg-blue-500/20 text-blue-400',
+  'add-mobile': 'bg-cyan-500/20 text-cyan-400',
+  'add-subscriptions': 'bg-emerald-500/20 text-emerald-400',
+  'add-alerts': 'bg-emerald-500/20 text-emerald-400',
+  'add-admin': 'bg-emerald-500/20 text-emerald-400',
+  'add-security': 'bg-yellow-500/20 text-yellow-400',
+  'apply-design-system': 'bg-pink-500/20 text-pink-400',
+  'website-3d': 'bg-pink-500/20 text-pink-400',
+  'ai': 'bg-purple-500/20 text-purple-400',
+  'image-generation': 'bg-purple-500/20 text-purple-400',
+  'agent-performance': 'bg-purple-500/20 text-purple-400',
+};
+const DEFAULT_BADGE = 'bg-gray-500/20 text-gray-400';
 
 /** Paths of projects currently being tracked (auto-commit) */
 function useActiveTracking() {
@@ -66,7 +85,7 @@ function formatHours(minutes: number): string {
   return remaining > 0 ? `${hours}h ${remaining}m` : `${hours}h`;
 }
 
-export function PortfolioGrid({ projects }: Props) {
+export function PortfolioGrid({ projects, projectSkillsMap }: Props) {
   const activePaths = useActiveTracking();
 
   if (projects.length === 0) {
@@ -82,6 +101,8 @@ export function PortfolioGrid({ projects }: Props) {
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {projects.map((project) => {
         const isTracking = activePaths.has(project.path);
+        const installedSkills = projectSkillsMap[project.id] ?? [];
+
         return (
         <Link
           key={project.id}
@@ -101,11 +122,28 @@ export function PortfolioGrid({ projects }: Props) {
                 {project.name}
               </h3>
             </div>
-            <StatusBadge status={project.status} />
+            <div className="flex items-center gap-1.5 shrink-0">
+              {project.sfVersion && (
+                <span className="px-1.5 py-0.5 text-[10px] font-mono bg-fluya-purple/10 text-fluya-purple border border-fluya-purple/20 rounded">
+                  SF {project.sfVersion}
+                </span>
+              )}
+              <StatusBadge status={project.status} />
+            </div>
           </div>
 
-          {project.sfVersion && (
-            <p className="text-xs text-fluya-purple/60 font-mono mb-3">SF {project.sfVersion}</p>
+          {/* Installed Skills badges */}
+          {installedSkills.length > 0 && (
+            <div className="flex flex-wrap gap-1 mb-3">
+              {installedSkills.map((skill) => (
+                <span
+                  key={skill}
+                  className={`px-1.5 py-0.5 text-[10px] rounded ${SKILL_BADGE_COLORS[skill] ?? DEFAULT_BADGE}`}
+                >
+                  {skill}
+                </span>
+              ))}
+            </div>
           )}
 
           {project.lastCommit && (

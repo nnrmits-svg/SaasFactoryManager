@@ -8,6 +8,7 @@
 
 ## project/ — Proyectos y decisiones activas
 - [factory-manager-status.md](project/factory-manager-status.md) — Estado del FM: features, PRP-004 roadmap, decisiones arquitectonicas
+- [sf-agent.md](project/sf-agent.md) — SaaS Factory Agent: app Electron de escritorio para sync local ↔ cloud
 
 ## feedback/ — Correcciones y preferencias
 - GitHub NO es requisito obligatorio, es una opcion mas
