@@ -17,3 +17,5 @@
     at processFullBinaryRow (http://localhost:3001/_next/static/chunks/8b06d_next_dist_compiled_react-server-dom-turbopack_ac66f558._.js:2361:9)
     at processBinaryChunk (http://localhost:3001/_next/static/chunks/8b06d_next_dist_compiled_react-server-dom-turbopack_ac66f558._.js:2470:221)
     at progress (http://localhost:3001/_next/static/chunks/8b06d_next_dist_compiled_react-server-dom-turbopack_ac66f558._.js:2640:13) @ http://localhost:3001/_next/static/chunks/8b06d_next_dist_d9ecd7c9._.js:3127
+[ 1069046ms] [ERROR] Failed to load resource: the server responded with a status of 500 () @ https://saas-factory-manager.vercel.app/dashboard:0
+[ 1069055ms] An error occurred in the Server Components render. The specific message is omitted in production builds to avoid leaking sensitive details. A digest property is included on this error instance which may provide additional details about the nature of the error.
