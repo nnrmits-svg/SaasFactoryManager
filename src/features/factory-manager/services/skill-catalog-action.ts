@@ -212,15 +212,47 @@ export async function getProjectSkills(projectPath: string): Promise<string[]> {
 export async function getProjectSkillsById(projectId: string): Promise<string[]> {
   try {
     const supabase = await createClient();
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('project_skills')
       .select('skill_name')
       .eq('project_id', projectId)
       .order('skill_name');
 
+    if (error) {
+      console.error('[getProjectSkillsById] Supabase error:', error.message, error.code);
+      return [];
+    }
+
     return (data ?? []).map((s) => s.skill_name);
-  } catch {
+  } catch (err) {
+    console.error('[getProjectSkillsById] Exception:', err);
     return [];
+  }
+}
+
+/** Get all skills for all projects in a single query */
+export async function getAllProjectSkillsMap(): Promise<Record<string, string[]>> {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from('project_skills')
+      .select('project_id, skill_name')
+      .order('skill_name');
+
+    if (error) {
+      console.error('[getAllProjectSkillsMap] Supabase error:', error.message);
+      return {};
+    }
+
+    const map: Record<string, string[]> = {};
+    for (const row of data ?? []) {
+      if (!map[row.project_id]) map[row.project_id] = [];
+      map[row.project_id].push(row.skill_name);
+    }
+    return map;
+  } catch (err) {
+    console.error('[getAllProjectSkillsMap] Exception:', err);
+    return {};
   }
 }
 
