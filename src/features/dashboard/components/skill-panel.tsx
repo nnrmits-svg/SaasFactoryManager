@@ -46,6 +46,7 @@ export function SkillPanel({ projectId, projectName, projectPath }: Props) {
   // Agent integration
   const agent = useAgentStatus();
   const agentInstallRef = useRef<string | null>(null);
+  const agentUninstallRef = useRef<string | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -60,34 +61,53 @@ export function SkillPanel({ projectId, projectName, projectPath }: Props) {
     load();
   }, [projectPath]);
 
-  // Watch agent command completion
+  // Watch agent command completion (install or uninstall)
   useEffect(() => {
-    const skillName = agentInstallRef.current;
-    if (!skillName) return;
+    const installSkill = agentInstallRef.current;
+    const uninstallSkill = agentUninstallRef.current;
+    if (!installSkill && !uninstallSkill) return;
 
     if (agent.activeCommand?.status === 'done') {
-      setInstalling(null);
-      setInstalledSkills((prev) => [...prev, skillName]);
-      setInstallMsg({ ok: true, text: `"${skillName}" instalado via Agent` });
-      registerProjectSkill(projectId, skillName);
-      agentInstallRef.current = null;
+      if (installSkill) {
+        setInstalling(null);
+        setInstalledSkills((prev) => [...prev, installSkill]);
+        setInstallMsg({ ok: true, text: `"${installSkill}" instalado via Agent` });
+        registerProjectSkill(projectId, installSkill);
+        agentInstallRef.current = null;
+      } else if (uninstallSkill) {
+        setUninstalling(null);
+        setInstalledSkills((prev) => prev.filter((s) => s !== uninstallSkill));
+        setInstallMsg({ ok: true, text: `"${uninstallSkill}" desinstalado via Agent` });
+        unregisterProjectSkill(projectId, uninstallSkill);
+        agentUninstallRef.current = null;
+      }
     } else if (agent.activeCommand?.status === 'error') {
       setInstalling(null);
+      setUninstalling(null);
       setInstallMsg({ ok: false, text: String(agent.activeCommand.result?.error ?? 'Error del agente') });
       agentInstallRef.current = null;
+      agentUninstallRef.current = null;
     }
   }, [agent.activeCommand?.status, agent.activeCommand?.result]);
 
   async function handleUninstall(skillName: string) {
     setUninstalling(skillName);
     setInstallMsg(null);
-    const result = await unregisterProjectSkill(projectId, skillName);
-    setUninstalling(null);
-    if (result.success) {
-      setInstalledSkills((prev) => prev.filter((s) => s !== skillName));
-      setInstallMsg({ ok: true, text: `"${skillName}" desinstalado` });
+
+    if (agent.isAgentOnline) {
+      // Agent online → send remove-skill command, Agent deletes folder, then we remove from Supabase
+      agentUninstallRef.current = skillName;
+      agent.sendCommand('remove-skill', { skillId: skillName, projectPath }, agent.activeInstance?.id);
     } else {
-      setInstallMsg({ ok: false, text: result.error ?? 'Error al desinstalar' });
+      // Agent offline → only remove from Supabase (folder stays, user deleted it manually)
+      const result = await unregisterProjectSkill(projectId, skillName);
+      setUninstalling(null);
+      if (result.success) {
+        setInstalledSkills((prev) => prev.filter((s) => s !== skillName));
+        setInstallMsg({ ok: true, text: `"${skillName}" desregistrado de Supabase` });
+      } else {
+        setInstallMsg({ ok: false, text: result.error ?? 'Error al desinstalar' });
+      }
     }
   }
 

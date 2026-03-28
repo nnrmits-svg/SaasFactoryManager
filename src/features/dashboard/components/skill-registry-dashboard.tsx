@@ -53,6 +53,7 @@ export function SkillRegistryDashboard() {
   // Agent integration
   const agent = useAgentStatus();
   const agentInstallRef = useRef<{ skill: string; projectId: string; projectPath: string } | null>(null);
+  const agentUninstallRef = useRef<{ skill: string; projectId: string } | null>(null);
 
   // Project skills cache
   const [projectSkillsMap, setProjectSkillsMap] = useState<Record<string, string[]>>({});
@@ -80,29 +81,42 @@ export function SkillRegistryDashboard() {
     load();
   }, []);
 
-  // Watch agent command completion to refresh installed skills
+  // Watch agent command completion (install or uninstall)
   useEffect(() => {
-    const target = agentInstallRef.current;
-    if (!target) return;
+    const installTarget = agentInstallRef.current;
+    const uninstallTarget = agentUninstallRef.current;
+    if (!installTarget && !uninstallTarget) return;
 
     if (agent.activeCommand?.status === 'done') {
       setInstalling(false);
-      setInstallResult({ skill: target.skill, success: true });
-      // Register in Supabase and refresh
-      registerProjectSkill(target.projectId, target.skill).then(() =>
-        getProjectSkillsById(target.projectId).then((pSkills) => {
-          setProjectSkillsMap((prev) => ({ ...prev, [target.projectId]: pSkills }));
-        }),
-      );
-      agentInstallRef.current = null;
+      if (installTarget) {
+        setInstallResult({ skill: installTarget.skill, success: true });
+        registerProjectSkill(installTarget.projectId, installTarget.skill).then(() =>
+          getProjectSkillsById(installTarget.projectId).then((pSkills) => {
+            setProjectSkillsMap((prev) => ({ ...prev, [installTarget.projectId]: pSkills }));
+          }),
+        );
+        agentInstallRef.current = null;
+      } else if (uninstallTarget) {
+        setInstallResult({ skill: uninstallTarget.skill, success: true });
+        unregisterProjectSkill(uninstallTarget.projectId, uninstallTarget.skill).then(() => {
+          setProjectSkillsMap((prev) => ({
+            ...prev,
+            [uninstallTarget.projectId]: (prev[uninstallTarget.projectId] ?? []).filter((s) => s !== uninstallTarget.skill),
+          }));
+        });
+        agentUninstallRef.current = null;
+      }
     } else if (agent.activeCommand?.status === 'error') {
       setInstalling(false);
+      const target = installTarget ?? uninstallTarget;
       setInstallResult({
-        skill: target.skill,
+        skill: target?.skill ?? '',
         success: false,
         error: String(agent.activeCommand.result?.error ?? 'Error del agente'),
       });
       agentInstallRef.current = null;
+      agentUninstallRef.current = null;
     }
   }, [agent.activeCommand?.status, agent.activeCommand?.result]);
 
@@ -123,16 +137,26 @@ export function SkillRegistryDashboard() {
   async function handleUninstall(skillName: string, projectId: string) {
     setInstalling(true);
     setInstallResult(null);
-    const result = await unregisterProjectSkill(projectId, skillName);
-    setInstalling(false);
-    if (result.success) {
-      setProjectSkillsMap((prev) => ({
-        ...prev,
-        [projectId]: (prev[projectId] ?? []).filter((s) => s !== skillName),
-      }));
-      setInstallResult({ skill: skillName, success: true });
+
+    const project = projects.find((p) => p.id === projectId);
+
+    if (agent.isAgentOnline && project) {
+      // Agent online → send remove-skill, Agent deletes folder, then we remove from Supabase
+      agentUninstallRef.current = { skill: skillName, projectId };
+      agent.sendCommand('remove-skill', { skillId: skillName, projectPath: project.path }, agent.activeInstance?.id);
     } else {
-      setInstallResult({ skill: skillName, success: false, error: result.error });
+      // Agent offline → only remove from Supabase
+      const result = await unregisterProjectSkill(projectId, skillName);
+      setInstalling(false);
+      if (result.success) {
+        setProjectSkillsMap((prev) => ({
+          ...prev,
+          [projectId]: (prev[projectId] ?? []).filter((s) => s !== skillName),
+        }));
+        setInstallResult({ skill: skillName, success: true });
+      } else {
+        setInstallResult({ skill: skillName, success: false, error: result.error });
+      }
     }
   }
 
