@@ -144,7 +144,7 @@ export function ProjectDetailView({ detail }: Props) {
       </div>
 
       {/* Skills */}
-      <SkillPanel projectId={project.id} projectName={project.name} projectPath={project.path} />
+      <SkillPanel projectName={project.name} projectPath={project.path} />
 
       {/* Work Sessions */}
       {sessions.length > 0 && (

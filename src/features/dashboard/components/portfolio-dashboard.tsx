@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { getPortfolioProjects } from '@/features/factory-manager/services/git-sync-action';
-import { getAllProjectSkillsMap } from '@/features/factory-manager/services/skill-catalog-action';
 import type { Project } from '@/features/factory-manager/types';
 import { StatsBar } from './stats-bar';
 import { PortfolioGrid } from './portfolio-grid';
@@ -10,17 +9,12 @@ import { SyncButton } from './sync-button';
 
 export function PortfolioDashboard() {
   const [projects, setProjects] = useState<Project[]>([]);
-  const [projectSkillsMap, setProjectSkillsMap] = useState<Record<string, string[]>>({});
   const [isLoading, setIsLoading] = useState(true);
 
   const loadProjects = useCallback(async () => {
     setIsLoading(true);
     const data = await getPortfolioProjects();
     setProjects(data);
-
-    // Load all installed skills in a single query
-    const skillsMap = await getAllProjectSkillsMap();
-    setProjectSkillsMap(skillsMap);
     setIsLoading(false);
   }, []);
 
@@ -45,7 +39,7 @@ export function PortfolioDashboard() {
       ) : (
         <>
           <StatsBar projects={projects} />
-          <PortfolioGrid projects={projects} projectSkillsMap={projectSkillsMap} />
+          <PortfolioGrid projects={projects} />
         </>
       )}
     </div>
