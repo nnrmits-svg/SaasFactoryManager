@@ -122,7 +122,7 @@ export interface AgentInstance {
 }
 
 /** Command sent from web to agent */
-export type AgentCommandType = 'scan' | 'sync' | 'apply-skill' | 'remove-skill' | 'push-projects';
+export type AgentCommandType = 'scan' | 'sync' | 'apply-skill' | 'push-projects';
 
 export interface AgentCommand {
   id: string;

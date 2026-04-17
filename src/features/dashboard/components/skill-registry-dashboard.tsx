@@ -4,9 +4,8 @@ import { useState, useEffect, useRef } from 'react';
 import {
   discoverAllSkills,
   getSkillContent,
-  getProjectSkillsById,
-  registerProjectSkill,
-  unregisterProjectSkill,
+  getProjectSkills,
+  installSkillToProject,
   type SkillInfo,
 } from '@/features/factory-manager/services/skill-catalog-action';
 import { getPortfolioProjects } from '@/features/factory-manager/services/git-sync-action';
@@ -53,7 +52,6 @@ export function SkillRegistryDashboard() {
   // Agent integration
   const agent = useAgentStatus();
   const agentInstallRef = useRef<{ skill: string; projectId: string; projectPath: string } | null>(null);
-  const agentUninstallRef = useRef<{ skill: string; projectId: string } | null>(null);
 
   // Project skills cache
   const [projectSkillsMap, setProjectSkillsMap] = useState<Record<string, string[]>>({});
@@ -71,7 +69,7 @@ export function SkillRegistryDashboard() {
       const skillsMap: Record<string, string[]> = {};
       await Promise.all(
         allProjects.map(async (p) => {
-          const pSkills = await getProjectSkillsById(p.id);
+          const pSkills = await getProjectSkills(p.path);
           skillsMap[p.id] = pSkills;
         }),
       );
@@ -81,42 +79,27 @@ export function SkillRegistryDashboard() {
     load();
   }, []);
 
-  // Watch agent command completion (install or uninstall)
+  // Watch agent command completion to refresh installed skills
   useEffect(() => {
-    const installTarget = agentInstallRef.current;
-    const uninstallTarget = agentUninstallRef.current;
-    if (!installTarget && !uninstallTarget) return;
+    const target = agentInstallRef.current;
+    if (!target) return;
 
     if (agent.activeCommand?.status === 'done') {
       setInstalling(false);
-      if (installTarget) {
-        setInstallResult({ skill: installTarget.skill, success: true });
-        registerProjectSkill(installTarget.projectId, installTarget.skill).then(() =>
-          getProjectSkillsById(installTarget.projectId).then((pSkills) => {
-            setProjectSkillsMap((prev) => ({ ...prev, [installTarget.projectId]: pSkills }));
-          }),
-        );
-        agentInstallRef.current = null;
-      } else if (uninstallTarget) {
-        setInstallResult({ skill: uninstallTarget.skill, success: true });
-        unregisterProjectSkill(uninstallTarget.projectId, uninstallTarget.skill).then(() => {
-          setProjectSkillsMap((prev) => ({
-            ...prev,
-            [uninstallTarget.projectId]: (prev[uninstallTarget.projectId] ?? []).filter((s) => s !== uninstallTarget.skill),
-          }));
-        });
-        agentUninstallRef.current = null;
-      }
+      setInstallResult({ skill: target.skill, success: true });
+      // Refresh installed skills for the project
+      getProjectSkills(target.projectPath).then((pSkills) => {
+        setProjectSkillsMap((prev) => ({ ...prev, [target.projectId]: pSkills }));
+      });
+      agentInstallRef.current = null;
     } else if (agent.activeCommand?.status === 'error') {
       setInstalling(false);
-      const target = installTarget ?? uninstallTarget;
       setInstallResult({
-        skill: target?.skill ?? '',
+        skill: target.skill,
         success: false,
         error: String(agent.activeCommand.result?.error ?? 'Error del agente'),
       });
       agentInstallRef.current = null;
-      agentUninstallRef.current = null;
     }
   }, [agent.activeCommand?.status, agent.activeCommand?.result]);
 
@@ -134,32 +117,6 @@ export function SkillRegistryDashboard() {
     setLoadingContent(false);
   }
 
-  async function handleUninstall(skillName: string, projectId: string) {
-    setInstalling(true);
-    setInstallResult(null);
-
-    const project = projects.find((p) => p.id === projectId);
-
-    if (agent.isAgentOnline && project) {
-      // Agent online → send remove-skill, Agent deletes folder, then we remove from Supabase
-      agentUninstallRef.current = { skill: skillName, projectId };
-      agent.sendCommand('remove-skill', { skillId: skillName, projectPath: project.path }, agent.activeInstance?.id);
-    } else {
-      // Agent offline → only remove from Supabase
-      const result = await unregisterProjectSkill(projectId, skillName);
-      setInstalling(false);
-      if (result.success) {
-        setProjectSkillsMap((prev) => ({
-          ...prev,
-          [projectId]: (prev[projectId] ?? []).filter((s) => s !== skillName),
-        }));
-        setInstallResult({ skill: skillName, success: true });
-      } else {
-        setInstallResult({ skill: skillName, success: false, error: result.error });
-      }
-    }
-  }
-
   async function handleInstall(skillName: string, projectPath: string, projectId: string) {
     setInstalling(true);
     setInstallResult(null);
@@ -169,13 +126,15 @@ export function SkillRegistryDashboard() {
       agentInstallRef.current = { skill: skillName, projectId, projectPath };
       agent.sendCommand('apply-skill', { skillId: skillName, projectPath }, agent.activeInstance?.id);
     } else {
-      // Agent offline — can't install remotely
-      setInstallResult({
-        skill: skillName,
-        success: false,
-        error: 'El SF Agent no esta conectado. Inicia el agente de escritorio para instalar skills en proyectos.',
-      });
+      // Fallback: direct install (works in local dev)
+      const result = await installSkillToProject(skillName, projectPath);
+      setInstallResult({ skill: skillName, ...result });
       setInstalling(false);
+
+      if (result.success) {
+        const pSkills = await getProjectSkills(projectPath);
+        setProjectSkillsMap((prev) => ({ ...prev, [projectId]: pSkills }));
+      }
     }
   }
 
@@ -336,14 +295,9 @@ export function SkillRegistryDashboard() {
                           >
                             <span className="text-xs text-white truncate">{project.name}</span>
                             {isInstalled ? (
-                              <button
-                                type="button"
-                                onClick={() => handleUninstall(selectedSkill, project.id)}
-                                disabled={installing}
-                                className="text-[10px] px-2 py-0.5 bg-fluya-green/10 text-fluya-green rounded hover:bg-red-500/10 hover:text-red-400 disabled:opacity-40 transition-all"
-                              >
+                              <span className="text-[10px] px-2 py-0.5 bg-fluya-green/10 text-fluya-green rounded">
                                 Instalado
-                              </button>
+                              </span>
                             ) : (
                               <button
                                 type="button"
@@ -361,7 +315,7 @@ export function SkillRegistryDashboard() {
                     {installResult && (
                       <p className={`mt-2 text-xs ${installResult.success ? 'text-fluya-green' : 'text-red-400'}`}>
                         {installResult.success
-                          ? `"${installResult.skill}" actualizado`
+                          ? `"${installResult.skill}" instalado ${agent.isAgentOnline ? 'via Agent' : ''}`
                           : installResult.error
                         }
                       </p>

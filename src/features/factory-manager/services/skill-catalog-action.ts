@@ -2,7 +2,6 @@
 
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { createClient } from '@/lib/supabase/server';
 
 /** Process/meta skills — NOT installable in projects */
 const META_SKILLS = new Set([
@@ -182,116 +181,33 @@ export async function getSkillContent(skillName: string): Promise<string | null>
   }
 }
 
-/** Check which skills are installed in a target project (reads from Supabase) */
+/** Check which skills are installed in a target project */
 export async function getProjectSkills(projectPath: string): Promise<string[]> {
+  const skillsDir = path.join(projectPath, '.claude', 'skills');
+
+  let entries: string[];
   try {
-    const supabase = await createClient();
-
-    // Find project by path
-    const { data: project } = await supabase
-      .from('projects')
-      .select('id')
-      .eq('path', projectPath)
-      .single();
-
-    if (!project) return [];
-
-    const { data: skills } = await supabase
-      .from('project_skills')
-      .select('skill_name')
-      .eq('project_id', project.id)
-      .order('skill_name');
-
-    return (skills ?? []).map((s) => s.skill_name);
+    entries = await fs.readdir(skillsDir);
   } catch {
     return [];
   }
-}
 
-/** Get skills for a project by ID (faster, no path lookup) */
-export async function getProjectSkillsById(projectId: string): Promise<string[]> {
-  try {
-    const supabase = await createClient();
-    const { data, error } = await supabase
-      .from('project_skills')
-      .select('skill_name')
-      .eq('project_id', projectId)
-      .order('skill_name');
+  const skills: string[] = [];
+  for (const entry of entries) {
+    if (entry.endsWith('.md')) continue;
+    const entryPath = path.join(skillsDir, entry);
+    const stat = await fs.stat(entryPath).catch(() => null);
+    if (!stat?.isDirectory()) continue;
 
-    if (error) {
-      console.error('[getProjectSkillsById] Supabase error:', error.message, error.code);
-      return [];
+    try {
+      await fs.access(path.join(entryPath, 'SKILL.md'));
+      skills.push(entry);
+    } catch {
+      // No SKILL.md
     }
-
-    return (data ?? []).map((s) => s.skill_name);
-  } catch (err) {
-    console.error('[getProjectSkillsById] Exception:', err);
-    return [];
   }
-}
 
-/** Get all skills for all projects in a single query */
-export async function getAllProjectSkillsMap(): Promise<Record<string, string[]>> {
-  try {
-    const supabase = await createClient();
-    const { data, error } = await supabase
-      .from('project_skills')
-      .select('project_id, skill_name')
-      .order('skill_name');
-
-    if (error) {
-      console.error('[getAllProjectSkillsMap] Supabase error:', error.message);
-      return {};
-    }
-
-    const map: Record<string, string[]> = {};
-    for (const row of data ?? []) {
-      if (!map[row.project_id]) map[row.project_id] = [];
-      map[row.project_id].push(row.skill_name);
-    }
-    return map;
-  } catch (err) {
-    console.error('[getAllProjectSkillsMap] Exception:', err);
-    return {};
-  }
-}
-
-/** Register a skill as installed for a project */
-export async function registerProjectSkill(
-  projectId: string,
-  skillName: string,
-): Promise<{ success: boolean; error?: string }> {
-  try {
-    const supabase = await createClient();
-    const { error } = await supabase
-      .from('project_skills')
-      .upsert({ project_id: projectId, skill_name: skillName, installed_by: 'web' });
-
-    if (error) return { success: false, error: error.message };
-    return { success: true };
-  } catch (err) {
-    return { success: false, error: String(err) };
-  }
-}
-
-/** Remove a skill registration from a project */
-export async function unregisterProjectSkill(
-  projectId: string,
-  skillName: string,
-): Promise<{ success: boolean; error?: string }> {
-  try {
-    const supabase = await createClient();
-    const { error } = await supabase
-      .from('project_skills')
-      .delete()
-      .eq('project_id', projectId)
-      .eq('skill_name', skillName);
-
-    if (error) return { success: false, error: error.message };
-    return { success: true };
-  } catch (err) {
-    return { success: false, error: String(err) };
-  }
+  return skills;
 }
 
 /** Copy a skill from FM to a target project */

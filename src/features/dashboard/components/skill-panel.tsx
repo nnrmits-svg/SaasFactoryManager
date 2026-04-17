@@ -3,16 +3,14 @@
 import { useState, useEffect, useRef } from 'react';
 import {
   getApplicableSkills,
-  getProjectSkillsById,
-  registerProjectSkill,
-  unregisterProjectSkill,
+  getProjectSkills,
+  installSkillToProject,
   type SkillInfo,
 } from '@/features/factory-manager/services/skill-catalog-action';
 import { useAgentStatus } from '@/features/factory-manager/hooks/use-agent-status';
 import Link from 'next/link';
 
 interface Props {
-  projectId: string;
   projectName: string;
   projectPath: string;
 }
@@ -35,24 +33,22 @@ const CATEGORY_COLORS: Record<string, string> = {
   ai: 'text-fluya-purple',
 };
 
-export function SkillPanel({ projectId, projectName, projectPath }: Props) {
+export function SkillPanel({ projectName, projectPath }: Props) {
   const [skills, setSkills] = useState<SkillInfo[]>([]);
   const [installedSkills, setInstalledSkills] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [installing, setInstalling] = useState<string | null>(null);
-  const [uninstalling, setUninstalling] = useState<string | null>(null);
   const [installMsg, setInstallMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
   // Agent integration
   const agent = useAgentStatus();
   const agentInstallRef = useRef<string | null>(null);
-  const agentUninstallRef = useRef<string | null>(null);
 
   useEffect(() => {
     async function load() {
       const [allSkills, projSkills] = await Promise.all([
         getApplicableSkills(),
-        getProjectSkillsById(projectId),
+        getProjectSkills(projectPath),
       ]);
       setSkills(allSkills);
       setInstalledSkills(projSkills);
@@ -61,55 +57,22 @@ export function SkillPanel({ projectId, projectName, projectPath }: Props) {
     load();
   }, [projectPath]);
 
-  // Watch agent command completion (install or uninstall)
+  // Watch agent command completion
   useEffect(() => {
-    const installSkill = agentInstallRef.current;
-    const uninstallSkill = agentUninstallRef.current;
-    if (!installSkill && !uninstallSkill) return;
+    const skillName = agentInstallRef.current;
+    if (!skillName) return;
 
     if (agent.activeCommand?.status === 'done') {
-      if (installSkill) {
-        setInstalling(null);
-        setInstalledSkills((prev) => [...prev, installSkill]);
-        setInstallMsg({ ok: true, text: `"${installSkill}" instalado via Agent` });
-        registerProjectSkill(projectId, installSkill);
-        agentInstallRef.current = null;
-      } else if (uninstallSkill) {
-        setUninstalling(null);
-        setInstalledSkills((prev) => prev.filter((s) => s !== uninstallSkill));
-        setInstallMsg({ ok: true, text: `"${uninstallSkill}" desinstalado via Agent` });
-        unregisterProjectSkill(projectId, uninstallSkill);
-        agentUninstallRef.current = null;
-      }
+      setInstalling(null);
+      setInstalledSkills((prev) => [...prev, skillName]);
+      setInstallMsg({ ok: true, text: `"${skillName}" instalado via Agent` });
+      agentInstallRef.current = null;
     } else if (agent.activeCommand?.status === 'error') {
       setInstalling(null);
-      setUninstalling(null);
       setInstallMsg({ ok: false, text: String(agent.activeCommand.result?.error ?? 'Error del agente') });
       agentInstallRef.current = null;
-      agentUninstallRef.current = null;
     }
   }, [agent.activeCommand?.status, agent.activeCommand?.result]);
-
-  async function handleUninstall(skillName: string) {
-    setUninstalling(skillName);
-    setInstallMsg(null);
-
-    if (agent.isAgentOnline) {
-      // Agent online → send remove-skill command, Agent deletes folder, then we remove from Supabase
-      agentUninstallRef.current = skillName;
-      agent.sendCommand('remove-skill', { skillId: skillName, projectPath }, agent.activeInstance?.id);
-    } else {
-      // Agent offline → only remove from Supabase (folder stays, user deleted it manually)
-      const result = await unregisterProjectSkill(projectId, skillName);
-      setUninstalling(null);
-      if (result.success) {
-        setInstalledSkills((prev) => prev.filter((s) => s !== skillName));
-        setInstallMsg({ ok: true, text: `"${skillName}" desregistrado de Supabase` });
-      } else {
-        setInstallMsg({ ok: false, text: result.error ?? 'Error al desinstalar' });
-      }
-    }
-  }
 
   async function handleInstall(skillName: string) {
     setInstalling(skillName);
@@ -120,9 +83,16 @@ export function SkillPanel({ projectId, projectName, projectPath }: Props) {
       agentInstallRef.current = skillName;
       agent.sendCommand('apply-skill', { skillId: skillName, projectPath }, agent.activeInstance?.id);
     } else {
-      // Agent offline — can't install remotely
+      // Fallback: direct install
+      const result = await installSkillToProject(skillName, projectPath);
       setInstalling(null);
-      setInstallMsg({ ok: false, text: 'El SF Agent no esta conectado. Inicia el agente de escritorio para instalar skills.' });
+
+      if (result.success) {
+        setInstalledSkills((prev) => [...prev, skillName]);
+        setInstallMsg({ ok: true, text: `"${skillName}" instalado` });
+      } else {
+        setInstallMsg({ ok: false, text: result.error ?? 'Error' });
+      }
     }
   }
 
@@ -188,14 +158,9 @@ export function SkillPanel({ projectId, projectName, projectPath }: Props) {
                     </div>
                     <div className="ml-2 shrink-0">
                       {isInstalled ? (
-                        <button
-                          type="button"
-                          onClick={() => handleUninstall(skill.name)}
-                          disabled={uninstalling === skill.name}
-                          className="px-2 py-1 text-[10px] bg-fluya-green/10 text-fluya-green rounded-lg hover:bg-red-500/10 hover:text-red-400 disabled:opacity-40 transition-all"
-                        >
-                          {uninstalling === skill.name ? '...' : 'Instalado'}
-                        </button>
+                        <span className="px-2 py-1 text-[10px] bg-fluya-green/10 text-fluya-green rounded-lg">
+                          Instalado
+                        </span>
                       ) : (
                         <button
                           type="button"

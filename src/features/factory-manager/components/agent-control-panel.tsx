@@ -18,7 +18,6 @@ const COMMAND_LABELS: Record<AgentCommandType, string> = {
   scan: 'Escanear',
   sync: 'Sincronizar',
   'apply-skill': 'Aplicar Skill',
-  'remove-skill': 'Desinstalar Skill',
   'push-projects': 'Subir a Cloud',
 };
 

@@ -3,17 +3,9 @@
 import Link from 'next/link';
 import { useAuth } from '@/features/auth/hooks/use-auth';
 import { UserMenu } from '@/features/auth/components/user-menu';
-import type { Profile } from '@/features/auth/types';
 
-interface Props {
-  serverProfile?: Profile | null;
-}
-
-export function Navbar({ serverProfile }: Props) {
-  const { profile: clientProfile, loading } = useAuth();
-
-  // Use server profile immediately, then client profile once loaded
-  const profile = clientProfile ?? (loading ? serverProfile : null);
+export function Navbar() {
+  const { profile, loading } = useAuth();
 
   return (
     <nav className="fixed top-0 inset-x-0 z-50 bg-fluya-bg/80 backdrop-blur-xl border-b border-white/5 px-6 py-3">
@@ -68,7 +60,7 @@ export function Navbar({ serverProfile }: Props) {
               </div>
             </>
           )}
-          {!profile && !loading && !serverProfile && (
+          {!profile && !loading && (
             <Link
               href="/login"
               className="px-4 py-1.5 text-sm bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 text-white rounded-lg transition-all duration-300 shadow-lg shadow-purple-500/20"

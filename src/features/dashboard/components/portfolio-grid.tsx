@@ -3,10 +3,10 @@
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import type { Project } from '@/features/factory-manager/types';
+import { getProjectSkills } from '@/features/factory-manager/services/skill-catalog-action';
 
 interface Props {
   projects: Project[];
-  projectSkillsMap: Record<string, string[]>;
 }
 
 /** Badge colors per skill category */
@@ -85,8 +85,24 @@ function formatHours(minutes: number): string {
   return remaining > 0 ? `${hours}h ${remaining}m` : `${hours}h`;
 }
 
-export function PortfolioGrid({ projects, projectSkillsMap }: Props) {
+export function PortfolioGrid({ projects }: Props) {
   const activePaths = useActiveTracking();
+  const [projectSkillsMap, setProjectSkillsMap] = useState<Record<string, string[]>>({});
+
+  // Load installed skills for each project
+  useEffect(() => {
+    async function loadSkills() {
+      const map: Record<string, string[]> = {};
+      await Promise.all(
+        projects.map(async (p) => {
+          const skills = await getProjectSkills(p.path);
+          map[p.id] = skills;
+        }),
+      );
+      setProjectSkillsMap(map);
+    }
+    if (projects.length > 0) loadSkills();
+  }, [projects]);
 
   if (projects.length === 0) {
     return (
