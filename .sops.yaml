@@ -1,0 +1,4 @@
+# Managed by SaaS Factory Agent. Add one recipient per dev.
+creation_rules:
+  - path_regex: \.env(\..+)?(\.enc)?$
+    age: age1eeydh6a09yfvaqr0rke7nd9mmqyrphws7j0gdjqaxns3vpxkzurqq35hdr
