@@ -2,37 +2,43 @@
 
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import type { User } from '@supabase/supabase-js';
 import type { Profile } from '../types';
 
 export function useAuth() {
+  const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const supabase = createClient();
 
-    async function getProfile() {
-      const { data: { user } } = await supabase.auth.getUser();
+    async function load() {
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      setUser(authUser);
 
-      if (user) {
+      if (authUser) {
         const { data } = await supabase
           .from('profiles')
           .select('*')
-          .eq('id', user.id)
-          .single();
+          .eq('id', authUser.id)
+          .maybeSingle();
 
         setProfile(data);
+      } else {
+        setProfile(null);
       }
       setLoading(false);
     }
 
-    getProfile();
+    load();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event) => {
         if (event === 'SIGNED_IN') {
-          getProfile();
+          load();
         } else if (event === 'SIGNED_OUT') {
+          setUser(null);
           setProfile(null);
         }
       }
@@ -41,5 +47,5 @@ export function useAuth() {
     return () => subscription.unsubscribe();
   }, []);
 
-  return { profile, loading };
+  return { user, profile, loading };
 }

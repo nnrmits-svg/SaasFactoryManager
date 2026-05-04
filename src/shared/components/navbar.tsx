@@ -5,7 +5,7 @@ import { useAuth } from '@/features/auth/hooks/use-auth';
 import { UserMenu } from '@/features/auth/components/user-menu';
 
 export function Navbar() {
-  const { profile, loading } = useAuth();
+  const { user, profile, loading } = useAuth();
 
   return (
     <nav className="fixed top-0 inset-x-0 z-50 bg-fluya-bg/80 backdrop-blur-xl border-b border-white/5 px-6 py-3">
@@ -23,7 +23,7 @@ export function Navbar() {
         </Link>
 
         <div className="flex items-center gap-1">
-          {profile && (
+          {user && (
             <>
               <Link
                 href="/dashboard"
@@ -56,11 +56,22 @@ export function Navbar() {
                 Settings
               </Link>
               <div className="ml-2 pl-2 border-l border-white/10">
-                <UserMenu profile={profile} />
+                <UserMenu
+                  profile={
+                    profile ?? {
+                      id: user.id,
+                      email: user.email ?? '',
+                      full_name: null,
+                      avatar_url: null,
+                      created_at: user.created_at,
+                      updated_at: user.created_at,
+                    }
+                  }
+                />
               </div>
             </>
           )}
-          {!profile && !loading && (
+          {!user && !loading && (
             <Link
               href="/login"
               className="px-4 py-1.5 text-sm bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 text-white rounded-lg transition-all duration-300 shadow-lg shadow-purple-500/20"
