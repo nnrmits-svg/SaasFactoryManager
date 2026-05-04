@@ -1,12 +1,12 @@
-'use client';
-
 import Link from 'next/link';
-import { useAuth } from '@/features/auth/hooks/use-auth';
+import type { Profile } from '@/features/auth/types';
 import { UserMenu } from '@/features/auth/components/user-menu';
 
-export function Navbar() {
-  const { user, profile, loading } = useAuth();
+interface Props {
+  profile: Profile | null;
+}
 
+export function Navbar({ profile }: Props) {
   return (
     <nav className="fixed top-0 inset-x-0 z-50 bg-fluya-bg/80 backdrop-blur-xl border-b border-white/5 px-6 py-3">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -23,7 +23,7 @@ export function Navbar() {
         </Link>
 
         <div className="flex items-center gap-1">
-          {user && (
+          {profile ? (
             <>
               <Link
                 href="/dashboard"
@@ -56,22 +56,10 @@ export function Navbar() {
                 Settings
               </Link>
               <div className="ml-2 pl-2 border-l border-white/10">
-                <UserMenu
-                  profile={
-                    profile ?? {
-                      id: user.id,
-                      email: user.email ?? '',
-                      full_name: null,
-                      avatar_url: null,
-                      created_at: user.created_at,
-                      updated_at: user.created_at,
-                    }
-                  }
-                />
+                <UserMenu profile={profile} />
               </div>
             </>
-          )}
-          {!user && !loading && (
+          ) : (
             <Link
               href="/login"
               className="px-4 py-1.5 text-sm bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 text-white rounded-lg transition-all duration-300 shadow-lg shadow-purple-500/20"
