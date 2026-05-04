@@ -21,8 +21,13 @@
 ## 2026-03-27 - Sincronizacion automatica
 - Sync general del proyecto
 
----
-
-## 2026-05-04 - Sesion actual
-- Revision de estado del repo: sin cambios pendientes, solo `supabase/` sin trackear
-- Creacion de este archivo Bitacora.md
+## 2026-05-04 - Sistema de creacion de proyectos con agente
+- **Nuevo**: `project-creating-modal.tsx` - Modal con estados (creando/creado/fallido) y progress por stages
+- **Nuevo**: `use-project-creation.ts` - Hook con state machine para el flujo de creacion (idle/pending/creating/created/failed), polling a Supabase para seguir el progreso
+- **Nuevo**: `create-project-with-agent.ts` - Server action que crea proyecto via agente (folder, git-init, skills), con retry
+- **Modificado**: `project-wizard.tsx` - Ampliado significativamente (+161 lineas) para integrar el flujo de creacion
+- **Modificado**: `factory-dashboard.tsx` - Ajustes de integracion (+50 lineas)
+- **Modificado**: `types/index.ts` - Nuevos tipos para `CreateProjectCommandResult`, stages, payloads (+28 lineas)
+- **Modificado**: `agent-control-panel.tsx` - Ajuste menor
+- Balance neto: +225 lineas (3 archivos nuevos, 4 modificados)
+- Creacion de Bitacora.md

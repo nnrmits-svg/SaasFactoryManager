@@ -19,6 +19,7 @@ const COMMAND_LABELS: Record<AgentCommandType, string> = {
   sync: 'Sincronizar',
   'apply-skill': 'Aplicar Skill',
   'push-projects': 'Subir a Cloud',
+  'create-project': 'Crear proyecto',
 };
 
 const STATUS_COLORS = {

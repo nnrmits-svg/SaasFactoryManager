@@ -3,13 +3,14 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
-  createProject,
   updateProject,
   deleteProject,
   getProjects,
   type UpdateProjectInput,
 } from '../services/project-crud-action';
 import { ProjectWizard, type BusinessBrief } from './project-wizard';
+import { ProjectCreatingModal } from './project-creating-modal';
+import { useProjectCreation } from '../hooks/use-project-creation';
 
 interface ProjectRow {
   id: string;
@@ -101,27 +102,41 @@ export function FactoryDashboard() {
     setShowEditForm(true);
   }
 
-  async function handleWizardComplete(data: { name: string; description: string; brief: BusinessBrief }) {
+  const projectCreation = useProjectCreation();
+  const [creatingName, setCreatingName] = useState<string>('');
+
+  async function handleWizardComplete(data: {
+    name: string;
+    description: string;
+    brief: BusinessBrief;
+    skills: string[];
+  }) {
     setSaving(true);
     setMessage(null);
+    setCreatingName(data.name);
+    setShowWizard(false);
 
-    const result = await createProject({
+    const result = await projectCreation.startCreation({
       name: data.name,
       description: data.description,
-      sfVersion: 'V4',
       businessBrief: data.brief as unknown as Record<string, string>,
+      skillsToApply: data.skills,
+      isPrivate: true,
     });
 
-    if (result.success) {
-      setMessage({ type: 'success', text: `"${data.name}" creado con brief de negocio` });
-      setShowWizard(false);
-      await loadProjects();
-    } else {
-      setMessage({ type: 'error', text: result.error || 'Error al crear' });
+    if (!result.ok) {
+      setMessage({ type: 'error', text: result.error ?? 'Error al crear' });
     }
 
     setSaving(false);
   }
+
+  useEffect(() => {
+    if (projectCreation.state.status === 'created') {
+      void loadProjects();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectCreation.state.status]);
 
   async function handleEditSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -385,6 +400,21 @@ export function FactoryDashboard() {
           </button>
         </div>
       )}
+
+      <ProjectCreatingModal
+        state={projectCreation.state}
+        projectName={creatingName}
+        onRetry={() => {
+          if (projectCreation.state.projectId) {
+            void projectCreation.retry(projectCreation.state.projectId);
+          }
+        }}
+        onClose={() => projectCreation.reset()}
+        onGoToProject={() => {
+          projectCreation.reset();
+          window.location.href = `/project/${encodeURIComponent(creatingName)}`;
+        }}
+      />
     </div>
   );
 }
