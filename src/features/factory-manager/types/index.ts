@@ -122,7 +122,33 @@ export interface AgentInstance {
 }
 
 /** Command sent from web to agent */
-export type AgentCommandType = 'scan' | 'sync' | 'apply-skill' | 'push-projects';
+export type AgentCommandType =
+  | 'scan'
+  | 'sync'
+  | 'apply-skill'
+  | 'push-projects'
+  | 'create-project';
+
+/** Payload shape for the 'create-project' command */
+export interface CreateProjectCommandPayload {
+  project_id: string;
+  name: string;
+  brief: Record<string, string>;
+  github_owner?: string;
+  skills_to_apply: string[];
+  is_private: boolean;
+}
+
+/** Result shape returned by agent in agent_commands.result for create-project */
+export interface CreateProjectCommandResult {
+  success: boolean;
+  local_path?: string;
+  github_url?: string;
+  github_owner?: string;
+  applied_skills?: string[];
+  stage?: 'folder' | 'git-init' | 'initial-commit' | 'gh-create' | 'apply-skills' | 'final-commit' | 'done';
+  error?: string;
+}
 
 export interface AgentCommand {
   id: string;

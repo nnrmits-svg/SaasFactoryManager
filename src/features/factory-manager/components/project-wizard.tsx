@@ -16,10 +16,82 @@ export interface BusinessBrief {
 }
 
 interface ProjectWizardProps {
-  onComplete: (data: { name: string; description: string; brief: BusinessBrief }) => void;
+  onComplete: (data: {
+    name: string;
+    description: string;
+    brief: BusinessBrief;
+    skills: string[];
+  }) => void;
   onCancel: () => void;
   saving: boolean;
 }
+
+interface SkillOption {
+  id: string;
+  label: string;
+  description: string;
+  required: boolean;
+  defaultChecked: boolean;
+}
+
+const AVAILABLE_SKILLS: SkillOption[] = [
+  {
+    id: 'bitacora',
+    label: 'Bitacora',
+    description: 'Registro cronologico de sesiones por proyecto (obligatorio)',
+    required: true,
+    defaultChecked: true,
+  },
+  {
+    id: 'project-plan',
+    label: 'Project Plan',
+    description: 'Plan vivo del proyecto: vision, estado, decisiones (obligatorio)',
+    required: true,
+    defaultChecked: true,
+  },
+  {
+    id: 'add-login',
+    label: 'Login + Auth',
+    description: 'Autenticacion completa: signup, login, password reset, OAuth Google',
+    required: false,
+    defaultChecked: false,
+  },
+  {
+    id: 'add-payments',
+    label: 'Pagos (Polar)',
+    description: 'Checkout + webhooks + suscripciones con Polar (Merchant of Record)',
+    required: false,
+    defaultChecked: false,
+  },
+  {
+    id: 'add-emails',
+    label: 'Emails (Resend)',
+    description: 'Emails transaccionales: welcome, magic link, batch sending',
+    required: false,
+    defaultChecked: false,
+  },
+  {
+    id: 'add-mobile',
+    label: 'PWA + Push',
+    description: 'PWA instalable + push notifications (iOS compatible)',
+    required: false,
+    defaultChecked: false,
+  },
+  {
+    id: 'add-security',
+    label: 'Seguridad enterprise',
+    description: 'Roles + RLS, 2FA/MFA, rate limiting, audit logs',
+    required: false,
+    defaultChecked: false,
+  },
+  {
+    id: 'fluya-brand',
+    label: 'Branding Fluya',
+    description: 'Logo, header, footer, paleta dark, gradientes, manifest PWA',
+    required: false,
+    defaultChecked: false,
+  },
+];
 
 const STEPS = [
   {
@@ -94,11 +166,28 @@ export function ProjectWizard({ onComplete, onCancel, saving }: ProjectWizardPro
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [projectName, setProjectName] = useState('');
+  const [selectedSkills, setSelectedSkills] = useState<Set<string>>(
+    () => new Set(AVAILABLE_SKILLS.filter((s) => s.defaultChecked).map((s) => s.id)),
+  );
 
+  const SKILLS_STEP_INDEX = STEPS.length;
   const currentStep = STEPS[step];
-  const isLastStep = step === STEPS.length - 1;
+  const isInterviewStep = step >= 0 && step < STEPS.length;
+  const isSkillsStep = step === SKILLS_STEP_INDEX;
+  const isLastStep = isSkillsStep;
   const isNameStep = step === -1;
-  const totalSteps = STEPS.length;
+  const totalSteps = STEPS.length + 1;
+
+  function toggleSkill(id: string) {
+    const skill = AVAILABLE_SKILLS.find((s) => s.id === id);
+    if (!skill || skill.required) return;
+    setSelectedSkills((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
 
   function handleNext() {
     if (isLastStep) {
@@ -115,7 +204,10 @@ export function ProjectWizard({ onComplete, onCancel, saving }: ProjectWizardPro
       };
 
       const description = answers.solucion || '';
-      onComplete({ name: projectName, description, brief });
+      const skills = AVAILABLE_SKILLS.filter(
+        (s) => s.required || selectedSkills.has(s.id),
+      ).map((s) => s.id);
+      onComplete({ name: projectName, description, brief, skills });
       return;
     }
 
@@ -132,7 +224,9 @@ export function ProjectWizard({ onComplete, onCancel, saving }: ProjectWizardPro
 
   const canProceed = isNameStep
     ? projectName.trim().length > 0
-    : (answers[currentStep?.id] || '').trim().length > 0;
+    : isSkillsStep
+      ? true
+      : (answers[currentStep?.id] || '').trim().length > 0;
 
   const stepContext = useMemo(() => {
     if (!currentStep) return null;
@@ -167,6 +261,11 @@ export function ProjectWizard({ onComplete, onCancel, saving }: ProjectWizardPro
               }`}
             />
           ))}
+          <div
+            className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${
+              isSkillsStep ? 'bg-purple-400' : 'bg-white/10'
+            }`}
+          />
         </div>
       )}
 
@@ -187,8 +286,58 @@ export function ProjectWizard({ onComplete, onCancel, saving }: ProjectWizardPro
         </>
       )}
 
+      {/* Skills Step (final) */}
+      {isSkillsStep && (
+        <>
+          <div className="flex items-center justify-between mb-1">
+            <h2 className="text-lg font-semibold text-white">Skills iniciales</h2>
+            <span className="text-xs text-gray-500">{totalSteps} / {totalSteps}</span>
+          </div>
+          <p className="text-sm text-purple-400 mb-4">
+            Que skills aplicar al proyecto al crearlo? Bitacora y Project Plan son obligatorios.
+          </p>
+          <div className="space-y-2 max-h-[420px] overflow-y-auto pr-1">
+            {AVAILABLE_SKILLS.map((skill) => {
+              const checked = skill.required || selectedSkills.has(skill.id);
+              return (
+                <label
+                  key={skill.id}
+                  className={`flex items-start gap-3 p-3 bg-black/30 border border-white/10 rounded-xl ${
+                    skill.required
+                      ? 'opacity-90 cursor-not-allowed'
+                      : 'cursor-pointer hover:border-purple-500/40'
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    disabled={skill.required}
+                    onChange={() => toggleSkill(skill.id)}
+                    className="mt-0.5 rounded border-white/20"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm text-white font-medium flex items-center gap-2">
+                      {skill.label}
+                      {skill.required && (
+                        <span className="text-[10px] uppercase text-purple-400 tracking-wide">
+                          obligatorio
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-400">{skill.description}</p>
+                  </div>
+                </label>
+              );
+            })}
+          </div>
+          <p className="mt-3 text-xs text-gray-500">
+            Podes aplicar mas skills despues desde la pantalla Skills del agente.
+          </p>
+        </>
+      )}
+
       {/* Interview Steps */}
-      {!isNameStep && currentStep && (
+      {isInterviewStep && currentStep && (
         <>
           <div className="flex items-center justify-between mb-1">
             <h2 className="text-lg font-semibold text-white">{currentStep.title}</h2>
