@@ -42,19 +42,21 @@ operando con multiples proyectos en multiples maquinas locales (una por develope
 ## Proximos pasos
 
 1. **Decidir commit + push del Sprint Camino-3** para tener Vercel preview verde con la UI honesta. 7 archivos modificados + 1 borrado + 2 carpetas de skills sin trackear.
-2. **Capa 2 — Skills visibles en Manager** (sprint siguiente, esfuerzo S):
+2. **Capa 1 UI en `/reports`** (sprint siguiente — el que arranca):
+   - Extender la tabla de reports con columnas Tokens (input/output/cached), Costo USD, $/hora (si hay `work_session_id`).
+   - Filtros: por modelo (claude-opus-4-7, claude-sonnet-4-6, etc.), por mes, por proyecto.
+   - Lectura simple desde `claude_sessions`. **Sin** tab "AI Activity" en `/project/[name]` — eso es sprint siguiente.
+   - Validacion end-to-end: el Agent ya pushea cada 5 min, deberia haber al menos 1 fila (la sesion actual) cuando abramos `/reports`.
+3. **Capa 2 — Skills visibles en Manager** (sprint que sigue, esfuerzo S):
    - Reemplazar `getProjectSkills(path)` (FS) por lectura de tabla `project_skills` en `<SkillPanel>`, `<PortfolioGrid>` y `<SkillRegistryDashboard>`. Pre-condicion del lado Agent **ya cubierta** (`pushInitialProjectSkills()` al boot + chokidar para cambios).
    - Estado por skill: `synced` / `divergent` / `missing`.
    - Reemplazar `discoverAllSkills()` (FS) por catalogo estatico en repo o tabla en Supabase (decidir).
-3. **Capa 1 — Tracking fino de actividad** (sprint siguiente, esfuerzo M):
-   - ~~Schema `claude_sessions`~~ ✓ aplicado 2026-05-04.
-   - Versionar el SQL de la migration en `supabase/migrations/` (deuda inmediata: se aplico manualmente al dashboard sin quedar en el repo).
-   - UI: leer `claude_sessions` en `/reports`, visualizar tokens / costo USD / model / prompt count.
-4. **Capa 3 del roadmap — CRUD remoto** desde Manager: editar/borrar proyecto, re-aplicar skills.
-5. **Capa 8 — Selector de `github_owner` (orgs)**.
-6. **PRP propio para migrar `auto-commit-service` y `sync` al SF Agent** (post-Capa 2). Cuando este listo, deshabilitar tooltips se vuelven funcionalidad real ruteada por `agent_commands`.
-7. **Cleanup post-migracion**: borrar los servicios FS ahora orphan (lista detallada en "Estado actual"), borrar `installSkillToProject` y `<DirectoryPicker>`.
-8. Resto de capas en el PRP global (vive en el repo del SF Agent: `.claude/PRPs/prp-global-manager-agent-roadmap.md`).
+4. **Tab "AI Activity" en `/project/[name]`** (sprint despues de Capa 2): filtrado de `claude_sessions` por proyecto.
+5. **Capa 3 del roadmap — CRUD remoto** desde Manager: editar/borrar proyecto, re-aplicar skills.
+6. **Capa 8 — Selector de `github_owner` (orgs)**. (El otro Claude arrancando Capa A en paralelo del lado Agent — no requiere coordinacion.)
+7. **PRP propio para migrar `auto-commit-service` y `sync` al SF Agent** (post-Capa 2). Cuando este listo, los botones deshabilitados se vuelven funcionalidad real ruteada por `agent_commands`.
+8. **Cleanup post-migracion**: borrar los servicios FS ahora orphan (lista detallada en "Estado actual"), borrar `installSkillToProject` y `<DirectoryPicker>`.
+9. Resto de capas en el PRP global (vive en el repo del SF Agent: `.claude/PRPs/prp-global-manager-agent-roadmap.md`).
 
 ## Decisiones arquitectonicas
 
@@ -71,7 +73,6 @@ operando con multiples proyectos en multiples maquinas locales (una por develope
 
 ## Riesgos / Bloqueos
 
-- **Migration `claude_sessions` aplicada manualmente sin versionar en el repo** — la tabla existe en el proyecto Supabase pero el SQL no esta en `supabase/migrations/`. Cualquier ambiente nuevo (otra maquina, fresh clone, branch nuevo) NO la tendra. Mitigacion: pedirle al user el SQL y commitearlo apenas se pueda.
 - **`useTracking` sigue firing fetch a `/api/tracking` al montar `/project/[name]`** — el boton de Start/Stop ya esta disabled pero el hook hace una request inicial que en Vercel va a 500. Una request por page load (no poll). Ruido en logs de prod, no funcionalidad rota. Mitigacion: queda hasta que se migre el tracking al Agent.
 - **Servicios FS dead-but-not-deleted** — `auto-commit-service`, `git-service`, `scanner-service`, etc. siguen en disco pero sin consumers. Si alguien los re-importa por error, vuelve a violar el criterio Vercel-only. Mitigacion: el cleanup forma parte de Capa 2/3.
 - **Coordinacion entre los dos Claudes** (uno por repo) tocando ambos Supabase — riesgo de race conditions o decisiones desincronizadas. Mitigacion actual: git push/pull + auto-sync, bitacora compartida via repo. Vigilar si crece la friccion.
@@ -79,6 +80,8 @@ operando con multiples proyectos en multiples maquinas locales (una por develope
 
 ## Done
 
+- [x] 2026-05-04: Sprint Camino-3 pusheado a `main` en 4 commits semanticos (rebased sobre wip de otra maquina que aporto el SQL versionado). Vercel preview verde en `https://saas-factory-manager.vercel.app/` (deployment status `success`, `/login` HTTP 200 renderizando "Factory Manager — Fluya Studio"). Verificacion interactiva del detail (consola limpia + tooltips) queda al user logueado.
+- [x] 2026-05-04: Migration `claude_sessions` versionada en `supabase/migrations/20260504193500_capa1_claude_sessions.sql` (deuda resuelta — la trajo un wip auto-sync de otra maquina antes del push).
 - [x] 2026-05-04: Sprint Camino-3 cerrado — UI del Manager desacoplada del filesystem. 6 surfaces deshabilitadas con tooltip + 2 fallbacks ilegales eliminados + B1/B2/B3 cerrados + `open-action.ts` y `create-action.ts` borrados. Typecheck limpio.
 - [x] 2026-05-04: B1 — `Project.localPath` agregado al tipo, mapeado en server reads, helper `filesystemPath()`, UI consume el helper con estado de espera cuando no hay path real.
 - [x] 2026-05-04: B2 — `getProjectDetail` usa `count: 'exact'` para commits; UI muestra count real con nota "mostrando los N mas recientes".

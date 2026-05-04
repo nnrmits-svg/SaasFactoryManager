@@ -6,6 +6,52 @@
 
 ---
 
+## 2026-05-04 20:30 — Hotfix: navbar auth + scope multi-tenant
+**Maquina**: NNRM-iMac-275.local
+
+### Hecho
+- **Bug A — Navbar mostraba "Iniciar Sesion" estando logueado**: `useAuth` requeria sesion **y** fila en `profiles`. La cuenta `ricardo@grupoits.com.ar` tiene sesion valida pero no tiene fila en `profiles` (probablemente nunca se le creo), entonces el navbar caia al rama "no logueado". Fix: `useAuth` ahora expone `user` (de `auth.getUser()`), el navbar condiciona el menu a `user`, y `UserMenu` recibe un profile-fallback construido con datos del user (email, sin avatar) cuando no hay fila en `profiles`. Cambiado `.single()` por `.maybeSingle()` para no tirar error cuando la fila no existe.
+- **Bug B — Proyectos duplicados en `/dashboard` y `/factory`**: `getPortfolioProjects`, `getProjects`, `getProjectDetail` y `getProjectCostData` hacian `select(*).from('projects')` sin filtro por `user_id`. Sin RLS estricto, traen proyectos de **todos** los users. La cuenta `ricardo@grupoits.com.ar` y la cuenta vieja `nnrm.its@gmail.com` son dos `user_id` distintos en `auth.users`; el mismo proyecto importado desde dos sesiones quedaba duplicado en el portfolio. Fix: las 4 funciones ahora hacen `.eq('user_id', user.id)`, y devuelven vacio si no hay user. `getProjectDetail` cambio de `.single()` a `.maybeSingle()` por la misma razon.
+
+### Decidido
+- **Multi-tenancy por `user_id` se enforce desde el lado server action**, no solo via RLS. Razon: defensa en profundidad — si la RLS esta mal configurada o se relaja por error, el filtro server-side sigue protegiendo. Y si la RLS YA filtra, este filtro es no-op (sin penalty).
+- **`maybeSingle()` reemplaza `single()` en queries que pueden devolver 0 filas**. Razon: `single()` tira error si no hay fila o hay >1; con multi-tenant + nombres reusables, eso se rompe seguido. `maybeSingle()` devuelve `null` y el caller decide.
+
+### Pendiente
+- **Decidir que hacer con las filas duplicadas en BD**. Tras el fix, el user `ricardo@grupoits.com.ar` solo ve sus filas, pero las del user viejo (`nnrm.its@gmail.com`) siguen ahi para el otro user_id. Si son el mismo humano operando con dos cuentas: candidato a (a) consolidar las dos cuentas, (b) reasignar `user_id` de las filas viejas, o (c) borrarlas si ya no aplican. Decision del user.
+- **Profile auto-creation**: si todos los users nuevos van a quedar sin fila en `profiles` (como ricardo@grupoits.com.ar), conviene un trigger en Supabase que cree el row al sign-up. Mientras tanto el fallback al email funciona.
+- Continuar con Capa 1 UI en `/reports`.
+
+### Notas
+- `getProjectDetail` lookup era por `name` solamente; en multi-tenant un user podia romper el detail de otro si compartian nombre. Ahora el lookup es por `(name, user_id)`.
+
+---
+
+## 2026-05-04 19:55 — Sprint Camino-3 pusheado + Vercel verde
+**Maquina**: NNRM-iMac-275.local
+
+### Hecho
+- 4 commits semanticos creados en orden (skills → fix B1+B2+B3 → disable Camino-3 → remove legacy create-action). Para hacer la separacion limpia se reescribio `project-detail-view.tsx` en dos pasos (State A para commit 2, State B para commit 3) usando `git checkout HEAD --` + `Write` para volver a aplicar.
+- `git push origin main` rebotado por una wip de otra maquina (`66fe286 wip: MacBookPro-2016.local`) que aportaba `supabase/migrations/20260504193500_capa1_claude_sessions.sql`. Rebase limpio (sin conflictos), push exitoso. SHA final del HEAD: `9a426d1`.
+- **Migration de `claude_sessions` ahora versionada** en el repo. La deuda de "SQL aplicado a Supabase pero no commiteado" queda resuelta.
+- Vercel deployment status: `success`. URL estable: `https://saas-factory-manager.vercel.app/`. `/login` HTTP 200 renderizando `<title>Factory Manager — Fluya Studio</title>`.
+- URL del deployment especifico (con hash): `https://saas-factory-manager-nyodmnmfh-saas-fluyaia.vercel.app` (devuelve 401 sin auth de Vercel team — esperado).
+
+### Pendiente
+- **Verificacion interactiva del detail view** (consola limpia + tooltips funcionando) queda al user logueado. Desde aca solo verifique build verde y publica. Sin credenciales de prod no puedo loguear y ver `/project/[name]`.
+- **Capa 1 UI en `/reports`** (sprint que arranca):
+  - Migration ya aplicada y versionada — listo.
+  - Extender tabla de reports con columnas Tokens (input/output/cached), Costo USD, $/hora (si hay `work_session_id`).
+  - Filtros por modelo, mes, proyecto.
+  - **NO** tab "AI Activity" en `/project/[name]` — eso es sprint despues.
+  - Validacion end-to-end: el Agent pushea cada 5 min, deberia haber al menos una fila al abrir `/reports`.
+
+### Notas
+- El otro Claude del lado Agent arranca Capa A (selector de `github_owner` / orgs) en paralelo — independiente, no requiere coordinacion en este sprint.
+- `tsconfig.tsbuildinfo` quedo modificado en working tree (cache de tsc incremental). Esta tracked en git desde antes pero es churn — candidato a `.gitignore` cuando haya un sprint de cleanup.
+
+---
+
 ## 2026-05-04 18:34 — Sprint Camino-3 cerrado: UI desacoplada del filesystem
 **Maquina**: NNRM-iMac-275.local
 
