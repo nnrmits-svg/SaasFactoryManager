@@ -1,0 +1,102 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - generic [ref=e3]:
+      - link "F Fluya Studio" [ref=e4] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e6]: F
+        - generic [ref=e7]: Fluya Studio
+      - generic [ref=e8]:
+        - link "Portfolio" [ref=e9] [cursor=pointer]:
+          - /url: /dashboard
+        - link "Factory" [ref=e10] [cursor=pointer]:
+          - /url: /factory
+        - link "Skills" [ref=e11] [cursor=pointer]:
+          - /url: /skills
+        - link "Reports" [ref=e12] [cursor=pointer]:
+          - /url: /reports
+        - link "Settings" [ref=e13] [cursor=pointer]:
+          - /url: /settings
+        - button "RM" [ref=e16] [cursor=pointer]:
+          - generic [ref=e18]: RM
+  - main [ref=e19]:
+    - generic [ref=e21]:
+      - generic [ref=e22]:
+        - generic [ref=e23]:
+          - heading "Portfolio" [level=1] [ref=e24]
+          - paragraph [ref=e25]: 4 proyecto(s) en tu fabrica de software.
+        - generic [ref=e27]:
+          - button "+ Agregar" [disabled] [ref=e28]
+          - button "Sincronizar" [disabled] [ref=e29]
+      - generic [ref=e30]:
+        - generic [ref=e31]:
+          - paragraph [ref=e32]: Proyectos
+          - paragraph [ref=e33]: "4"
+        - generic [ref=e34]:
+          - paragraph [ref=e35]: Tiempo Total
+          - paragraph [ref=e36]: 4400h 35m
+        - generic [ref=e37]:
+          - paragraph [ref=e38]: Commits
+          - paragraph [ref=e39]: "430"
+        - generic [ref=e40]:
+          - paragraph [ref=e41]: Mas Activo
+          - paragraph [ref=e42]: SuscriptionsMgmt
+      - generic [ref=e43]:
+        - 'link "SuscriptionsMgmt active update: sincronización automática 2026-04-27 16:55 7d por nnrmits-svg 262 commits 3043h 34m trabajado" [ref=e44] [cursor=pointer]':
+          - /url: /project/SuscriptionsMgmt
+          - generic [ref=e45]:
+            - heading "SuscriptionsMgmt" [level=3] [ref=e47]
+            - generic [ref=e49]: active
+          - generic [ref=e50]:
+            - paragraph [ref=e51]: "update: sincronización automática 2026-04-27 16:55"
+            - paragraph [ref=e52]: 7d por nnrmits-svg
+          - generic [ref=e53]:
+            - generic [ref=e54]: 262 commits
+            - generic [ref=e55]: 3043h 34m trabajado
+        - 'link "SaasFactoryManager active wip: MacBookPro-2016.local 2026-05-04 19:09 39m por nnrmits-svg 45 commits 523h 59m trabajado" [ref=e104] [cursor=pointer]':
+          - /url: /project/SaasFactoryManager
+          - generic [ref=e57]:
+            - heading "SaasFactoryManager" [level=3] [ref=e59]
+            - generic [ref=e61]: active
+          - generic [ref=e62]:
+            - paragraph [ref=e63]: "wip: MacBookPro-2016.local 2026-05-04 19:09"
+            - paragraph [ref=e64]: 39m por nnrmits-svg
+          - generic [ref=e65]:
+            - generic [ref=e66]: 45 commits
+            - generic [ref=e67]: 523h 59m trabajado
+        - 'link "ConsultorFinanciero active feat(db): security and perf audit fixes 2d por nnrmits-svg 7 commits 48h 20m trabajado" [ref=e68] [cursor=pointer]':
+          - /url: /project/ConsultorFinanciero
+          - generic [ref=e69]:
+            - heading "ConsultorFinanciero" [level=3] [ref=e71]
+            - generic [ref=e73]: active
+          - generic [ref=e74]:
+            - paragraph [ref=e75]: "feat(db): security and perf audit fixes"
+            - paragraph [ref=e76]: 2d por nnrmits-svg
+          - generic [ref=e77]:
+            - generic [ref=e78]: 7 commits
+            - generic [ref=e79]: 48h 20m trabajado
+        - 'link "SaasFactoryAgent active wip: MacBookPro-2016.local 2026-05-04 19:15 34m por nnrmits-svg 116 commits 784h 42m trabajado" [ref=e105] [cursor=pointer]':
+          - /url: /project/SaasFactoryAgent
+          - generic [ref=e81]:
+            - heading "SaasFactoryAgent" [level=3] [ref=e83]
+            - generic [ref=e85]: active
+          - generic [ref=e86]:
+            - paragraph [ref=e87]: "wip: MacBookPro-2016.local 2026-05-04 19:15"
+            - paragraph [ref=e88]: 34m por nnrmits-svg
+          - generic [ref=e89]:
+            - generic [ref=e90]: 116 commits
+            - generic [ref=e91]: 784h 42m trabajado
+  - contentinfo [ref=e92]:
+    - generic [ref=e93]:
+      - link "F Fluya Studio" [ref=e94] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e96]: F
+        - generic [ref=e97]: Fluya Studio
+      - generic [ref=e98]:
+        - link "Terminos" [ref=e99] [cursor=pointer]:
+          - /url: /terminos
+        - link "Privacidad" [ref=e100] [cursor=pointer]:
+          - /url: /privacidad
+        - link "Contacto" [ref=e101] [cursor=pointer]:
+          - /url: /contacto
+      - paragraph [ref=e102]: Fluya Studio IA • Buenos Aires, Argentina
+  - alert [ref=e103]

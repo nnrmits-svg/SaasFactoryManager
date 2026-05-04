@@ -1,0 +1,48 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - link "F Fluya Studio" [ref=e4] [cursor=pointer]:
+      - /url: /
+      - generic [ref=e6]: F
+      - generic [ref=e7]: Fluya Studio
+  - main [ref=e10]:
+    - generic [ref=e12]:
+      - generic [ref=e13]:
+        - generic [ref=e15]: F
+        - heading "Bienvenido de vuelta" [level=1] [ref=e16]
+        - paragraph [ref=e17]: Inicia sesion en Factory Manager
+      - generic [ref=e18]:
+        - generic [ref=e19]:
+          - generic [ref=e20]: Email
+          - textbox "Email" [ref=e21]:
+            - /placeholder: tu@email.com
+        - generic [ref=e22]:
+          - generic [ref=e23]:
+            - generic [ref=e24]: Password
+            - link "Olvidaste tu password?" [ref=e25] [cursor=pointer]:
+              - /url: /forgot-password
+          - textbox "Password" [ref=e26]:
+            - /placeholder: ••••••••
+        - button "Iniciar Sesion" [ref=e27] [cursor=pointer]
+      - generic [ref=e32]: o continua con
+      - button "Google" [ref=e33] [cursor=pointer]:
+        - img [ref=e34]
+        - text: Google
+      - paragraph [ref=e39]:
+        - text: No tienes cuenta?
+        - link "Crear cuenta" [ref=e40] [cursor=pointer]:
+          - /url: /signup
+  - contentinfo [ref=e41]:
+    - generic [ref=e42]:
+      - link "F Fluya Studio" [ref=e43] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e45]: F
+        - generic [ref=e46]: Fluya Studio
+      - generic [ref=e47]:
+        - link "Terminos" [ref=e48] [cursor=pointer]:
+          - /url: /terminos
+        - link "Privacidad" [ref=e49] [cursor=pointer]:
+          - /url: /privacidad
+        - link "Contacto" [ref=e50] [cursor=pointer]:
+          - /url: /contacto
+      - paragraph [ref=e51]: Fluya Studio IA • Buenos Aires, Argentina
+  - alert [ref=e52]
