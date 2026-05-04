@@ -207,6 +207,7 @@ export async function getPortfolioProjects(): Promise<Project[]> {
       id: p.id,
       name: p.name,
       path: p.path,
+      localPath: (p as Record<string, unknown>).local_path as string | null ?? null,
       sfVersion: p.sf_version,
       designSystem: p.design_system ?? 'fluya',
       status: p.status ?? 'active',

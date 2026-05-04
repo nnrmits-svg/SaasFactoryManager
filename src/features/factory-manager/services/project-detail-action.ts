@@ -21,9 +21,11 @@ export async function getProjectDetail(name: string): Promise<ProjectDetail | nu
   if (error || !project) return null;
 
   const [commitsResult, sessionsResult] = await Promise.all([
+    // count: 'exact' returns the total row count alongside the limited data,
+    // so commitCount stays accurate when there are >100 commits.
     supabase
       .from('commits')
-      .select('*')
+      .select('*', { count: 'exact' })
       .eq('project_id', project.id)
       .order('committed_at', { ascending: false })
       .limit(100),
@@ -42,6 +44,7 @@ export async function getProjectDetail(name: string): Promise<ProjectDetail | nu
     author: c.author ?? '',
     committedAt: c.committed_at,
   }));
+  const totalCommitCount = commitsResult.count ?? commits.length;
 
   const sessions: WorkSession[] = (sessionsResult.data ?? []).map((s) => ({
     id: s.id,
@@ -59,6 +62,7 @@ export async function getProjectDetail(name: string): Promise<ProjectDetail | nu
       id: project.id,
       name: project.name,
       path: project.path,
+      localPath: project.local_path ?? null,
       sfVersion: project.sf_version,
       designSystem: project.design_system ?? 'fluya',
       status: project.status ?? 'active',
@@ -68,7 +72,7 @@ export async function getProjectDetail(name: string): Promise<ProjectDetail | nu
       updatedAt: project.updated_at,
       totalWorkMinutes,
       lastCommit: commits[0] ?? null,
-      commitCount: commits.length,
+      commitCount: totalCommitCount,
     },
     commits,
     sessions,

@@ -8,6 +8,7 @@ import { useState } from 'react';
 import { useTracking } from '@/features/factory-manager/hooks/use-tracking';
 import { AgentControlPanel } from '@/features/factory-manager/components/agent-control-panel';
 import { SkillPanel } from './skill-panel';
+import { filesystemPath } from '@/features/factory-manager/types';
 
 interface Props {
   detail: ProjectDetail;
@@ -35,12 +36,16 @@ function formatHours(minutes: number): string {
 export function ProjectDetailView({ detail }: Props) {
   const { project, commits, sessions } = detail;
   const [isSyncing, setIsSyncing] = useState(false);
-  const tracking = useTracking(project.path, project.id);
+  const fsPath = filesystemPath(project);
+  // useTracking expects a non-empty string; pass empty when unavailable so it
+  // short-circuits without firing /api/tracking against a placeholder.
+  const tracking = useTracking(fsPath ?? '', project.id);
 
   async function handleSync() {
+    if (!fsPath) return;
     setIsSyncing(true);
     try {
-      await syncProjectGitData(project.path);
+      await syncProjectGitData(fsPath);
       window.location.reload();
     } finally {
       setIsSyncing(false);
@@ -57,21 +62,28 @@ export function ProjectDetailView({ detail }: Props) {
         <div className="flex items-start justify-between">
           <div>
             <h1 className="text-2xl font-bold text-white">{project.name}</h1>
-            <p className="text-gray-500 text-sm mt-1 font-mono">{project.path}</p>
+            {fsPath ? (
+              <p className="text-gray-500 text-sm mt-1 font-mono">{fsPath}</p>
+            ) : (
+              <p className="text-yellow-400/80 text-sm mt-1">
+                Esperando que el agente cree el proyecto en disco...
+              </p>
+            )}
           </div>
           <div className="flex gap-2">
             <button
               type="button"
-              onClick={() => openInIDE(project.path)}
-              className="px-4 py-2 bg-fluya-purple/20 text-fluya-purple border border-fluya-purple/30 rounded-xl hover:bg-fluya-purple/30 transition-all duration-300"
+              onClick={() => fsPath && openInIDE(fsPath)}
+              disabled={!fsPath}
+              className="px-4 py-2 bg-fluya-purple/20 text-fluya-purple border border-fluya-purple/30 rounded-xl hover:bg-fluya-purple/30 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-300"
             >
               Abrir en IDE
             </button>
             <button
               type="button"
               onClick={handleSync}
-              disabled={isSyncing}
-              className="px-4 py-2 bg-white/5 text-gray-300 border border-white/10 rounded-xl hover:bg-white/10 disabled:opacity-40 transition-all duration-300"
+              disabled={isSyncing || !fsPath}
+              className="px-4 py-2 bg-white/5 text-gray-300 border border-white/10 rounded-xl hover:bg-white/10 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-300"
             >
               {isSyncing ? 'Sync...' : 'Re-sync'}
             </button>
@@ -80,6 +92,7 @@ export function ProjectDetailView({ detail }: Props) {
       </div>
 
       {/* Auto-Commit Tracking */}
+      {fsPath && (
       <div className={`mb-6 p-4 rounded-2xl border transition-all duration-300 ${
         tracking.isTracking
           ? 'bg-fluya-green/5 border-fluya-green/30'
@@ -122,11 +135,14 @@ export function ProjectDetailView({ detail }: Props) {
           <p className="mt-2 text-xs text-red-400">{tracking.error}</p>
         )}
       </div>
+      )}
 
       {/* Agent Control */}
-      <div className="mb-6">
-        <AgentControlPanel projectPath={project.path} />
-      </div>
+      {fsPath && (
+        <div className="mb-6">
+          <AgentControlPanel projectPath={fsPath} />
+        </div>
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
@@ -144,7 +160,9 @@ export function ProjectDetailView({ detail }: Props) {
       </div>
 
       {/* Skills */}
-      <SkillPanel projectName={project.name} projectPath={project.path} />
+      {fsPath && (
+        <SkillPanel projectName={project.name} projectPath={fsPath} />
+      )}
 
       {/* Work Sessions */}
       {sessions.length > 0 && (
@@ -169,7 +187,14 @@ export function ProjectDetailView({ detail }: Props) {
 
       {/* Commits Timeline */}
       <div>
-        <h2 className="text-lg font-semibold text-white mb-4">Commits ({commits.length})</h2>
+        <h2 className="text-lg font-semibold text-white mb-4">
+          Commits ({project.commitCount ?? commits.length})
+          {(project.commitCount ?? 0) > commits.length && (
+            <span className="text-xs text-gray-500 font-normal ml-2">
+              mostrando los {commits.length} mas recientes
+            </span>
+          )}
+        </h2>
         {commits.length === 0 ? (
           <p className="text-gray-500 text-sm">No hay commits sincronizados. Usa &quot;Re-sync&quot; para cargar.</p>
         ) : (

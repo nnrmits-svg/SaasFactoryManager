@@ -111,8 +111,9 @@ export async function deleteProject(projectId: string): Promise<ProjectActionRes
     return { success: false, error: 'No autenticado' };
   }
 
-  // Delete related data first (cascading)
-  await supabase.from('tracking_sessions').delete().eq('project_id', projectId);
+  // Delete related data first (cascading). `tracking_sessions` queda fuera —
+  // el ciclo de vida de tracking es responsabilidad del SF Agent, el Manager
+  // no debe tocar esa tabla.
   await supabase.from('work_sessions').delete().eq('project_id', projectId);
   await supabase.from('commits').delete().eq('project_id', projectId);
 
