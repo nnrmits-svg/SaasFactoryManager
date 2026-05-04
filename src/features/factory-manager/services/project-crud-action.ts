@@ -134,6 +134,9 @@ export async function deleteProject(projectId: string): Promise<ProjectActionRes
 export async function getProjects() {
   const supabase = await createClient();
 
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+
   const { data, error } = await supabase
     .from('projects')
     .select(`
@@ -142,6 +145,7 @@ export async function getProjects() {
       commits(id),
       work_sessions(duration_minutes)
     `)
+    .eq('user_id', user.id)
     .order('updated_at', { ascending: false });
 
   if (error) {

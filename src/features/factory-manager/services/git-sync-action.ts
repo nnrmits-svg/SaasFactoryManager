@@ -170,6 +170,9 @@ export async function syncAllProjects(rootDir: string): Promise<{
 export async function getPortfolioProjects(): Promise<Project[]> {
   const supabase = await createClient();
 
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+
   const { data: projects, error } = await supabase
     .from('projects')
     .select(`
@@ -177,6 +180,7 @@ export async function getPortfolioProjects(): Promise<Project[]> {
       commits(hash, message, author, committed_at),
       work_sessions(duration_minutes)
     `)
+    .eq('user_id', user.id)
     .order('updated_at', { ascending: false });
 
   if (error || !projects) return [];
