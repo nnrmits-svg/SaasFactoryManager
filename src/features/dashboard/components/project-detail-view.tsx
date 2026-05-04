@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import type { ProjectDetail } from '@/features/factory-manager/services/project-detail-action';
-import { openInIDE } from '@/features/factory-manager/services/open-action';
 import { syncProjectGitData } from '@/features/factory-manager/services/git-sync-action';
 import { useState } from 'react';
 import { useTracking } from '@/features/factory-manager/hooks/use-tracking';
@@ -73,19 +72,12 @@ export function ProjectDetailView({ detail }: Props) {
           <div className="flex gap-2">
             <button
               type="button"
-              onClick={() => fsPath && openInIDE(fsPath)}
-              disabled={!fsPath}
-              className="px-4 py-2 bg-fluya-purple/20 text-fluya-purple border border-fluya-purple/30 rounded-xl hover:bg-fluya-purple/30 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-300"
-            >
-              Abrir en IDE
-            </button>
-            <button
-              type="button"
               onClick={handleSync}
-              disabled={isSyncing || !fsPath}
-              className="px-4 py-2 bg-white/5 text-gray-300 border border-white/10 rounded-xl hover:bg-white/10 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-300"
+              disabled
+              title="⚠ Disponible próximamente vía Agent"
+              className="px-4 py-2 bg-white/5 text-gray-300 border border-white/10 rounded-xl disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-300"
             >
-              {isSyncing ? 'Sync...' : 'Re-sync'}
+              Re-sync
             </button>
           </div>
         </div>
@@ -117,18 +109,16 @@ export function ProjectDetailView({ detail }: Props) {
           </div>
           <button
             type="button"
-            disabled={tracking.isLoading}
+            disabled
+            title="⚠ Disponible próximamente vía Agent"
             onClick={tracking.isTracking ? tracking.stopTracking : tracking.startTracking}
             className={`px-4 py-2 text-sm font-medium rounded-xl transition-all duration-300 ${
               tracking.isTracking
-                ? 'bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20'
-                : 'bg-fluya-green/10 text-fluya-green border border-fluya-green/30 hover:bg-fluya-green/20'
-            } disabled:opacity-40`}
+                ? 'bg-red-500/10 text-red-400 border border-red-500/20'
+                : 'bg-fluya-green/10 text-fluya-green border border-fluya-green/30'
+            } disabled:opacity-40 disabled:cursor-not-allowed`}
           >
-            {tracking.isLoading
-              ? '...'
-              : tracking.isTracking ? 'Stop' : 'Start Tracking'
-            }
+            {tracking.isTracking ? 'Stop' : 'Start Tracking'}
           </button>
         </div>
         {tracking.error && (

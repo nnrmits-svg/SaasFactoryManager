@@ -53,21 +53,29 @@ export function SyncButton({ onSyncComplete }: Props) {
     }
   }
 
+  // Manager corre en Vercel; "Sincronizar" / "Agregar" requieren acceso al
+  // filesystem del developer y deben rutearse por el SF Agent (PRP separado).
+  // Hasta entonces: deshabilitados con tooltip.
+  const AGENT_PENDING_MSG = '⚠ Disponible próximamente vía Agent';
+
   return (
     <div className="flex flex-col items-end gap-2">
       <div className="flex gap-2">
         <button
           type="button"
           onClick={() => setShowAddForm(!showAddForm)}
-          className="px-4 py-2.5 bg-white/5 text-gray-300 border border-white/10 rounded-xl hover:bg-white/10 transition-all duration-300"
+          disabled
+          title={AGENT_PENDING_MSG}
+          className="px-4 py-2.5 bg-white/5 text-gray-300 border border-white/10 rounded-xl disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-300"
         >
           + Agregar
         </button>
         <button
           type="button"
           onClick={handleSync}
-          disabled={isSyncing || !rootDir}
-          className="px-5 py-2.5 bg-gradient-to-r from-fluya-purple to-fluya-blue text-white rounded-xl font-medium hover:-translate-y-0.5 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0 transition-all duration-300 shadow-lg shadow-fluya-purple/20"
+          disabled
+          title={AGENT_PENDING_MSG}
+          className="px-5 py-2.5 bg-gradient-to-r from-fluya-purple to-fluya-blue text-white rounded-xl font-medium disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-300 shadow-lg shadow-fluya-purple/20"
         >
           {isSyncing ? 'Sincronizando...' : 'Sincronizar'}
         </button>

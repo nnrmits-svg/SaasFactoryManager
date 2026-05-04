@@ -2,10 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import {
-  discoverAllSkills,
   getSkillContent,
-  getProjectSkills,
-  installSkillToProject,
   type SkillInfo,
 } from '@/features/factory-manager/services/skill-catalog-action';
 import { getPortfolioProjects } from '@/features/factory-manager/services/git-sync-action';
@@ -58,22 +55,14 @@ export function SkillRegistryDashboard() {
 
   useEffect(() => {
     async function load() {
-      const [allSkills, allProjects] = await Promise.all([
-        discoverAllSkills(),
-        getPortfolioProjects(),
-      ]);
-      setSkills(allSkills);
+      // discoverAllSkills + getProjectSkills tocan filesystem del Manager — no
+      // funcionan en Vercel. Quedan deshabilitados hasta que la lectura del
+      // catalogo y el listado por proyecto se rutee por el SF Agent / la
+      // tabla `project_skills`. Solo cargamos la lista de proyectos (Supabase).
+      const allProjects = await getPortfolioProjects();
       setProjects(allProjects);
-
-      // Load skills for each project
-      const skillsMap: Record<string, string[]> = {};
-      await Promise.all(
-        allProjects.map(async (p) => {
-          const pSkills = await getProjectSkills(p.path);
-          skillsMap[p.id] = pSkills;
-        }),
-      );
-      setProjectSkillsMap(skillsMap);
+      setSkills([]);
+      setProjectSkillsMap({});
       setIsLoading(false);
     }
     load();
@@ -87,10 +76,12 @@ export function SkillRegistryDashboard() {
     if (agent.activeCommand?.status === 'done') {
       setInstalling(false);
       setInstallResult({ skill: target.skill, success: true });
-      // Refresh installed skills for the project
-      getProjectSkills(target.projectPath).then((pSkills) => {
-        setProjectSkillsMap((prev) => ({ ...prev, [target.projectId]: pSkills }));
-      });
+      // Optimistic update — refresh real desde tabla `project_skills` queda
+      // pendiente de Capa 2 del roadmap (wire al watcher del Agent).
+      setProjectSkillsMap((prev) => ({
+        ...prev,
+        [target.projectId]: [...(prev[target.projectId] ?? []), target.skill],
+      }));
       agentInstallRef.current = null;
     } else if (agent.activeCommand?.status === 'error') {
       setInstalling(false);
@@ -121,21 +112,18 @@ export function SkillRegistryDashboard() {
     setInstalling(true);
     setInstallResult(null);
 
-    if (agent.isAgentOnline) {
-      // Route through the Agent (same as desktop app)
-      agentInstallRef.current = { skill: skillName, projectId, projectPath };
-      agent.sendCommand('apply-skill', { skillId: skillName, projectPath }, agent.activeInstance?.id);
-    } else {
-      // Fallback: direct install (works in local dev)
-      const result = await installSkillToProject(skillName, projectPath);
-      setInstallResult({ skill: skillName, ...result });
+    if (!agent.isAgentOnline) {
+      setInstallResult({
+        skill: skillName,
+        success: false,
+        error: 'El Agent del developer está offline; no se puede instalar el skill ahora.',
+      });
       setInstalling(false);
-
-      if (result.success) {
-        const pSkills = await getProjectSkills(projectPath);
-        setProjectSkillsMap((prev) => ({ ...prev, [projectId]: pSkills }));
-      }
+      return;
     }
+
+    agentInstallRef.current = { skill: skillName, projectId, projectPath };
+    agent.sendCommand('apply-skill', { skillId: skillName, projectPath }, agent.activeInstance?.id);
   }
 
   const filteredSkills = tab === 'injectable'
@@ -164,6 +152,13 @@ export function SkillRegistryDashboard() {
     <div className="max-w-6xl mx-auto px-6">
       {/* Header */}
       <div className="mb-8">
+        <div className="mb-4 p-3 rounded-xl border border-yellow-500/30 bg-yellow-500/5 text-xs text-yellow-300/90">
+          ⚠ El catálogo de skills aplicables se lee del filesystem del Manager
+          y no está disponible mientras corre en Vercel. La instalación de
+          skills se rutea por el SF Agent del developer; el listado va a
+          migrar a la tabla <code className="font-mono">project_skills</code>{' '}
+          (Capa 2 del roadmap).
+        </div>
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-white">Skill Registry</h1>
