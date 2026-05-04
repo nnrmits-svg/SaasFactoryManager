@@ -19,6 +19,11 @@ export interface CostReport {
 export async function getProjectCostData(): Promise<CostReport> {
   const supabase = await createClient();
 
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return { projects: [], generatedAt: new Date().toISOString() };
+  }
+
   const { data: projects, error } = await supabase
     .from('projects')
     .select(`
@@ -27,6 +32,7 @@ export async function getProjectCostData(): Promise<CostReport> {
       commits(committed_at),
       work_sessions(duration_minutes)
     `)
+    .eq('user_id', user.id)
     .order('name');
 
   if (error || !projects) {

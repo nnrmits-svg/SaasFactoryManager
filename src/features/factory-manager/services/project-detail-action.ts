@@ -12,11 +12,15 @@ export interface ProjectDetail {
 export async function getProjectDetail(name: string): Promise<ProjectDetail | null> {
   const supabase = await createClient();
 
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+
   const { data: project, error } = await supabase
     .from('projects')
     .select('*')
     .eq('name', name)
-    .single();
+    .eq('user_id', user.id)
+    .maybeSingle();
 
   if (error || !project) return null;
 
