@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import type { Project } from '@/features/factory-manager/types';
+import { filesystemPath } from '@/features/factory-manager/types';
 import { getProjectSkills } from '@/features/factory-manager/services/skill-catalog-action';
 
 interface Props {
@@ -95,7 +96,12 @@ export function PortfolioGrid({ projects }: Props) {
       const map: Record<string, string[]> = {};
       await Promise.all(
         projects.map(async (p) => {
-          const skills = await getProjectSkills(p.path);
+          const fsPath = filesystemPath(p);
+          if (!fsPath) {
+            map[p.id] = [];
+            return;
+          }
+          const skills = await getProjectSkills(fsPath);
           map[p.id] = skills;
         }),
       );
@@ -116,7 +122,8 @@ export function PortfolioGrid({ projects }: Props) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {projects.map((project) => {
-        const isTracking = activePaths.has(project.path);
+        const fsPath = filesystemPath(project);
+        const isTracking = fsPath ? activePaths.has(fsPath) : false;
         const installedSkills = projectSkillsMap[project.id] ?? [];
 
         return (

@@ -46,7 +46,15 @@ export type ProjectStatus = 'OK' | 'Desactualizada' | 'Desconocida';
 export interface Project {
   id: string;
   name: string;
+  /** Path field as originally stored. For scanned projects this IS the filesystem
+   *  path. For wizard-created projects this is a placeholder (project name or
+   *  repo URL) until the SF Agent completes and writes `localPath`. Use the
+   *  `filesystemPath()` helper instead of reading `path` directly when you
+   *  need a path for filesystem ops. */
   path: string;
+  /** Filesystem path written by the SF Agent after `create-project` finishes.
+   *  Null while the agent has not completed (or for legacy scanned projects). */
+  localPath: string | null;
   sfVersion: string | null;
   designSystem: string;
   status: 'active' | 'archived' | 'paused';
@@ -58,6 +66,15 @@ export interface Project {
   totalWorkMinutes?: number;
   lastCommit?: CommitInfo | null;
   commitCount?: number;
+}
+
+/** Returns the real filesystem path for a project, or null if neither
+ *  `localPath` nor a usable `path` is available (e.g. wizard project pending
+ *  agent completion). Heuristic: a usable path starts with `/`. */
+export function filesystemPath(p: Pick<Project, 'localPath' | 'path'>): string | null {
+  if (p.localPath && p.localPath.startsWith('/')) return p.localPath;
+  if (p.path.startsWith('/')) return p.path;
+  return null;
 }
 
 /** A single git commit */
