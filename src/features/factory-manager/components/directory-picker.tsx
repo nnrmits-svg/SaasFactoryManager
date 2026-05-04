@@ -50,16 +50,24 @@ export function DirectoryPicker({ value, onChange, placeholder }: Props) {
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
-          className="flex-1 px-4 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
+          disabled
+          title="⚠ Disponible próximamente vía Agent"
+          className="flex-1 px-4 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 disabled:opacity-40 disabled:cursor-not-allowed"
         />
         <button
           type="button"
           onClick={handleOpen}
-          className="px-3 py-2 bg-gray-700 text-gray-300 rounded-lg hover:bg-gray-600 transition-colors text-sm"
+          disabled
+          title="⚠ Disponible próximamente vía Agent"
+          className="px-3 py-2 bg-gray-700 text-gray-300 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-sm"
         >
           Explorar
         </button>
       </div>
+      <p className="mt-1 text-xs text-yellow-400/70">
+        ⚠ Disponible próximamente vía Agent. El Manager corre en Vercel; la
+        navegación del filesystem del developer va a rutearse por SF Agent.
+      </p>
 
       {isOpen && (
         <div className="absolute z-50 mt-2 w-full bg-gray-800 border border-gray-600 rounded-lg shadow-xl max-h-80 overflow-hidden">

@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from 'react';
 import {
   getApplicableSkills,
   getProjectSkills,
-  installSkillToProject,
   type SkillInfo,
 } from '@/features/factory-manager/services/skill-catalog-action';
 import { useAgentStatus } from '@/features/factory-manager/hooks/use-agent-status';
@@ -75,25 +74,19 @@ export function SkillPanel({ projectName, projectPath }: Props) {
   }, [agent.activeCommand?.status, agent.activeCommand?.result]);
 
   async function handleInstall(skillName: string) {
-    setInstalling(skillName);
     setInstallMsg(null);
 
-    if (agent.isAgentOnline) {
-      // Route through Agent (same as desktop app)
-      agentInstallRef.current = skillName;
-      agent.sendCommand('apply-skill', { skillId: skillName, projectPath }, agent.activeInstance?.id);
-    } else {
-      // Fallback: direct install
-      const result = await installSkillToProject(skillName, projectPath);
-      setInstalling(null);
-
-      if (result.success) {
-        setInstalledSkills((prev) => [...prev, skillName]);
-        setInstallMsg({ ok: true, text: `"${skillName}" instalado` });
-      } else {
-        setInstallMsg({ ok: false, text: result.error ?? 'Error' });
-      }
+    if (!agent.isAgentOnline) {
+      setInstallMsg({
+        ok: false,
+        text: 'El Agent del developer está offline; no se puede instalar el skill ahora.',
+      });
+      return;
     }
+
+    setInstalling(skillName);
+    agentInstallRef.current = skillName;
+    agent.sendCommand('apply-skill', { skillId: skillName, projectPath }, agent.activeInstance?.id);
   }
 
   if (isLoading) {
@@ -165,8 +158,9 @@ export function SkillPanel({ projectName, projectPath }: Props) {
                         <button
                           type="button"
                           onClick={() => handleInstall(skill.name)}
-                          disabled={isInstalling}
-                          className="px-2 py-1 text-[10px] bg-fluya-purple/10 text-fluya-purple border border-fluya-purple/20 rounded-lg hover:bg-fluya-purple/20 disabled:opacity-40 transition-all"
+                          disabled={isInstalling || !agent.isAgentOnline}
+                          title={!agent.isAgentOnline ? 'Agent del developer offline' : undefined}
+                          className="px-2 py-1 text-[10px] bg-fluya-purple/10 text-fluya-purple border border-fluya-purple/20 rounded-lg hover:bg-fluya-purple/20 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
                         >
                           {isInstalling ? '...' : 'Instalar'}
                         </button>
