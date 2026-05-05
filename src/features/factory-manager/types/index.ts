@@ -144,7 +144,19 @@ export type AgentCommandType =
   | 'sync'
   | 'apply-skill'
   | 'push-projects'
-  | 'create-project';
+  | 'create-project'
+  | 'list-github-orgs';
+
+/** A row from `user_github_orgs` — cache of `gh api /user/orgs` populated by
+ *  the SF Agent's `list-github-orgs` handler. */
+export interface UserGithubOrg {
+  id: string;
+  orgLogin: string;
+  avatarUrl: string | null;
+  description: string | null;
+  isDefault: boolean;
+  updatedAt: string;
+}
 
 /** Payload shape for the 'create-project' command */
 export interface CreateProjectCommandPayload {

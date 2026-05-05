@@ -3,7 +3,9 @@
 import { useState, useEffect } from 'react';
 import { deleteArchivedProjects, getPortfolioProjects } from '@/features/factory-manager/services/git-sync-action';
 import { getAgentInstances } from '@/features/factory-manager/services/agent-command-action';
-import type { AgentInstance } from '@/features/factory-manager/types';
+import { getUserGithubOrgs } from '@/features/factory-manager/services/github-orgs-action';
+import { useAgentStatus } from '@/features/factory-manager/hooks/use-agent-status';
+import type { AgentInstance, UserGithubOrg } from '@/features/factory-manager/types';
 
 function formatHeartbeat(iso: string): string {
   const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
@@ -20,10 +22,35 @@ export function SettingsPage() {
   const [agents, setAgents] = useState<AgentInstance[]>([]);
   const [loadingAgents, setLoadingAgents] = useState(true);
 
+  const [orgs, setOrgs] = useState<UserGithubOrg[]>([]);
+  const [isSyncingOrgs, setIsSyncingOrgs] = useState(false);
+  const [orgsSyncMsg, setOrgsSyncMsg] = useState<string | null>(null);
+  const agent = useAgentStatus();
+
   useEffect(() => {
     loadArchivedCount();
     loadAgents();
+    loadOrgs();
   }, []);
+
+  // Watch the dispatched orgs-sync command (matches by command name —
+  // settings only ever dispatches list-github-orgs from this surface).
+  useEffect(() => {
+    if (!isSyncingOrgs) return;
+    const active = agent.activeCommand;
+    if (!active || active.command !== 'list-github-orgs') return;
+
+    if (active.status === 'done') {
+      setIsSyncingOrgs(false);
+      setOrgsSyncMsg('Orgs actualizadas');
+      loadOrgs();
+    } else if (active.status === 'error') {
+      setIsSyncingOrgs(false);
+      setOrgsSyncMsg(
+        `Error: ${String(active.result?.error ?? 'el Agent reportó un error')}`,
+      );
+    }
+  }, [isSyncingOrgs, agent.activeCommand]);
 
   async function loadArchivedCount() {
     const projects = await getPortfolioProjects();
@@ -35,6 +62,21 @@ export function SettingsPage() {
     const instances = await getAgentInstances();
     setAgents(instances);
     setLoadingAgents(false);
+  }
+
+  async function loadOrgs() {
+    const rows = await getUserGithubOrgs();
+    setOrgs(rows);
+  }
+
+  function handleSyncOrgs() {
+    setOrgsSyncMsg(null);
+    if (!agent.isAgentOnline) {
+      setOrgsSyncMsg('Agent offline — no se puede sincronizar ahora.');
+      return;
+    }
+    setIsSyncingOrgs(true);
+    agent.sendCommand('list-github-orgs', {}, agent.activeInstance?.id);
   }
 
   async function handleDeleteArchived() {
@@ -110,6 +152,84 @@ export function SettingsPage() {
             ))}
           </div>
         )}
+      </section>
+
+      {/* GitHub Organizations */}
+      <section className="mb-8">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-white">GitHub Organizations</h2>
+          <button
+            type="button"
+            onClick={handleSyncOrgs}
+            disabled={isSyncingOrgs || !agent.isAgentOnline}
+            title={!agent.isAgentOnline ? 'Agent offline' : undefined}
+            className="text-xs px-3 py-1.5 bg-white/5 text-gray-300 border border-white/10 rounded-lg hover:bg-white/10 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+          >
+            {isSyncingOrgs ? 'Sincronizando...' : 'Refresh from GitHub'}
+          </button>
+        </div>
+        <div className="p-4 bg-white/5 border border-white/10 rounded-2xl">
+          {orgs.length === 0 ? (
+            <p className="text-sm text-gray-400">
+              Sin orgs cacheadas. Hace click en &quot;Refresh from GitHub&quot; para
+              poblar desde tu cuenta (requiere SF Agent online).
+            </p>
+          ) : (
+            <ul className="space-y-2">
+              {orgs.map((o) => (
+                <li
+                  key={o.id}
+                  className="flex items-center justify-between py-1.5 border-b border-white/5 last:border-0"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    {o.avatarUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={o.avatarUrl}
+                        alt=""
+                        className="w-6 h-6 rounded-full"
+                      />
+                    ) : (
+                      <div className="w-6 h-6 rounded-full bg-white/10" />
+                    )}
+                    <div className="min-w-0">
+                      <p className="text-sm text-white font-mono truncate">
+                        {o.orgLogin}
+                        {o.isDefault && (
+                          <span className="ml-2 text-[10px] text-fluya-purple">default</span>
+                        )}
+                      </p>
+                      {o.description && (
+                        <p className="text-xs text-gray-500 truncate">{o.description}</p>
+                      )}
+                    </div>
+                  </div>
+                  <span className="text-xs text-gray-500 shrink-0">
+                    {formatHeartbeat(o.updatedAt)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+          {orgsSyncMsg && (
+            <p
+              className={`mt-3 text-xs ${
+                orgsSyncMsg.startsWith('Error') ? 'text-red-400' : 'text-fluya-green'
+              }`}
+            >
+              {orgsSyncMsg}
+            </p>
+          )}
+          <p className="mt-3 text-xs text-gray-500">
+            Si te faltan orgs privadas en la lista, corré{' '}
+            <code className="font-mono text-gray-400">gh auth refresh -s read:org</code>{' '}
+            en la terminal del Agent y volvé a sincronizar.{' '}
+            <span className="text-gray-600">
+              (gh login default no incluye ese scope, así que la API te oculta orgs
+              privadas hasta que lo agregues.)
+            </span>
+          </p>
+        </div>
       </section>
 
       {/* Limpieza de Datos */}

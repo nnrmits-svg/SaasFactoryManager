@@ -110,6 +110,7 @@ export function FactoryDashboard() {
     description: string;
     brief: BusinessBrief;
     skills: string[];
+    githubOwner: string;
   }) {
     setSaving(true);
     setMessage(null);
@@ -122,6 +123,7 @@ export function FactoryDashboard() {
       businessBrief: data.brief as unknown as Record<string, string>,
       skillsToApply: data.skills,
       isPrivate: true,
+      githubOwner: data.githubOwner || null,
     });
 
     if (!result.ok) {
