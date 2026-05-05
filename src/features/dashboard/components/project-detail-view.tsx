@@ -149,10 +149,10 @@ export function ProjectDetailView({ detail }: Props) {
         ))}
       </div>
 
-      {/* Skills */}
-      {fsPath && (
-        <SkillPanel projectName={project.name} projectPath={fsPath} />
-      )}
+      {/* Skills — reads from `project_skills` table (Vercel-friendly), so it
+          renders even before the Agent finishes creating the project on disk
+          (panel just shows "0 skills" until the Agent installs them). */}
+      <SkillPanel projectId={project.id} />
 
       {/* Work Sessions */}
       {sessions.length > 0 && (

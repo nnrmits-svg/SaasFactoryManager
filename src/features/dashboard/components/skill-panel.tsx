@@ -1,93 +1,66 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import {
-  getApplicableSkills,
-  getProjectSkills,
-  type SkillInfo,
-} from '@/features/factory-manager/services/skill-catalog-action';
-import { useAgentStatus } from '@/features/factory-manager/hooks/use-agent-status';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import {
+  getProjectSkillsByProject,
+  type ProjectSkillRow,
+} from '@/features/factory-manager/services/project-skills-action';
 
 interface Props {
-  projectName: string;
-  projectPath: string;
+  projectId: string;
 }
 
-const CATEGORY_LABELS: Record<string, string> = {
-  ui: 'UI / Design',
-  auth: 'Autenticacion',
-  backend: 'Backend',
-  frontend: 'Frontend',
-  feature: 'Features',
-  ai: 'Inteligencia Artificial',
-};
+function formatRelative(iso: string | null): string {
+  if (!iso) return '—';
+  const ms = Date.now() - new Date(iso).getTime();
+  if (ms < 0) return 'recién';
+  const min = Math.floor(ms / 60_000);
+  if (min < 1) return 'recién';
+  if (min < 60) return `Hace ${min} min`;
+  const h = Math.floor(min / 60);
+  if (h < 24) return `Hace ${h}h`;
+  const d = Math.floor(h / 24);
+  if (d === 1) return 'Ayer';
+  if (d < 7) return `Hace ${d} días`;
+  if (d < 30) return `Hace ${Math.floor(d / 7)} sem`;
+  if (d < 365) return `Hace ${Math.floor(d / 30)} mes(es)`;
+  return `Hace ${Math.floor(d / 365)} año(s)`;
+}
 
-const CATEGORY_COLORS: Record<string, string> = {
-  ui: 'text-pink-400',
-  auth: 'text-yellow-400',
-  backend: 'text-blue-400',
-  frontend: 'text-cyan-400',
-  feature: 'text-fluya-green',
-  ai: 'text-fluya-purple',
-};
+function installedByLabel(by: string | null): string {
+  if (!by) return 'Origen del install desconocido';
+  if (/^agent/i.test(by)) return 'Instalado por SF Agent';
+  if (/manual/i.test(by)) return 'Instalado manualmente';
+  return `Instalado por: ${by}`;
+}
 
-export function SkillPanel({ projectName, projectPath }: Props) {
-  const [skills, setSkills] = useState<SkillInfo[]>([]);
-  const [installedSkills, setInstalledSkills] = useState<string[]>([]);
+/**
+ * Lists the skills installed in this project. Reads from `project_skills`
+ * (populated by the SF Agent watcher), Vercel-friendly. The applicable-skill
+ * catalog and install flow live in `<SkillRegistryDashboard>` — this panel is
+ * read-only by design.
+ */
+export function SkillPanel({ projectId }: Props) {
+  const [skills, setSkills] = useState<ProjectSkillRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [installing, setInstalling] = useState<string | null>(null);
-  const [installMsg, setInstallMsg] = useState<{ ok: boolean; text: string } | null>(null);
-
-  // Agent integration
-  const agent = useAgentStatus();
-  const agentInstallRef = useRef<string | null>(null);
 
   useEffect(() => {
-    async function load() {
-      const [allSkills, projSkills] = await Promise.all([
-        getApplicableSkills(),
-        getProjectSkills(projectPath),
-      ]);
-      setSkills(allSkills);
-      setInstalledSkills(projSkills);
-      setIsLoading(false);
-    }
-    load();
-  }, [projectPath]);
-
-  // Watch agent command completion
-  useEffect(() => {
-    const skillName = agentInstallRef.current;
-    if (!skillName) return;
-
-    if (agent.activeCommand?.status === 'done') {
-      setInstalling(null);
-      setInstalledSkills((prev) => [...prev, skillName]);
-      setInstallMsg({ ok: true, text: `"${skillName}" instalado via Agent` });
-      agentInstallRef.current = null;
-    } else if (agent.activeCommand?.status === 'error') {
-      setInstalling(null);
-      setInstallMsg({ ok: false, text: String(agent.activeCommand.result?.error ?? 'Error del agente') });
-      agentInstallRef.current = null;
-    }
-  }, [agent.activeCommand?.status, agent.activeCommand?.result]);
-
-  async function handleInstall(skillName: string) {
-    setInstallMsg(null);
-
-    if (!agent.isAgentOnline) {
-      setInstallMsg({
-        ok: false,
-        text: 'El Agent del developer está offline; no se puede instalar el skill ahora.',
+    let cancelled = false;
+    getProjectSkillsByProject(projectId)
+      .then((data) => {
+        if (cancelled) return;
+        setSkills(data);
+        setIsLoading(false);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setIsLoading(false);
       });
-      return;
-    }
-
-    setInstalling(skillName);
-    agentInstallRef.current = skillName;
-    agent.sendCommand('apply-skill', { skillId: skillName, projectPath }, agent.activeInstance?.id);
-  }
+    return () => {
+      cancelled = true;
+    };
+  }, [projectId]);
 
   if (isLoading) {
     return (
@@ -97,22 +70,13 @@ export function SkillPanel({ projectName, projectPath }: Props) {
     );
   }
 
-  const grouped = skills.reduce<Record<string, SkillInfo[]>>((acc, skill) => {
-    const cat = skill.category;
-    if (!acc[cat]) acc[cat] = [];
-    acc[cat].push(skill);
-    return acc;
-  }, {});
-
-  const installedCount = skills.filter((s) => installedSkills.includes(s.name)).length;
-
   return (
     <div className="mb-8">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h2 className="text-lg font-semibold text-white">Skills</h2>
+          <h2 className="text-lg font-semibold text-white">Skills instalados</h2>
           <p className="text-xs text-gray-500">
-            {installedCount}/{skills.length} instalados &bull;{' '}
+            {skills.length === 0 ? 'Sin skills' : `${skills.length} skill(s)`} &bull;{' '}
             <Link href="/skills" className="text-fluya-purple hover:underline">
               Ver Registry
             </Link>
@@ -120,64 +84,37 @@ export function SkillPanel({ projectName, projectPath }: Props) {
         </div>
       </div>
 
-      <div className="space-y-4">
-        {Object.entries(grouped).map(([category, categorySkills]) => (
-          <div key={category}>
-            <p className={`text-xs font-medium uppercase tracking-wider mb-2 ${CATEGORY_COLORS[category] ?? 'text-gray-400'}`}>
-              {CATEGORY_LABELS[category] ?? category}
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {categorySkills.map((skill) => {
-                const isInstalled = installedSkills.includes(skill.name);
-                const isInstalling = installing === skill.name;
-
-                return (
-                  <div
-                    key={skill.name}
-                    className={`flex items-center justify-between p-3 rounded-xl border transition-all duration-300 ${
-                      isInstalled
-                        ? 'bg-fluya-green/5 border-fluya-green/20'
-                        : 'bg-white/5 border-white/10 hover:border-white/20'
-                    }`}
-                  >
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-1.5">
-                        {isInstalled && (
-                          <span className="w-1.5 h-1.5 rounded-full bg-fluya-green shrink-0" />
-                        )}
-                        <p className="text-sm font-medium text-white">{skill.label}</p>
-                      </div>
-                      <p className="text-xs text-gray-500 truncate">{skill.description}</p>
-                    </div>
-                    <div className="ml-2 shrink-0">
-                      {isInstalled ? (
-                        <span className="px-2 py-1 text-[10px] bg-fluya-green/10 text-fluya-green rounded-lg">
-                          Instalado
-                        </span>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => handleInstall(skill.name)}
-                          disabled={isInstalling || !agent.isAgentOnline}
-                          title={!agent.isAgentOnline ? 'Agent del developer offline' : undefined}
-                          className="px-2 py-1 text-[10px] bg-fluya-purple/10 text-fluya-purple border border-fluya-purple/20 rounded-lg hover:bg-fluya-purple/20 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-                        >
-                          {isInstalling ? '...' : 'Instalar'}
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
+      {skills.length === 0 ? (
+        <div className="p-6 bg-white/5 border border-white/10 rounded-2xl text-center">
+          <p className="text-sm text-gray-400">Este proyecto no tiene skills instalados todavía.</p>
+          <p className="text-xs text-gray-500 mt-1">
+            Aplicalos desde el{' '}
+            <Link href="/skills" className="text-fluya-purple hover:underline">
+              Skill Registry
+            </Link>{' '}
+            (requiere SF Agent online).
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          {skills.map((skill) => (
+            <div
+              key={skill.id}
+              className="flex items-center justify-between p-3 bg-fluya-green/5 border border-fluya-green/20 rounded-xl"
+              title={installedByLabel(skill.installedBy)}
+            >
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-fluya-green shrink-0" />
+                  <p className="text-sm font-medium text-white font-mono truncate">
+                    {skill.skillName}
+                  </p>
+                </div>
+                <p className="text-xs text-gray-500 mt-0.5">{formatRelative(skill.installedAt)}</p>
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
-
-      {installMsg && (
-        <p className={`mt-3 text-xs ${installMsg.ok ? 'text-fluya-green' : 'text-red-400'}`}>
-          {installMsg.text}
-        </p>
+          ))}
+        </div>
       )}
     </div>
   );

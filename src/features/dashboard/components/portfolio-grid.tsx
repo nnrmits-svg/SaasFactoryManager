@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import type { Project } from '@/features/factory-manager/types';
 import { filesystemPath } from '@/features/factory-manager/types';
-import { getProjectSkills } from '@/features/factory-manager/services/skill-catalog-action';
+import { getAllProjectSkills } from '@/features/factory-manager/services/project-skills-action';
 
 interface Props {
   projects: Project[];
@@ -90,25 +90,17 @@ export function PortfolioGrid({ projects }: Props) {
   const activePaths = useActiveTracking();
   const [projectSkillsMap, setProjectSkillsMap] = useState<Record<string, string[]>>({});
 
-  // Load installed skills for each project
+  // Load installed skills for every project in one batched query against the
+  // `project_skills` table (Vercel-friendly).
   useEffect(() => {
-    async function loadSkills() {
-      const map: Record<string, string[]> = {};
-      await Promise.all(
-        projects.map(async (p) => {
-          const fsPath = filesystemPath(p);
-          if (!fsPath) {
-            map[p.id] = [];
-            return;
-          }
-          const skills = await getProjectSkills(fsPath);
-          map[p.id] = skills;
-        }),
-      );
-      setProjectSkillsMap(map);
-    }
-    if (projects.length > 0) loadSkills();
-  }, [projects]);
+    getAllProjectSkills().then((grouped) => {
+      const flat: Record<string, string[]> = {};
+      for (const [pid, rows] of Object.entries(grouped)) {
+        flat[pid] = rows.map((r) => r.skillName);
+      }
+      setProjectSkillsMap(flat);
+    });
+  }, []);
 
   if (projects.length === 0) {
     return (
