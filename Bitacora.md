@@ -6,6 +6,26 @@
 
 ---
 
+## 2026-05-05 18:00 — Capa 2 completa + Capa 8 github_owner selector
+**Maquina**: NNRM-iMac-275.local
+
+### Hecho
+- **Capa 2 surfaces 1+2** (commit `4ec1617`): `<SkillPanel>` y `<PortfolioGrid>` leen `project_skills` desde BD. Nuevo server action `project-skills-action.ts` (+95 lineas). `<SkillPanel>` refactoreado (-168 lineas FS, +227 lineas BD-driven). `<ProjectDetailView>` simplificado.
+- **Capa 2 surface 3** (commit `3190ce9`): `<SkillRegistryDashboard>` ahora lee de tabla `skills_catalog` via nuevo `skills-catalog-action.ts` (+46 lineas). Rewrite completo del componente (+263/-233 lineas). Las funciones FS (`getApplicableSkills`, `getProjectSkills`, `installSkillToProject`, `discoverAllSkills`, `getSkillContent`) en `skill-catalog-action.ts` ya no tienen consumers en UI — flaggeadas para cleanup.
+- **Refactor installedByLabel** (commit `6a7614d`): valores canonicos `agent`/`manager`/`manual` en `<SkillPanel>`; rows con `installed_by = 'seed'` suprimen tooltip hasta que se limpien.
+- **Capa 8 — github_owner selector** (commit `47b6184`): selector de organizacion GitHub cableado a tabla `user_github_orgs`. Nuevo `github-orgs-action.ts` (+31 lineas). `project-wizard.tsx` extendido (+102 lineas) con paso de seleccion de org. `settings-page.tsx` ampliado (+122 lineas) para gestionar orgs. `agent-control-panel.tsx` actualizado con `COMMAND_LABELS['list-github-orgs']`. Types extendidos (+14 lineas).
+
+### Decidido
+- **`skills_catalog` es la fuente de verdad para skills disponibles** (reemplaza `discoverAllSkills` FS). El Agent popula la tabla; el Manager solo lee.
+- **`installed_by = 'seed'` es dato legacy tolerable**: las rows son reales (el skill SI esta instalado) pero el origen es impreciso. Se suprime el tooltip hasta cleanup opcional (`UPDATE project_skills SET installed_by = 'agent' WHERE installed_by = 'seed'`).
+
+### Pendiente
+- Aplicar migraciones `20260505100000` y `20260505110000` en Supabase (dedup work_sessions + skills_catalog).
+- Tab "AI Activity" en `/project/[name]`.
+- Cleanup de servicios FS orphan (sprint dedicado).
+
+---
+
 ## 2026-05-05 14:30 — Migraciones versionadas: dedup work_sessions + skills_catalog
 **Maquina**: NNRM-iMac-275.local
 
