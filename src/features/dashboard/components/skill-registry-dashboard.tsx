@@ -2,89 +2,82 @@
 
 import { useState, useEffect, useRef } from 'react';
 import {
-  getSkillContent,
-  type SkillInfo,
-} from '@/features/factory-manager/services/skill-catalog-action';
+  getSkillsCatalog,
+  type CatalogSkill,
+  type SkillSource,
+} from '@/features/factory-manager/services/skills-catalog-action';
 import { getPortfolioProjects } from '@/features/factory-manager/services/git-sync-action';
+import { getAllProjectSkills } from '@/features/factory-manager/services/project-skills-action';
 import { useAgentStatus } from '@/features/factory-manager/hooks/use-agent-status';
 import type { Project } from '@/features/factory-manager/types';
+import { filesystemPath } from '@/features/factory-manager/types';
 
-const CATEGORY_LABELS: Record<string, string> = {
-  ui: 'UI / Design',
-  auth: 'Autenticacion',
-  backend: 'Backend',
-  frontend: 'Frontend',
-  feature: 'Features',
-  ai: 'Inteligencia Artificial',
-  other: 'Otros',
-  meta: 'Proceso / Meta',
+const SOURCE_LABELS: Record<SkillSource, string> = {
+  official: 'Skills oficiales (.claude/skills/)',
+  catalog: 'Skills del catálogo (.claude/skills-catalog/)',
 };
 
-const CATEGORY_COLORS: Record<string, string> = {
-  ui: 'text-pink-400 border-pink-400/20',
-  auth: 'text-yellow-400 border-yellow-400/20',
-  backend: 'text-blue-400 border-blue-400/20',
-  frontend: 'text-cyan-400 border-cyan-400/20',
-  feature: 'text-fluya-green border-fluya-green/20',
-  ai: 'text-fluya-purple border-fluya-purple/20',
-  other: 'text-gray-400 border-gray-400/20',
-  meta: 'text-gray-500 border-gray-500/20',
+const SOURCE_COLORS: Record<SkillSource, string> = {
+  official: 'text-fluya-purple',
+  catalog: 'text-cyan-400',
 };
-
-type TabFilter = 'injectable' | 'all';
 
 export function SkillRegistryDashboard() {
-  const [skills, setSkills] = useState<SkillInfo[]>([]);
+  const [skills, setSkills] = useState<CatalogSkill[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [installedMap, setInstalledMap] = useState<Record<string, Set<string>>>({});
   const [isLoading, setIsLoading] = useState(true);
-  const [tab, setTab] = useState<TabFilter>('injectable');
   const [selectedSkill, setSelectedSkill] = useState<string | null>(null);
-  const [skillContent, setSkillContent] = useState<string | null>(null);
-  const [loadingContent, setLoadingContent] = useState(false);
 
-  // Install state
-  const [installing, setInstalling] = useState(false);
-  const [installResult, setInstallResult] = useState<{ skill: string; success: boolean; error?: string } | null>(null);
+  const [installing, setInstalling] = useState<{ skill: string; projectId: string } | null>(null);
+  const [installResult, setInstallResult] = useState<
+    { skill: string; success: boolean; error?: string } | null
+  >(null);
 
-  // Agent integration
   const agent = useAgentStatus();
-  const agentInstallRef = useRef<{ skill: string; projectId: string; projectPath: string } | null>(null);
-
-  // Project skills cache
-  const [projectSkillsMap, setProjectSkillsMap] = useState<Record<string, string[]>>({});
+  const agentInstallRef = useRef<{ skill: string; projectId: string } | null>(null);
 
   useEffect(() => {
-    async function load() {
-      // discoverAllSkills + getProjectSkills tocan filesystem del Manager — no
-      // funcionan en Vercel. Quedan deshabilitados hasta que la lectura del
-      // catalogo y el listado por proyecto se rutee por el SF Agent / la
-      // tabla `project_skills`. Solo cargamos la lista de proyectos (Supabase).
-      const allProjects = await getPortfolioProjects();
-      setProjects(allProjects);
-      setSkills([]);
-      setProjectSkillsMap({});
-      setIsLoading(false);
-    }
-    load();
+    let cancelled = false;
+    Promise.all([getSkillsCatalog(), getPortfolioProjects(), getAllProjectSkills()])
+      .then(([catalog, projs, grouped]) => {
+        if (cancelled) return;
+        setSkills(catalog);
+        setProjects(projs);
+        const map: Record<string, Set<string>> = {};
+        for (const [pid, rows] of Object.entries(grouped)) {
+          map[pid] = new Set(rows.map((r) => r.skillName));
+        }
+        setInstalledMap(map);
+        setIsLoading(false);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setIsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  // Watch agent command completion to refresh installed skills
+  // Watch agent command completion
   useEffect(() => {
     const target = agentInstallRef.current;
     if (!target) return;
 
     if (agent.activeCommand?.status === 'done') {
-      setInstalling(false);
+      setInstalling(null);
       setInstallResult({ skill: target.skill, success: true });
-      // Optimistic update — refresh real desde tabla `project_skills` queda
-      // pendiente de Capa 2 del roadmap (wire al watcher del Agent).
-      setProjectSkillsMap((prev) => ({
-        ...prev,
-        [target.projectId]: [...(prev[target.projectId] ?? []), target.skill],
-      }));
+      setInstalledMap((prev) => {
+        const next = { ...prev };
+        const set = new Set(next[target.projectId] ?? []);
+        set.add(target.skill);
+        next[target.projectId] = set;
+        return next;
+      });
       agentInstallRef.current = null;
     } else if (agent.activeCommand?.status === 'error') {
-      setInstalling(false);
+      setInstalling(null);
       setInstallResult({
         skill: target.skill,
         success: false,
@@ -94,22 +87,7 @@ export function SkillRegistryDashboard() {
     }
   }, [agent.activeCommand?.status, agent.activeCommand?.result]);
 
-  async function handleSkillClick(skillName: string) {
-    if (selectedSkill === skillName) {
-      setSelectedSkill(null);
-      setSkillContent(null);
-      return;
-    }
-
-    setSelectedSkill(skillName);
-    setLoadingContent(true);
-    const content = await getSkillContent(skillName);
-    setSkillContent(content);
-    setLoadingContent(false);
-  }
-
-  async function handleInstall(skillName: string, projectPath: string, projectId: string) {
-    setInstalling(true);
+  function handleInstall(skillName: string, project: Project) {
     setInstallResult(null);
 
     if (!agent.isAgentOnline) {
@@ -118,27 +96,33 @@ export function SkillRegistryDashboard() {
         success: false,
         error: 'El Agent del developer está offline; no se puede instalar el skill ahora.',
       });
-      setInstalling(false);
       return;
     }
 
-    agentInstallRef.current = { skill: skillName, projectId, projectPath };
-    agent.sendCommand('apply-skill', { skillId: skillName, projectPath }, agent.activeInstance?.id);
+    const fsPath = filesystemPath(project);
+    if (!fsPath) {
+      setInstallResult({
+        skill: skillName,
+        success: false,
+        error: 'El proyecto todavía no fue creado en disco por el Agent.',
+      });
+      return;
+    }
+
+    setInstalling({ skill: skillName, projectId: project.id });
+    agentInstallRef.current = { skill: skillName, projectId: project.id };
+    agent.sendCommand(
+      'apply-skill',
+      { skillId: skillName, projectPath: fsPath },
+      agent.activeInstance?.id,
+    );
   }
 
-  const filteredSkills = tab === 'injectable'
-    ? skills.filter((s) => s.isInjectable)
-    : skills;
-
-  const grouped = filteredSkills.reduce<Record<string, SkillInfo[]>>((acc, skill) => {
-    const cat = skill.category;
-    if (!acc[cat]) acc[cat] = [];
-    acc[cat].push(skill);
+  const grouped = skills.reduce<Record<SkillSource, CatalogSkill[]>>((acc, s) => {
+    if (!acc[s.source]) acc[s.source] = [];
+    acc[s.source].push(s);
     return acc;
-  }, {});
-
-  const injectableCount = skills.filter((s) => s.isInjectable).length;
-  const metaCount = skills.filter((s) => !s.isInjectable).length;
+  }, { official: [], catalog: [] });
 
   if (isLoading) {
     return (
@@ -148,32 +132,40 @@ export function SkillRegistryDashboard() {
     );
   }
 
+  const selectedSkillData = skills.find((s) => s.skillName === selectedSkill) ?? null;
+
   return (
     <div className="max-w-6xl mx-auto px-6">
       {/* Header */}
       <div className="mb-8">
-        <div className="mb-4 p-3 rounded-xl border border-yellow-500/30 bg-yellow-500/5 text-xs text-yellow-300/90">
-          ⚠ El catálogo de skills aplicables se lee del filesystem del Manager
-          y no está disponible mientras corre en Vercel. La instalación de
-          skills se rutea por el SF Agent del developer; el listado va a
-          migrar a la tabla <code className="font-mono">project_skills</code>{' '}
-          (Capa 2 del roadmap).
-        </div>
+        {skills.length === 0 && (
+          <div className="mb-4 p-3 rounded-xl border border-yellow-500/30 bg-yellow-500/5 text-xs text-yellow-300/90">
+            ⚠ Sin skills registrados en las últimas 24h. El SF Agent pushea
+            su catálogo al boot leyendo <code className="font-mono">.claude/skills/</code>{' '}
+            y <code className="font-mono">.claude/skills-catalog/</code>. Si
+            ningún Agent del usuario booteó recientemente, el catálogo aparece
+            vacío hasta el próximo arranque.
+          </div>
+        )}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-white">Skill Registry</h1>
             <p className="text-gray-400 mt-1">
-              {injectableCount} skills instalables &bull; {metaCount} skills de proceso &bull; {projects.length} proyecto(s)
+              {skills.length} skill(s) en catálogo &bull; {projects.length} proyecto(s)
             </p>
           </div>
-          <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs ${
-            agent.isAgentOnline
-              ? 'bg-blue-500/10 border-blue-500/20 text-blue-400'
-              : 'bg-white/5 border-white/10 text-gray-500'
-          }`}>
-            <span className={`w-2 h-2 rounded-full ${
-              agent.isAgentOnline ? 'bg-blue-400 animate-pulse' : 'bg-gray-600'
-            }`} />
+          <div
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs ${
+              agent.isAgentOnline
+                ? 'bg-blue-500/10 border-blue-500/20 text-blue-400'
+                : 'bg-white/5 border-white/10 text-gray-500'
+            }`}
+          >
+            <span
+              className={`w-2 h-2 rounded-full ${
+                agent.isAgentOnline ? 'bg-blue-400 animate-pulse' : 'bg-gray-600'
+              }`}
+            />
             {agent.isAgentOnline
               ? `Agent: ${agent.activeInstance!.machineName}`
               : 'Agent offline'}
@@ -181,154 +173,146 @@ export function SkillRegistryDashboard() {
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-1 mb-6 p-1 bg-white/5 rounded-xl w-fit">
-        <button
-          type="button"
-          onClick={() => setTab('injectable')}
-          className={`px-4 py-2 text-sm rounded-lg transition-all ${
-            tab === 'injectable'
-              ? 'bg-fluya-purple/20 text-fluya-purple'
-              : 'text-gray-400 hover:text-white'
-          }`}
-        >
-          Instalables ({injectableCount})
-        </button>
-        <button
-          type="button"
-          onClick={() => setTab('all')}
-          className={`px-4 py-2 text-sm rounded-lg transition-all ${
-            tab === 'all'
-              ? 'bg-fluya-purple/20 text-fluya-purple'
-              : 'text-gray-400 hover:text-white'
-          }`}
-        >
-          Todos ({skills.length})
-        </button>
-      </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Skills List */}
+        {/* Skills list */}
         <div className="lg:col-span-2 space-y-6">
-          {Object.entries(grouped).map(([category, categorySkills]) => (
-            <div key={category}>
-              <p className={`text-xs font-medium uppercase tracking-wider mb-3 ${CATEGORY_COLORS[category]?.split(' ')[0] ?? 'text-gray-400'}`}>
-                {CATEGORY_LABELS[category] ?? category}
-              </p>
-              <div className="space-y-2">
-                {categorySkills.map((skill) => {
-                  const isSelected = selectedSkill === skill.name;
-                  const installedInProjects = projects.filter(
-                    (p) => projectSkillsMap[p.id]?.includes(skill.name),
-                  );
-
-                  return (
-                    <button
-                      key={skill.name}
-                      type="button"
-                      onClick={() => handleSkillClick(skill.name)}
-                      className={`w-full text-left p-4 rounded-xl border transition-all duration-300 ${
-                        isSelected
-                          ? 'bg-fluya-purple/10 border-fluya-purple/30'
-                          : 'bg-white/5 border-white/10 hover:border-white/20'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2">
-                            <p className="text-sm font-medium text-white">{skill.label}</p>
-                            {skill.prerequisites && skill.prerequisites.length > 0 && (
-                              <span className="text-[10px] px-1.5 py-0.5 bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 rounded">
-                                req: {skill.prerequisites.join(', ')}
+          {(Object.entries(grouped) as Array<[SkillSource, CatalogSkill[]]>)
+            .filter(([, list]) => list.length > 0)
+            .map(([source, sourceSkills]) => (
+              <div key={source}>
+                <p
+                  className={`text-xs font-medium uppercase tracking-wider mb-3 ${
+                    SOURCE_COLORS[source] ?? 'text-gray-400'
+                  }`}
+                >
+                  {SOURCE_LABELS[source] ?? source} ({sourceSkills.length})
+                </p>
+                <div className="space-y-2">
+                  {sourceSkills.map((skill) => {
+                    const isSelected = selectedSkill === skill.skillName;
+                    const installedCount = projects.filter((p) =>
+                      installedMap[p.id]?.has(skill.skillName),
+                    ).length;
+                    return (
+                      <button
+                        key={skill.id}
+                        type="button"
+                        onClick={() =>
+                          setSelectedSkill((prev) =>
+                            prev === skill.skillName ? null : skill.skillName,
+                          )
+                        }
+                        className={`w-full text-left p-4 rounded-xl border transition-all duration-300 ${
+                          isSelected
+                            ? 'bg-fluya-purple/10 border-fluya-purple/30'
+                            : 'bg-white/5 border-white/10 hover:border-white/20'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-medium text-white font-mono truncate">
+                              {skill.skillName}
+                            </p>
+                            {skill.description && (
+                              <p className="text-xs text-gray-500 mt-0.5 truncate">
+                                {skill.description}
+                              </p>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            {installedCount > 0 && (
+                              <span className="text-[10px] px-1.5 py-0.5 bg-fluya-green/10 text-fluya-green border border-fluya-green/20 rounded">
+                                {installedCount} proyecto(s)
+                              </span>
+                            )}
+                            {skill.hash && (
+                              <span
+                                className="text-[10px] text-gray-600 font-mono"
+                                title={`Hash: ${skill.hash}`}
+                              >
+                                {skill.hash.slice(0, 7)}
                               </span>
                             )}
                           </div>
-                          <p className="text-xs text-gray-500 mt-0.5">{skill.description}</p>
                         </div>
-                        <div className="flex items-center gap-2 ml-3 shrink-0">
-                          {installedInProjects.length > 0 && (
-                            <span className="text-[10px] px-1.5 py-0.5 bg-fluya-green/10 text-fluya-green border border-fluya-green/20 rounded">
-                              {installedInProjects.length} proyecto(s)
-                            </span>
-                          )}
-                          <span className="px-2 py-1 text-xs bg-white/5 text-gray-400 border border-white/10 rounded-lg font-mono">
-                            /{skill.name}
-                          </span>
-                        </div>
-                      </div>
-                    </button>
-                  );
-                })}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
         </div>
 
-        {/* Detail Panel */}
+        {/* Detail panel */}
         <div className="lg:col-span-1">
           <div className="sticky top-24">
-            {selectedSkill ? (
+            {selectedSkillData ? (
               <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
                 <div className="p-4 border-b border-white/10">
-                  <h3 className="text-sm font-semibold text-white">
-                    {skills.find((s) => s.name === selectedSkill)?.label}
+                  <h3 className="text-sm font-semibold text-white font-mono">
+                    {selectedSkillData.skillName}
                   </h3>
-                  <p className="text-xs text-gray-500 font-mono mt-1">/{selectedSkill}</p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {SOURCE_LABELS[selectedSkillData.source] ?? selectedSkillData.source}
+                  </p>
                 </div>
-
-                {/* Install to project */}
-                {skills.find((s) => s.name === selectedSkill)?.isInjectable && (
+                {selectedSkillData.description && (
                   <div className="p-4 border-b border-white/10">
-                    <p className="text-xs text-gray-400 mb-2">Instalar en proyecto:</p>
-                    <div className="space-y-1">
-                      {projects.map((project) => {
-                        const isInstalled = projectSkillsMap[project.id]?.includes(selectedSkill);
-                        return (
-                          <div
-                            key={project.id}
-                            className="flex items-center justify-between py-1.5"
-                          >
-                            <span className="text-xs text-white truncate">{project.name}</span>
-                            {isInstalled ? (
-                              <span className="text-[10px] px-2 py-0.5 bg-fluya-green/10 text-fluya-green rounded">
-                                Instalado
-                              </span>
-                            ) : (
-                              <button
-                                type="button"
-                                onClick={() => handleInstall(selectedSkill, project.path, project.id)}
-                                disabled={installing}
-                                className="text-[10px] px-2 py-0.5 bg-fluya-purple/10 text-fluya-purple border border-fluya-purple/20 rounded hover:bg-fluya-purple/20 disabled:opacity-40 transition-all"
-                              >
-                                {installing && agentInstallRef.current?.projectId === project.id ? '...' : 'Instalar'}
-                              </button>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                    {installResult && (
-                      <p className={`mt-2 text-xs ${installResult.success ? 'text-fluya-green' : 'text-red-400'}`}>
-                        {installResult.success
-                          ? `"${installResult.skill}" instalado ${agent.isAgentOnline ? 'via Agent' : ''}`
-                          : installResult.error
-                        }
-                      </p>
-                    )}
+                    <p className="text-xs text-gray-300 leading-relaxed">
+                      {selectedSkillData.description}
+                    </p>
                   </div>
                 )}
-
-                {/* SKILL.md preview */}
-                <div className="p-4 max-h-[60vh] overflow-y-auto">
-                  {loadingContent ? (
-                    <p className="text-xs text-gray-500">Cargando...</p>
-                  ) : skillContent ? (
-                    <pre className="text-xs text-gray-300 whitespace-pre-wrap font-mono leading-relaxed">
-                      {skillContent.slice(0, 2000)}
-                      {skillContent.length > 2000 && '\n\n... (truncado)'}
-                    </pre>
-                  ) : (
-                    <p className="text-xs text-gray-500">Sin contenido SKILL.md</p>
+                <div className="p-4">
+                  <p className="text-xs text-gray-400 mb-2">Instalar en proyecto:</p>
+                  <div className="space-y-1">
+                    {projects.map((project) => {
+                      const isInstalled = installedMap[project.id]?.has(
+                        selectedSkillData.skillName,
+                      );
+                      const fsPath = filesystemPath(project);
+                      const canInstall = agent.isAgentOnline && fsPath !== null;
+                      const isThisInstalling =
+                        installing?.skill === selectedSkillData.skillName &&
+                        installing?.projectId === project.id;
+                      return (
+                        <div key={project.id} className="flex items-center justify-between py-1.5">
+                          <span className="text-xs text-white truncate">{project.name}</span>
+                          {isInstalled ? (
+                            <span className="text-[10px] px-2 py-0.5 bg-fluya-green/10 text-fluya-green rounded">
+                              Instalado
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => handleInstall(selectedSkillData.skillName, project)}
+                              disabled={!canInstall || isThisInstalling}
+                              title={
+                                !agent.isAgentOnline
+                                  ? 'Agent offline'
+                                  : !fsPath
+                                    ? 'Proyecto no creado en disco aún'
+                                    : undefined
+                              }
+                              className="text-[10px] px-2 py-0.5 bg-fluya-purple/10 text-fluya-purple border border-fluya-purple/20 rounded hover:bg-fluya-purple/20 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                            >
+                              {isThisInstalling ? '...' : 'Instalar'}
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {installResult && (
+                    <p
+                      className={`mt-2 text-xs ${
+                        installResult.success ? 'text-fluya-green' : 'text-red-400'
+                      }`}
+                    >
+                      {installResult.success
+                        ? `"${installResult.skill}" instalado vía Agent`
+                        : installResult.error}
+                    </p>
                   )}
                 </div>
               </div>
