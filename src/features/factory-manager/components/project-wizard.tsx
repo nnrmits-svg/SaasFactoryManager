@@ -1,7 +1,10 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { AiAssistant } from './ai-assistant';
+import { getUserGithubOrgs } from '../services/github-orgs-action';
+import { useAgentStatus } from '../hooks/use-agent-status';
+import type { UserGithubOrg } from '../types';
 
 export interface BusinessBrief {
   dolor: string;
@@ -21,6 +24,8 @@ interface ProjectWizardProps {
     description: string;
     brief: BusinessBrief;
     skills: string[];
+    /** Empty string → use the developer's gh-cli authenticated user. */
+    githubOwner: string;
   }) => void;
   onCancel: () => void;
   saving: boolean;
@@ -166,9 +171,50 @@ export function ProjectWizard({ onComplete, onCancel, saving }: ProjectWizardPro
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [projectName, setProjectName] = useState('');
+  const [githubOwner, setGithubOwner] = useState<string>('');
+  const [orgs, setOrgs] = useState<UserGithubOrg[]>([]);
+  const [isSyncingOrgs, setIsSyncingOrgs] = useState(false);
+  const [orgsSyncMsg, setOrgsSyncMsg] = useState<string | null>(null);
   const [selectedSkills, setSelectedSkills] = useState<Set<string>>(
     () => new Set(AVAILABLE_SKILLS.filter((s) => s.defaultChecked).map((s) => s.id)),
   );
+
+  const agent = useAgentStatus();
+
+  useEffect(() => {
+    getUserGithubOrgs().then((rows) => setOrgs(rows));
+  }, []);
+
+  // Watch the dispatched orgs-sync command. We match by `command` rather than
+  // by id because sendCommand is async and the id arrives back via a state
+  // update; matching by command name is sufficient since the wizard only
+  // dispatches list-github-orgs from this surface.
+  useEffect(() => {
+    if (!isSyncingOrgs) return;
+    const active = agent.activeCommand;
+    if (!active || active.command !== 'list-github-orgs') return;
+
+    if (active.status === 'done') {
+      setIsSyncingOrgs(false);
+      setOrgsSyncMsg('Orgs actualizadas');
+      getUserGithubOrgs().then((rows) => setOrgs(rows));
+    } else if (active.status === 'error') {
+      setIsSyncingOrgs(false);
+      setOrgsSyncMsg(
+        `Error: ${String(active.result?.error ?? 'el Agent reportó un error')}`,
+      );
+    }
+  }, [isSyncingOrgs, agent.activeCommand]);
+
+  function handleSyncOrgs() {
+    setOrgsSyncMsg(null);
+    if (!agent.isAgentOnline) {
+      setOrgsSyncMsg('Agent offline — no se puede sincronizar ahora.');
+      return;
+    }
+    setIsSyncingOrgs(true);
+    agent.sendCommand('list-github-orgs', {}, agent.activeInstance?.id);
+  }
 
   const SKILLS_STEP_INDEX = STEPS.length;
   const currentStep = STEPS[step];
@@ -207,7 +253,7 @@ export function ProjectWizard({ onComplete, onCancel, saving }: ProjectWizardPro
       const skills = AVAILABLE_SKILLS.filter(
         (s) => s.required || selectedSkills.has(s.id),
       ).map((s) => s.id);
-      onComplete({ name: projectName, description, brief, skills });
+      onComplete({ name: projectName, description, brief, skills, githubOwner });
       return;
     }
 
@@ -283,6 +329,58 @@ export function ProjectWizard({ onComplete, onCancel, saving }: ProjectWizardPro
             className="w-full px-4 py-3 bg-black/30 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50 transition-colors text-lg"
             onKeyDown={(e) => e.key === 'Enter' && canProceed && setStep(0)}
           />
+
+          {/* Owner en GitHub */}
+          <div className="mt-5">
+            <div className="flex items-center justify-between mb-2">
+              <label htmlFor="github-owner" className="text-sm font-medium text-white">
+                Owner en GitHub
+              </label>
+              <button
+                type="button"
+                onClick={handleSyncOrgs}
+                disabled={isSyncingOrgs || !agent.isAgentOnline}
+                title={!agent.isAgentOnline ? 'Agent offline' : undefined}
+                className="text-xs px-2 py-1 bg-white/5 text-gray-300 border border-white/10 rounded-lg hover:bg-white/10 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+              >
+                {isSyncingOrgs ? 'Sincronizando...' : 'Sincronizar orgs'}
+              </button>
+            </div>
+            <select
+              id="github-owner"
+              value={githubOwner}
+              onChange={(e) => setGithubOwner(e.target.value)}
+              className="w-full px-4 py-3 bg-black/30 border border-white/10 rounded-xl text-white focus:outline-none focus:border-purple-500/50 transition-colors"
+            >
+              <option value="">Mi usuario (gh-cli default)</option>
+              {orgs.map((o) => (
+                <option key={o.id} value={o.orgLogin}>
+                  {o.orgLogin}
+                  {o.isDefault ? ' · default' : ''}
+                </option>
+              ))}
+            </select>
+            {orgsSyncMsg && (
+              <p
+                className={`mt-2 text-xs ${
+                  orgsSyncMsg.startsWith('Error') ? 'text-red-400' : 'text-fluya-green'
+                }`}
+              >
+                {orgsSyncMsg}
+              </p>
+            )}
+            {orgs.length === 0 && (
+              <p className="mt-2 text-xs text-gray-500">
+                Sin orgs cacheadas. Hace click en &quot;Sincronizar orgs&quot; para poblar
+                desde GitHub.
+              </p>
+            )}
+            <p className="mt-2 text-xs text-gray-500">
+              Si te faltan orgs privadas, corré{' '}
+              <code className="font-mono text-gray-400">gh auth refresh -s read:org</code>{' '}
+              en la terminal del Agent (gh login default no incluye ese scope).
+            </p>
+          </div>
         </>
       )}
 

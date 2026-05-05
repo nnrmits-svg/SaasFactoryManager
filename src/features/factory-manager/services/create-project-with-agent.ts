@@ -10,6 +10,9 @@ export interface CreateProjectWithAgentInput {
   businessBrief?: Record<string, string>;
   skillsToApply?: string[];
   isPrivate?: boolean;
+  /** GitHub login (org_login or user) under which the Agent should create the
+   *  repo. Empty/undefined → Agent uses the gh-cli authenticated user. */
+  githubOwner?: string | null;
 }
 
 export interface CreateProjectWithAgentResult {
@@ -37,6 +40,8 @@ export async function createProjectWithAgent(
     new Set([...(input.skillsToApply ?? []), ...CORE_SKILLS]),
   );
 
+  const githubOwner = input.githubOwner?.trim() || null;
+
   const { data: project, error: insertProjectError } = await supabase
     .from('projects')
     .insert({
@@ -49,6 +54,7 @@ export async function createProjectWithAgent(
       business_brief: input.businessBrief ?? {},
       agent_status: 'pending',
       skills_to_apply: skillsToApply,
+      github_owner: githubOwner,
     })
     .select('id')
     .single();
@@ -68,6 +74,7 @@ export async function createProjectWithAgent(
     brief: input.businessBrief ?? {},
     skills_to_apply: skillsToApply,
     is_private: input.isPrivate ?? true,
+    ...(githubOwner ? { github_owner: githubOwner } : {}),
   };
 
   const { data: command, error: insertCommandError } = await supabase

@@ -20,6 +20,7 @@ const COMMAND_LABELS: Record<AgentCommandType, string> = {
   'apply-skill': 'Aplicar Skill',
   'push-projects': 'Subir a Cloud',
   'create-project': 'Crear proyecto',
+  'list-github-orgs': 'Listar GitHub orgs',
 };
 
 const STATUS_COLORS = {
