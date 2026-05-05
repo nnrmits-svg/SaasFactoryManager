@@ -6,6 +6,19 @@
 
 ---
 
+## 2026-05-05 14:30 — Migraciones versionadas: dedup work_sessions + skills_catalog
+**Maquina**: NNRM-iMac-275.local
+
+### Hecho
+- **Versionada** `20260505100000_work_sessions_unique_dedup.sql` — Capa 1.5: dedup de `work_sessions` + UNIQUE constraint. Corrige el bug de "9.5 anios trabajados" flaggeado en la sesion anterior.
+- **Versionada** `20260505110000_capa2_skills_catalog.sql` — Capa 2: tabla `skills_catalog` poblada por el Agent (lee `.claude/skills/` del filesystem y pushea al Manager).
+- Ambas migraciones pendientes de aplicar en Supabase (ref `fxlvexilnrfkkcbzwskr`).
+
+### Hecho (sesion previa, 13:12)
+- Capa 2 surfaces 1+2: `<SkillPanel>` y `<SkillRegistryDashboard>` leen `project_skills` desde BD en vez de filesystem (commit `4ec1617`).
+
+---
+
 ## 2026-05-05 13:12 — Capa 1 UI cerrada + Bug auth/duplicados/merge legacy resuelto
 **Maquina**: NNRM-iMac-275.local
 
