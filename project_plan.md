@@ -45,12 +45,12 @@ operando con multiples proyectos en multiples maquinas locales (una por develope
    - Reemplazar `getProjectSkills(path)` (FS) por lectura de tabla `project_skills` en `<SkillPanel>`, `<PortfolioGrid>` y `<SkillRegistryDashboard>`. Pre-condicion del lado Agent **ya cubierta** (`pushInitialProjectSkills()` al boot + chokidar para cambios).
    - Estado por skill: `synced` / `divergent` / `missing`.
    - Reemplazar `discoverAllSkills()` (FS) por catalogo estatico en repo o tabla en Supabase (decidir).
-4. **Tab "AI Activity" en `/project/[name]`** (sprint despues de Capa 2): filtrado de `claude_sessions` por proyecto.
-5. **Capa 3 del roadmap — CRUD remoto** desde Manager: editar/borrar proyecto, re-aplicar skills.
-6. **Capa 8 — Selector de `github_owner` (orgs)**. (El otro Claude arrancando Capa A en paralelo del lado Agent — no requiere coordinacion.)
-7. **PRP propio para migrar `auto-commit-service` y `sync` al SF Agent** (post-Capa 2). Cuando este listo, los botones deshabilitados se vuelven funcionalidad real ruteada por `agent_commands`.
-8. **Cleanup post-migracion**: borrar los servicios FS ahora orphan (lista detallada en "Estado actual"), borrar `installSkillToProject` y `<DirectoryPicker>`.
-9. Resto de capas en el PRP global (vive en el repo del SF Agent: `.claude/PRPs/prp-global-manager-agent-roadmap.md`).
+2. **Tab "AI Activity" en `/project/[name]`** (sprint despues de Capa 2): filtrado de `claude_sessions` por proyecto.
+3. **Capa 3 del roadmap — CRUD remoto** desde Manager: editar/borrar proyecto, re-aplicar skills.
+4. **Capa 8 — Selector de `github_owner` (orgs)**. (El otro Claude arrancando Capa A en paralelo del lado Agent — no requiere coordinacion.)
+5. **PRP propio para migrar `auto-commit-service` y `sync` al SF Agent** (post-Capa 2). Cuando este listo, los botones deshabilitados se vuelven funcionalidad real ruteada por `agent_commands`.
+6. **Cleanup post-migracion**: borrar los servicios FS ahora orphan (lista detallada en "Estado actual"), borrar `installSkillToProject` y `<DirectoryPicker>`.
+7. Resto de capas en el PRP global (vive en el repo del SF Agent: `.claude/PRPs/prp-global-manager-agent-roadmap.md`).
 
 ## Decisiones arquitectonicas
 
@@ -69,6 +69,7 @@ operando con multiples proyectos en multiples maquinas locales (una por develope
 
 - **`useTracking` sigue firing fetch a `/api/tracking` al montar `/project/[name]`** — el boton de Start/Stop ya esta disabled pero el hook hace una request inicial que en Vercel va a 500. Una request por page load (no poll). Ruido en logs de prod, no funcionalidad rota. Mitigacion: queda hasta que se migre el tracking al Agent.
 - **Servicios FS dead-but-not-deleted** — `auto-commit-service`, `git-service`, `scanner-service`, etc. siguen en disco pero sin consumers. Si alguien los re-importa por error, vuelve a violar el criterio Vercel-only. Mitigacion: el cleanup forma parte de Capa 2/3.
+- **`work_sessions.duration_minutes` posiblemente inflado por watcher del Agent** — los rows del user actual muestran cifras irreales (5990 work_sessions, 4.9M minutos = 9.5 anios en SuscriptionsMgmt). Visible en `/dashboard` (tiempo total inflado) y `/reports` ($/hora muy bajo). Mitigacion: revisar el loop del watcher del Agent cuando se aborde la calidad de datos. No bloqueante para el Manager.
 - **Coordinacion entre los dos Claudes** (uno por repo) tocando ambos Supabase — riesgo de race conditions o decisiones desincronizadas. Mitigacion actual: git push/pull + auto-sync, bitacora compartida via repo. Vigilar si crece la friccion.
 - **PRP global vive en otro repo** (SF Agent) — el contexto completo del roadmap no esta en este repo; hay que pedirlo o consultarlo manualmente cuando haga falta detalle.
 
