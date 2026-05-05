@@ -6,6 +6,33 @@
 
 ---
 
+## 2026-05-05 13:12 — Capa 1 UI cerrada + Bug auth/duplicados/merge legacy resuelto
+**Maquina**: NNRM-iMac-275.local
+
+### Hecho
+- **Capa 1 UI deployada en `/reports`** (commit `ee4d1d5`): server action `getReportsData()` lee `claude_sessions` con join a project name + work_session duration; tabla cliente con filtros (Modelo / Mes / Proyecto), columnas Tokens (in/out/cached compact format), $ Total, $/hora (sobre sesiones linkeadas a `work_session_id`), Modelo más usado, Última sesión. Validacion en prod: 2 sesiones, $712.68, 264.8M tokens, 4 proyectos en filtro, $/hora calculandose ($53.81/h en SaasFactoryAgent). El SF Agent pushea cada 5 min.
+- **Bug 1 (header sin sesion)** definitivamente resuelto via Suspense + cacheComponents (commit `0de9117`). Validacion completa con Playwright: login + logout + re-login. Causa raiz documentada: el primer fix de `useAuth` client-side fallaba por asimetria `cookies()` server vs browser; el fix con `<Suspense fallback={NavbarSkeleton}><NavbarAuth /></Suspense>` y `cacheComponents: true` requirio NavbarAuth como server async component para satisfacer Next.js 16.1.
+- **Bug 2 (proyectos duplicados en `/dashboard`)** cerrado via filtro `eq('user_id', user.id)` en las 4 reads (`getPortfolioProjects`, `getProjects`, `getProjectDetail`, `getProjectCostData`). Commit `6aef780`.
+- **Filas legacy NULL mergeadas** — completado con dos transactions PostgreSQL idempotentes/reversibles. Diagnostico previo: 6 child tables FK a `projects.id` con `ON DELETE CASCADE` (commits, work_sessions, claude_sessions, project_skills, sync_configs, tracking_sessions). UNIQUE solo en `commits(project_id, hash)` y `project_skills(project_id, skill_name)` — esos requirieron DELETE-overlap antes del UPDATE; el resto reparentado directo. Para cada nombre, ganador = row de ricardo (mas reciente, mas commits, claude_session linkeada), perdedor = row con `user_id NULL`. Validacion post-merge en `/dashboard`: 4 proyectos unicos, SaasFactoryManager paso de 45 a 51 commits (5 commits del loser preservados, sin duplicados), tiempo total agregado +27h 21m. Bug del INTO con `max(uuid)` corregido a dos SELECT separados.
+- **Verificacion tooltips de Sprint Camino-3** completada via Playwright: 5/5 elementos pass (`Sincronizar`, `+ Agregar`, `Re-sync`, `Start Tracking`, banner SkillRegistry) con `disabled=true`, `title="⚠ Disponible próximamente vía Agent"`, `cursor: not-allowed`.
+- **Auto-detectado por el otro Claude** del lado Agent: pre-condicion para Capa 2 implementada via `pushInitialProjectSkills()` al boot — `project_skills` se popula con todo el estado actual en lugar de solo cambios futuros.
+
+### Decidido
+- **Multi-tenancy enforce desde server action + RLS combinado**. Razon: defensa en profundidad. Cualquier query a `projects` desde el Manager filtra explicitamente por `user_id`.
+- **Auth state se resuelve server-side en `RootLayout` con Suspense**, no via client hook. Razon: con cacheComponents activo, `cookies()` requiere Suspense boundary; intentar leer auth en client tambien falla en preview Vercel por asimetria de la session. El patron canonico es server component async + Suspense fallback que NO miente sobre el estado.
+- **Para el merge de duplicados con FK CASCADE: reparentar TODAS las child tables ANTES del DELETE FROM projects**. Razon: el CASCADE silenciosamente borra child rows si el parent se va con FKs activas. Reparentando primero, el CASCADE es no-op.
+
+### Pendiente
+- **Capa 2 — Skills visibles desde tabla `project_skills`** (sprint que sigue). Reemplazar `getProjectSkills(path)` (FS) por lectura de la tabla en `<SkillPanel>`, `<PortfolioGrid>`, `<SkillRegistryDashboard>`. Catalogo de aplicables (`discoverAllSkills`) reemplazar por manifest estatico o tabla.
+- **Tab "AI Activity" en `/project/[name]`** (sprint despues de Capa 2). Filtrado de `claude_sessions` por proyecto.
+- **Cleanup tecnico** (sprint dedicado): `useAuth` sin consumers, `<DirectoryPicker>` huerfano, `tsconfig.tsbuildinfo` tracked en git, profile auto-creation trigger en Supabase, servicios FS orphan (`auto-commit-service`, `git-service`, `scanner-service`, `git-sync-action`, `scan-action`, `browse-action`, `sync-action`, `sync-service`, `design-system-service`, `resolve-path`, `installSkillToProject`).
+
+### Notas
+- El `n_work_sessions` de los rows del usuario (5990 y 27020) y `sum_minutes` (438752 y 4997156 = ~9.5 anios) son numeros llamativos. Parece dato inflado por algun loop del Agent contando work_sessions repetidas. Lo dejo flag para revisar cuando se mire la calidad de datos del Agent watcher; no es bloqueante para el Manager.
+- `useAuth` quedo huerfano despues del move a server-side. Lo dejo en repo por si se reutiliza, tagged para borrado en el cleanup sprint.
+
+---
+
 ## 2026-05-04 20:30 — Hotfix: navbar auth + scope multi-tenant
 **Maquina**: NNRM-iMac-275.local
 
