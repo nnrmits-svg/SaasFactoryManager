@@ -3,8 +3,8 @@
 > Plan vivo del producto. Una sola fuente de verdad de "donde estamos y a donde vamos".
 > Mantenido por el skill `project-plan`. Cronologia detallada en `Bitacora.md`.
 >
-> Ultima actualizacion: 2026-05-04 18:34
-> Cross-ref: ver entrada del 2026-05-04 18:34 en `Bitacora.md`
+> Ultima actualizacion: 2026-05-05 13:12
+> Cross-ref: ver entrada del 2026-05-05 13:12 en `Bitacora.md`
 
 ---
 
@@ -41,13 +41,7 @@ operando con multiples proyectos en multiples maquinas locales (una por develope
 
 ## Proximos pasos
 
-1. **Decidir commit + push del Sprint Camino-3** para tener Vercel preview verde con la UI honesta. 7 archivos modificados + 1 borrado + 2 carpetas de skills sin trackear.
-2. **Capa 1 UI en `/reports`** (sprint siguiente — el que arranca):
-   - Extender la tabla de reports con columnas Tokens (input/output/cached), Costo USD, $/hora (si hay `work_session_id`).
-   - Filtros: por modelo (claude-opus-4-7, claude-sonnet-4-6, etc.), por mes, por proyecto.
-   - Lectura simple desde `claude_sessions`. **Sin** tab "AI Activity" en `/project/[name]` — eso es sprint siguiente.
-   - Validacion end-to-end: el Agent ya pushea cada 5 min, deberia haber al menos 1 fila (la sesion actual) cuando abramos `/reports`.
-3. **Capa 2 — Skills visibles en Manager** (sprint que sigue, esfuerzo S):
+1. **Capa 2 — Skills visibles en Manager** (sprint que arranca, esfuerzo S):
    - Reemplazar `getProjectSkills(path)` (FS) por lectura de tabla `project_skills` en `<SkillPanel>`, `<PortfolioGrid>` y `<SkillRegistryDashboard>`. Pre-condicion del lado Agent **ya cubierta** (`pushInitialProjectSkills()` al boot + chokidar para cambios).
    - Estado por skill: `synced` / `divergent` / `missing`.
    - Reemplazar `discoverAllSkills()` (FS) por catalogo estatico en repo o tabla en Supabase (decidir).
@@ -80,6 +74,11 @@ operando con multiples proyectos en multiples maquinas locales (una por develope
 
 ## Done
 
+- [x] 2026-05-05: Filas legacy `user_id NULL` mergeadas en transactions PostgreSQL idempotentes. Loser SaasFactoryManager `27c9ca1e` mergeado en `bbd3e72a`; loser SuscriptionsMgmt `809d729f` mergeado en `953d208d`. 6 child tables reparentadas (commits, work_sessions, claude_sessions, project_skills, sync_configs, tracking_sessions) con DELETE-overlap previo en commits y project_skills por UNIQUE (project_id, hash) y (project_id, skill_name). Validacion visual en `/dashboard`: 4 proyectos unicos, SaasFactoryManager 51 commits (45 winner + 5 reparentados del loser).
+- [x] 2026-05-05: Capa 1 UI en `/reports` deployada (commit `ee4d1d5`). Tabla con tokens (compact), $ Total, $/hora, modelo mas usado, ultima sesion + filtros por modelo / mes / proyecto. Validacion en prod: 2 sesiones, $712.68, 264.8M tokens.
+- [x] 2026-05-05: Bug navbar (header sin sesion) resuelto definitivamente con `<Suspense>` boundary (commit `0de9117`). Causa raiz: `cookies()` en server component fuera de Suspense rompe build con `cacheComponents: true` (Next.js 16.1+). Validacion completa via Playwright: login, logout, re-login.
+- [x] 2026-05-05: Bug proyectos duplicados resuelto via filtro `user_id` en las 4 reads de `projects` (commit `6aef780`). Verificado visualmente: 4 proyectos unicos.
+- [x] 2026-05-05: Verificacion tooltips Sprint Camino-3 completada via Playwright. 5/5 elementos pass.
 - [x] 2026-05-04: Sprint Camino-3 pusheado a `main` en 4 commits semanticos (rebased sobre wip de otra maquina que aporto el SQL versionado). Vercel preview verde en `https://saas-factory-manager.vercel.app/` (deployment status `success`, `/login` HTTP 200 renderizando "Factory Manager — Fluya Studio"). Verificacion interactiva del detail (consola limpia + tooltips) queda al user logueado.
 - [x] 2026-05-04: Migration `claude_sessions` versionada en `supabase/migrations/20260504193500_capa1_claude_sessions.sql` (deuda resuelta — la trajo un wip auto-sync de otra maquina antes del push).
 - [x] 2026-05-04: Sprint Camino-3 cerrado — UI del Manager desacoplada del filesystem. 6 surfaces deshabilitadas con tooltip + 2 fallbacks ilegales eliminados + B1/B2/B3 cerrados + `open-action.ts` y `create-action.ts` borrados. Typecheck limpio.
