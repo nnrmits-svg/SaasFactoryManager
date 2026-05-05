@@ -168,7 +168,9 @@ const STEPS = [
 ];
 
 export function ProjectWizard({ onComplete, onCancel, saving }: ProjectWizardProps) {
-  const [step, setStep] = useState(0);
+  // Wizard starts on the name step (step === -1) — the user types the project
+  // name and picks a GitHub owner before the brief interview begins.
+  const [step, setStep] = useState(-1);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [projectName, setProjectName] = useState('');
   const [githubOwner, setGithubOwner] = useState<string>('');
