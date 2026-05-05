@@ -1,0 +1,99 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - generic [ref=e3]:
+      - link "F Fluya Studio" [ref=e4] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e6]: F
+        - generic [ref=e7]: Fluya Studio
+      - generic [ref=e8]:
+        - link "Portfolio" [ref=e9] [cursor=pointer]:
+          - /url: /dashboard
+        - link "Factory" [ref=e10] [cursor=pointer]:
+          - /url: /factory
+        - link "Skills" [ref=e11] [cursor=pointer]:
+          - /url: /skills
+        - link "Reports" [ref=e12] [cursor=pointer]:
+          - /url: /reports
+        - link "Settings" [ref=e13] [cursor=pointer]:
+          - /url: /settings
+        - button "RM" [ref=e16] [cursor=pointer]:
+          - generic [ref=e18]: RM
+  - main [ref=e19]:
+    - main [ref=e20]:
+      - generic [ref=e21]:
+        - heading "Reports" [level=1] [ref=e22]
+        - paragraph [ref=e23]: "Actividad de Claude por proyecto: tokens, costo y modelo más usado."
+      - generic [ref=e24]:
+        - generic [ref=e37]:
+          - generic [ref=e38]:
+            - generic [ref=e39]: Modelo
+            - combobox "Modelo" [ref=e40]:
+              - option "Todos" [selected]
+              - option "claude-opus-4-6"
+              - option "claude-opus-4-7"
+          - generic [ref=e41]:
+            - generic [ref=e42]: Mes
+            - combobox "Mes" [ref=e43]:
+              - option "Todos" [selected]
+              - option "2026-05"
+              - option "2026-04"
+          - generic [ref=e44]:
+            - generic [ref=e45]: Proyecto
+            - combobox "Proyecto" [ref=e46]:
+              - option "Todos" [selected]
+              - option "ConsultorFinanciero"
+              - option "SaasFactoryAgent"
+              - option "SaasFactoryManager"
+              - option "SuscriptionsMgmt"
+          - generic [ref=e47]: 2 sesion(es) • $712.68 • 264.8M tokens
+        - table [ref=e49]:
+          - rowgroup [ref=e50]:
+            - row "Proyecto Status Tokens (in / out / cached) $ Total $/hora Modelo más usado Última sesión" [ref=e51]:
+              - columnheader "Proyecto" [ref=e52]
+              - columnheader "Status" [ref=e53]
+              - columnheader "Tokens (in / out / cached)" [ref=e54]
+              - columnheader "$ Total" [ref=e55]
+              - columnheader "$/hora" [ref=e56]
+              - columnheader "Modelo más usado" [ref=e57]
+              - columnheader "Última sesión" [ref=e58]
+          - rowgroup [ref=e59]:
+            - row "SaasFactoryAgent active 2.4K / 957.8K / 263.4M $707.63 $53.81 claude-opus-4-7 02/05/2026" [ref=e60]:
+              - cell "SaasFactoryAgent" [ref=e61]
+              - cell "active" [ref=e62]
+              - cell "2.4K / 957.8K / 263.4M" [ref=e63]
+              - cell "$707.63" [ref=e64]
+              - cell "$53.81" [ref=e65]
+              - cell "claude-opus-4-7" [ref=e66]
+              - cell "02/05/2026" [ref=e67]
+            - row "SaasFactoryManager active 61 / 3.5K / 434.4K $5.05 $1.07 claude-opus-4-6 16/04/2026" [ref=e68]:
+              - cell "SaasFactoryManager" [ref=e69]
+              - cell "active" [ref=e70]
+              - cell "61 / 3.5K / 434.4K" [ref=e71]
+              - cell "$5.05" [ref=e72]
+              - cell "$1.07" [ref=e73]
+              - cell "claude-opus-4-6" [ref=e74]
+              - cell "16/04/2026" [ref=e75]
+          - rowgroup [ref=e76]:
+            - row "Totales 2 proyecto(s) 2.5K / 961.3K / 263.8M $712.68" [ref=e77]:
+              - cell "Totales" [ref=e78]
+              - cell "2 proyecto(s)" [ref=e79]
+              - cell "2.5K / 961.3K / 263.8M" [ref=e80]
+              - cell "$712.68" [ref=e81]
+              - cell [ref=e82]
+              - cell [ref=e83]
+              - cell [ref=e84]
+  - contentinfo [ref=e25]:
+    - generic [ref=e26]:
+      - link "F Fluya Studio" [ref=e27] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e29]: F
+        - generic [ref=e30]: Fluya Studio
+      - generic [ref=e31]:
+        - link "Terminos" [ref=e32] [cursor=pointer]:
+          - /url: /terminos
+        - link "Privacidad" [ref=e33] [cursor=pointer]:
+          - /url: /privacidad
+        - link "Contacto" [ref=e34] [cursor=pointer]:
+          - /url: /contacto
+      - paragraph [ref=e35]: Fluya Studio IA • Buenos Aires, Argentina
+  - alert [ref=e36]
