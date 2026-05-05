@@ -7,7 +7,10 @@ import { useState } from 'react';
 import { useTracking } from '@/features/factory-manager/hooks/use-tracking';
 import { AgentControlPanel } from '@/features/factory-manager/components/agent-control-panel';
 import { SkillPanel } from './skill-panel';
+import { AiActivityTab } from './ai-activity-tab';
 import { filesystemPath } from '@/features/factory-manager/types';
+
+type DetailTab = 'overview' | 'ai-activity';
 
 interface Props {
   detail: ProjectDetail;
@@ -35,6 +38,7 @@ function formatHours(minutes: number): string {
 export function ProjectDetailView({ detail }: Props) {
   const { project, commits, sessions } = detail;
   const [isSyncing, setIsSyncing] = useState(false);
+  const [tab, setTab] = useState<DetailTab>('overview');
   const fsPath = filesystemPath(project);
   // useTracking expects a non-empty string; pass empty when unavailable so it
   // short-circuits without firing /api/tracking against a placeholder.
@@ -82,6 +86,37 @@ export function ProjectDetailView({ detail }: Props) {
           </div>
         </div>
       </div>
+
+      {/* Tabs */}
+      <div className="flex gap-1 mb-6 p-1 bg-white/5 rounded-xl w-fit">
+        <button
+          type="button"
+          onClick={() => setTab('overview')}
+          className={`px-4 py-2 text-sm rounded-lg transition-all ${
+            tab === 'overview'
+              ? 'bg-fluya-purple/20 text-fluya-purple'
+              : 'text-gray-400 hover:text-white'
+          }`}
+        >
+          Overview
+        </button>
+        <button
+          type="button"
+          onClick={() => setTab('ai-activity')}
+          className={`px-4 py-2 text-sm rounded-lg transition-all ${
+            tab === 'ai-activity'
+              ? 'bg-fluya-purple/20 text-fluya-purple'
+              : 'text-gray-400 hover:text-white'
+          }`}
+        >
+          AI Activity
+        </button>
+      </div>
+
+      {tab === 'ai-activity' && <AiActivityTab projectId={project.id} />}
+
+      {tab === 'overview' && (
+      <>
 
       {/* Auto-Commit Tracking */}
       {fsPath && (
@@ -207,6 +242,8 @@ export function ProjectDetailView({ detail }: Props) {
           </div>
         )}
       </div>
+      </>
+      )}
     </div>
   );
 }

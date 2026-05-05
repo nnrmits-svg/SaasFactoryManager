@@ -147,22 +147,14 @@ export function CostReportTable() {
       }
       row.topModel = topModel;
 
-      // $/hour over sessions with a linked work_session.
-      // Sum each work_session's duration once, no matter how many claude_sessions
-      // attach to it.
-      let costLinked = 0;
-      const seenWS = new Set<string>();
-      let minutesLinked = 0;
-      for (const s of projectSessions) {
-        if (s.workSessionId && s.workSessionMinutes !== null) {
-          costLinked += s.costUsd;
-          if (!seenWS.has(s.workSessionId)) {
-            seenWS.add(s.workSessionId);
-            minutesLinked += s.workSessionMinutes;
-          }
-        }
-      }
-      row.costPerHour = minutesLinked > 0 ? costLinked / (minutesLinked / 60) : null;
+      // $/hour: divide the (filtered) project cost by the project's TOTAL
+      // work-session minutes. Project-level — no per-session linking — so the
+      // ratio stays in scale even when a single long claude_session aligns to
+      // a brief work_session. (Asymmetry under month filters is intentional;
+      // see ProjectMeta.totalWorkMinutes docstring.)
+      const projectMeta = projectsById.get(row.projectId ?? '');
+      const totalMinutes = projectMeta?.totalWorkMinutes ?? 0;
+      row.costPerHour = totalMinutes > 0 ? row.costUsd / (totalMinutes / 60) : null;
     }
 
     return Array.from(byProject.values()).sort((a, b) => b.costUsd - a.costUsd);
