@@ -28,10 +28,13 @@ function formatRelative(iso: string | null): string {
   return `Hace ${Math.floor(d / 365)} año(s)`;
 }
 
-function installedByLabel(by: string | null): string {
-  if (!by) return 'Origen del install desconocido';
-  if (/^agent/i.test(by)) return 'Instalado por SF Agent';
-  if (/manual/i.test(by)) return 'Instalado manualmente';
+function installedByLabel(by: string | null): string | null {
+  if (!by) return null;
+  // 'seed' is legacy data from a pre-Agent seed run — hide the tooltip so the
+  // panel doesn't show a meaningless origin. Real Agent rows write 'agent'.
+  if (by === 'seed') return null;
+  if (by === 'agent') return 'Instalado por SF Agent';
+  if (by === 'manual') return 'Instalado manualmente';
   return `Instalado por: ${by}`;
 }
 
@@ -97,11 +100,13 @@ export function SkillPanel({ projectId }: Props) {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          {skills.map((skill) => (
+          {skills.map((skill) => {
+            const byLabel = installedByLabel(skill.installedBy);
+            return (
             <div
               key={skill.id}
               className="flex items-center justify-between p-3 bg-fluya-green/5 border border-fluya-green/20 rounded-xl"
-              title={installedByLabel(skill.installedBy)}
+              title={byLabel ?? undefined}
             >
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5">
@@ -113,7 +118,8 @@ export function SkillPanel({ projectId }: Props) {
                 <p className="text-xs text-gray-500 mt-0.5">{formatRelative(skill.installedAt)}</p>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
