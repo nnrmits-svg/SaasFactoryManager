@@ -3,8 +3,8 @@
 > Plan vivo del producto. Una sola fuente de verdad de "donde estamos y a donde vamos".
 > Mantenido por el skill `project-plan`. Cronologia detallada en `Bitacora.md`.
 >
-> Ultima actualizacion: 2026-05-05 13:12
-> Cross-ref: ver entrada del 2026-05-05 13:12 en `Bitacora.md`
+> Ultima actualizacion: 2026-05-06
+> Cross-ref: ver entrada del 2026-05-05 18:00 en `Bitacora.md`
 
 ---
 
@@ -25,7 +25,7 @@ operando con multiples proyectos en multiples maquinas locales (una por develope
 
 ## Estado actual
 
-- **Fase**: post-MVP, Sprint Camino-3 cerrado (UI desacoplada del filesystem). Listo para arrancar Capa 2 del roadmap.
+- **Fase**: post-MVP. Capa 2 (Skills visibles) y Capa 8 (github_owner selector) completadas. Listo para Capa 3 del roadmap (CRUD remoto).
 - **Stack**: Next.js 16 + React 19 + Supabase (proyecto ref `fxlvexilnrfkkcbzwskr`) + Vercel.
 - **Auth**: middleware Supabase activo (`src/middleware.ts`), redirect a `/login` para rutas protegidas.
 - **Wizard de creacion de proyectos**: completo — 10 pasos (9 brief + 1 skills), integrado con SF Agent via `agent_commands`.
@@ -33,10 +33,14 @@ operando con multiples proyectos en multiples maquinas locales (una por develope
   - Tabla `projects` extendida con 7 columnas para tracking async: `agent_status`, `local_path`, `github_repo_url`, `github_owner`, `agent_error`, `skills_to_apply`, `created_by_command_id`.
   - Tabla `agent_commands` soporta type `'create-project'` (Capa 3 *del proyecto* — no confundir con Capa 3 del roadmap global).
   - Tabla `claude_sessions` aplicada (lado Manager pendiente UI; ver "Proximos pasos").
-  - Tabla `project_skills` poblada por SF Agent al boot (`pushInitialProjectSkills()`) + chokidar para cambios futuros. Lista para ser fuente de verdad de Capa 2.
+  - Tabla `project_skills` poblada por SF Agent al boot (`pushInitialProjectSkills()`) + chokidar para cambios futuros. Fuente de verdad consumida por `<SkillPanel>` y `<PortfolioGrid>`.
+  - Tabla `skills_catalog` poblada por el Agent, consumida por `<SkillRegistryDashboard>`.
+  - Tabla `user_github_orgs` consumida por el wizard de creacion y settings.
 - **Frontend del flujo de creacion**: hook `useProjectCreation` + componente `ProjectCreatingModal` cableados; `Project.localPath` mapeado y consumido por `<ProjectDetailView>` y `<PortfolioGrid>` con UI de espera cuando no hay path real.
 - **Entorno**: `.env.local` rellenado manualmente desde dashboard de Supabase (Plan B aplicado tras incidencia con SOPS); `npm run dev` levanta limpio.
-- **UI desacoplada de filesystem (Sprint Camino-3)**: 6 surfaces que tocaban filesystem desde el Manager quedan deshabilitadas con tooltip "⚠ Disponible próximamente vía Agent" — `<SyncButton>`, "Re-sync", "Auto-Commit Tracking", `<DirectoryPicker>`, catalogo de `<SkillRegistryDashboard>`. Fallbacks ilegales en `<SkillPanel>` y `<SkillRegistryDashboard>` eliminados (instalar skill ahora requiere Agent online). Codigo legacy borrado: `open-action.ts`, `create-action.ts`.
+- **UI desacoplada de filesystem (Sprint Camino-3)**: 6 surfaces deshabilitadas con tooltip "⚠ Disponible próximamente vía Agent" — `<SyncButton>`, "Re-sync", "Auto-Commit Tracking", `<DirectoryPicker>`. Fallbacks ilegales eliminados. Codigo legacy borrado: `open-action.ts`, `create-action.ts`.
+- **Capa 2 completada**: `<SkillPanel>`, `<PortfolioGrid>`, `<SkillRegistryDashboard>` leen de BD (`project_skills` + `skills_catalog`) en vez de filesystem. Server actions: `project-skills-action.ts`, `skills-catalog-action.ts`. Funciones FS legacy (`getApplicableSkills`, `getProjectSkills`, `installSkillToProject`, `discoverAllSkills`, `getSkillContent`) sin consumers en UI — pendiente cleanup.
+- **Capa 8 completada**: selector de `github_owner` en wizard y settings, cableado a `user_github_orgs`. Server action: `github-orgs-action.ts`. `agent-control-panel` extendido con `'list-github-orgs'`.
 - **Servicios FS no eliminados** (cleanup queda para Capa 2/3): `auto-commit-service`, `git-service`, `scanner-service`, `git-sync-action`, `scan-action`, `browse-action`, `sync-action`, `sync-service`, `design-system-service`, `resolve-path`, `installSkillToProject`. Quedan en disco pero sin consumers desde la UI.
 
 ## Proximos pasos
