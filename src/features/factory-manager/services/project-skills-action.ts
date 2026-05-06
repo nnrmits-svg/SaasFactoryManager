@@ -12,6 +12,12 @@ export interface ProjectSkillRow {
   installedAt: string | null;
   /** Free-form label written by the SF Agent (e.g. "agent", "manual"). */
   installedBy: string | null;
+  /** Hash of the local .claude/skills/<name>/ directory. Null when the skill
+   *  is registered but missing from disk. */
+  localHash: string | null;
+  /** Hash of the same skill in `skills_catalog` at last Agent push. Null for
+   *  custom skills not present in the catalog. */
+  registryHash: string | null;
 }
 
 /**
@@ -37,7 +43,7 @@ export async function getProjectSkillsByProject(
 
   const { data, error } = await supabase
     .from('project_skills')
-    .select('id, project_id, skill_name, installed_at, installed_by')
+    .select('id, project_id, skill_name, installed_at, installed_by, local_hash, registry_hash')
     .eq('project_id', projectId)
     .order('installed_at', { ascending: false, nullsFirst: false })
     .order('skill_name', { ascending: true });
@@ -50,6 +56,8 @@ export async function getProjectSkillsByProject(
     skillName: row.skill_name as string,
     installedAt: (row.installed_at as string | null) ?? null,
     installedBy: (row.installed_by as string | null) ?? null,
+    localHash: (row.local_hash as string | null) ?? null,
+    registryHash: (row.registry_hash as string | null) ?? null,
   }));
 }
 
@@ -68,7 +76,7 @@ export async function getAllProjectSkills(): Promise<Record<string, ProjectSkill
 
   const { data, error } = await supabase
     .from('project_skills')
-    .select('id, project_id, skill_name, installed_at, installed_by, projects!inner(user_id)')
+    .select('id, project_id, skill_name, installed_at, installed_by, local_hash, registry_hash, projects!inner(user_id)')
     .eq('projects.user_id', user.id);
 
   if (error || !data) return {};
@@ -80,6 +88,8 @@ export async function getAllProjectSkills(): Promise<Record<string, ProjectSkill
     skill_name: string;
     installed_at: string | null;
     installed_by: string | null;
+    local_hash: string | null;
+    registry_hash: string | null;
   }>) {
     const skill: ProjectSkillRow = {
       id: row.id,
@@ -87,6 +97,8 @@ export async function getAllProjectSkills(): Promise<Record<string, ProjectSkill
       skillName: row.skill_name,
       installedAt: row.installed_at ?? null,
       installedBy: row.installed_by ?? null,
+      localHash: row.local_hash ?? null,
+      registryHash: row.registry_hash ?? null,
     };
     if (!grouped[skill.projectId]) grouped[skill.projectId] = [];
     grouped[skill.projectId].push(skill);
