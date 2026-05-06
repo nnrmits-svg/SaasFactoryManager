@@ -38,6 +38,48 @@ function installedByLabel(by: string | null): string | null {
   return `Instalado por: ${by}`;
 }
 
+type SyncState = 'synced' | 'divergent' | 'external' | 'missing';
+
+function computeSyncState(local: string | null, registry: string | null): SyncState {
+  if (!local) return 'missing';
+  if (!registry) return 'external';
+  return local === registry ? 'synced' : 'divergent';
+}
+
+interface StateStyle {
+  tooltip: string;
+  dot: string;
+  border: string;
+  bg: string;
+}
+
+const STATE_STYLES: Record<SyncState, StateStyle> = {
+  synced: {
+    tooltip: 'Sincronizado con catálogo',
+    dot: 'bg-fluya-green',
+    border: 'border-fluya-green/20',
+    bg: 'bg-fluya-green/5',
+  },
+  divergent: {
+    tooltip: 'Difiere del catálogo',
+    dot: 'bg-amber-400',
+    border: 'border-amber-400/30',
+    bg: 'bg-amber-400/5',
+  },
+  external: {
+    tooltip: 'Skill custom',
+    dot: 'bg-gray-400',
+    border: 'border-gray-400/20',
+    bg: 'bg-gray-400/5',
+  },
+  missing: {
+    tooltip: 'Falta el skill',
+    dot: 'bg-red-500',
+    border: 'border-red-500/30',
+    bg: 'bg-red-500/5',
+  },
+};
+
 /**
  * Lists the skills installed in this project. Reads from `project_skills`
  * (populated by the SF Agent watcher), Vercel-friendly. The applicable-skill
@@ -102,15 +144,18 @@ export function SkillPanel({ projectId }: Props) {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {skills.map((skill) => {
             const byLabel = installedByLabel(skill.installedBy);
+            const state = computeSyncState(skill.localHash, skill.registryHash);
+            const style = STATE_STYLES[state];
+            const tooltip = byLabel ? `${style.tooltip} · ${byLabel}` : style.tooltip;
             return (
             <div
               key={skill.id}
-              className="flex items-center justify-between p-3 bg-fluya-green/5 border border-fluya-green/20 rounded-xl"
-              title={byLabel ?? undefined}
+              className={`flex items-center justify-between p-3 ${style.bg} border ${style.border} rounded-xl`}
+              title={tooltip}
             >
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-fluya-green shrink-0" />
+                  <span className={`w-1.5 h-1.5 rounded-full ${style.dot} shrink-0`} />
                   <p className="text-sm font-medium text-white font-mono truncate">
                     {skill.skillName}
                   </p>
