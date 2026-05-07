@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import type { Profile } from '@/features/auth/types';
 import { UserMenu } from '@/features/auth/components/user-menu';
+import { FluyaLogo } from '@/shared/components/fluya-logo';
 
 interface NavbarShellProps {
   /** Right-side content. Auth-aware in NavbarAuth, neutral in NavbarSkeleton. */
@@ -12,16 +13,8 @@ function NavbarShell({ rightSlot }: NavbarShellProps) {
   return (
     <nav className="fixed top-0 inset-x-0 z-50 bg-fluya-bg/80 backdrop-blur-xl border-b border-white/5 px-6 py-3">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2.5 w-fit group">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-gradient-to-br from-pink-500 via-purple-500 to-purple-700 shadow-lg shadow-purple-500/30 group-hover:shadow-purple-500/50 transition-shadow">
-            <span className="text-white font-black text-sm leading-none">F</span>
-          </div>
-          <span className="text-lg font-bold tracking-tight">
-            <span className="text-white">Fluya</span>{' '}
-            <span className="bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">
-              Studio
-            </span>
-          </span>
+        <Link href="/" className="w-fit transition-transform hover:scale-105">
+          <FluyaLogo className="h-8" />
         </Link>
 
         <div className="flex items-center gap-1">{rightSlot}</div>
