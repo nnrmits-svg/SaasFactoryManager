@@ -1,0 +1,29 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - link "F Fluya Studio" [ref=e4] [cursor=pointer]:
+      - /url: /
+      - generic [ref=e6]: F
+      - generic [ref=e7]: Fluya Studio
+  - main [ref=e10]:
+    - generic [ref=e12]:
+      - generic [ref=e13]:
+        - generic [ref=e14]:
+          - heading "Factory" [level=1] [ref=e15]
+          - paragraph [ref=e16]: Crea y gestiona tus proyectos SaaS.
+        - button "+ Nuevo Proyecto" [ref=e17] [cursor=pointer]
+      - generic [ref=e18]: Cargando proyectos...
+  - contentinfo [ref=e19]:
+    - generic [ref=e20]:
+      - link "F Fluya Studio" [ref=e21] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e23]: F
+        - generic [ref=e24]: Fluya Studio
+      - generic [ref=e25]:
+        - link "Terminos" [ref=e26] [cursor=pointer]:
+          - /url: /terminos
+        - link "Privacidad" [ref=e27] [cursor=pointer]:
+          - /url: /privacidad
+        - link "Contacto" [ref=e28] [cursor=pointer]:
+          - /url: /contacto
+      - paragraph [ref=e29]: Fluya Studio IA • Buenos Aires, Argentina
+  - alert [ref=e30]

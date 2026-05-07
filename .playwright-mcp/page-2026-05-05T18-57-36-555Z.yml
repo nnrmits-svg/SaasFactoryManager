@@ -1,0 +1,115 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - generic [ref=e3]:
+      - link "F Fluya Studio" [ref=e4] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e6]: F
+        - generic [ref=e7]: Fluya Studio
+      - generic [ref=e8]:
+        - link "Portfolio" [ref=e9] [cursor=pointer]:
+          - /url: /dashboard
+        - link "Factory" [ref=e10] [cursor=pointer]:
+          - /url: /factory
+        - link "Skills" [ref=e11] [cursor=pointer]:
+          - /url: /skills
+        - link "Reports" [ref=e12] [cursor=pointer]:
+          - /url: /reports
+        - link "Settings" [ref=e13] [cursor=pointer]:
+          - /url: /settings
+        - button "RM" [ref=e16] [cursor=pointer]:
+          - generic [ref=e18]: RM
+  - main [ref=e19]:
+    - main [ref=e20]:
+      - generic [ref=e21]:
+        - heading "Reports" [level=1] [ref=e22]
+        - paragraph [ref=e23]: "Actividad de Claude por proyecto: tokens, costo y modelo más usado."
+      - generic [ref=e24]:
+        - generic [ref=e37]:
+          - generic [ref=e38]:
+            - generic [ref=e39]: Modelo
+            - combobox "Modelo" [ref=e40]:
+              - option "Todos" [selected]
+              - option "claude-opus-4-6"
+              - option "claude-opus-4-7"
+          - generic [ref=e41]:
+            - generic [ref=e42]: Mes
+            - combobox "Mes" [ref=e43]:
+              - option "Todos" [selected]
+              - option "2026-05"
+              - option "2026-04"
+          - generic [ref=e44]:
+            - generic [ref=e45]: Proyecto
+            - combobox "Proyecto" [ref=e46]:
+              - option "Todos" [selected]
+              - option "ConsultorFinanciero"
+              - option "SaasFactoryAgent"
+              - option "SaasFactoryManager"
+              - option "SuscriptionsMgmt"
+          - generic [ref=e47]: 4 sesion(es) • $856.49 • 294.9M tokens
+        - table [ref=e49]:
+          - rowgroup [ref=e50]:
+            - row "Proyecto Status Tokens (in / out / cached) $ Total $/hora Modelo más usado Última sesión" [ref=e51]:
+              - columnheader "Proyecto" [ref=e52]
+              - columnheader "Status" [ref=e53]
+              - columnheader "Tokens (in / out / cached)" [ref=e54]
+              - columnheader "$ Total" [ref=e55]
+              - columnheader "$/hora" [ref=e56]
+              - columnheader "Modelo más usado" [ref=e57]
+              - columnheader "Última sesión" [ref=e58]
+          - rowgroup [ref=e59]:
+            - row "SaasFactoryAgent active 2.6K / 1.1M / 277.9M $772.12 $9,265.45 claude-opus-4-7 02/05/2026" [ref=e60]:
+              - cell "SaasFactoryAgent" [ref=e61]
+              - cell "active" [ref=e62]
+              - cell "2.6K / 1.1M / 277.9M" [ref=e63]
+              - cell "$772.12" [ref=e64]
+              - cell "$9,265.45" [ref=e65]
+              - cell "claude-opus-4-7" [ref=e66]
+              - cell "02/05/2026" [ref=e67]
+            - row "SuscriptionsMgmt active 420 / 124.1K / 14.8M $74.92 $21.20 claude-opus-4-7 20/04/2026" [ref=e68]:
+              - cell "SuscriptionsMgmt" [ref=e69]
+              - cell "active" [ref=e70]
+              - cell "420 / 124.1K / 14.8M" [ref=e71]
+              - cell "$74.92" [ref=e72]
+              - cell "$21.20" [ref=e73]
+              - cell "claude-opus-4-7" [ref=e74]
+              - cell "20/04/2026" [ref=e75]
+            - row "SaasFactoryManager active 85 / 5.8K / 829.3K $8.49 $3.00 claude-opus-4-6 16/04/2026" [ref=e76]:
+              - cell "SaasFactoryManager" [ref=e77]
+              - cell "active" [ref=e78]
+              - cell "85 / 5.8K / 829.3K" [ref=e79]
+              - cell "$8.49" [ref=e80]
+              - cell "$3.00" [ref=e81]
+              - cell "claude-opus-4-6" [ref=e82]
+              - cell "16/04/2026" [ref=e83]
+            - row "ConsultorFinanciero active 20 / 819 / 64K $0.96 - claude-opus-4-6 05/05/2026" [ref=e84]:
+              - cell "ConsultorFinanciero" [ref=e85]
+              - cell "active" [ref=e86]
+              - cell "20 / 819 / 64K" [ref=e87]
+              - cell "$0.96" [ref=e88]
+              - cell "-" [ref=e89]
+              - cell "claude-opus-4-6" [ref=e90]
+              - cell "05/05/2026" [ref=e91]
+          - rowgroup [ref=e92]:
+            - row "Totales 4 proyecto(s) 3.1K / 1.3M / 293.6M $856.49" [ref=e93]:
+              - cell "Totales" [ref=e94]
+              - cell "4 proyecto(s)" [ref=e95]
+              - cell "3.1K / 1.3M / 293.6M" [ref=e96]
+              - cell "$856.49" [ref=e97]
+              - cell [ref=e98]
+              - cell [ref=e99]
+              - cell [ref=e100]
+  - contentinfo [ref=e25]:
+    - generic [ref=e26]:
+      - link "F Fluya Studio" [ref=e27] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e29]: F
+        - generic [ref=e30]: Fluya Studio
+      - generic [ref=e31]:
+        - link "Terminos" [ref=e32] [cursor=pointer]:
+          - /url: /terminos
+        - link "Privacidad" [ref=e33] [cursor=pointer]:
+          - /url: /privacidad
+        - link "Contacto" [ref=e34] [cursor=pointer]:
+          - /url: /contacto
+      - paragraph [ref=e35]: Fluya Studio IA • Buenos Aires, Argentina
+  - alert [ref=e36]
