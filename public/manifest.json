@@ -1,0 +1,29 @@
+{
+    "name": "Factory Manager — Fluya Studio",
+    "short_name": "Factory Manager",
+    "description": "Business OS para gestionar tu fabrica de software",
+    "start_url": "/dashboard",
+    "display": "standalone",
+    "background_color": "#0B001E",
+    "theme_color": "#7C3AED",
+    "orientation": "portrait-primary",
+    "scope": "/",
+    "icons": [
+        {
+            "src": "/icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "/icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ],
+    "categories": [
+        "productivity",
+        "business"
+    ]
+}
