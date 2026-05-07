@@ -38,11 +38,12 @@ function installedByLabel(by: string | null): string | null {
   return `Instalado por: ${by}`;
 }
 
-type SyncState = 'synced' | 'divergent' | 'external' | 'missing';
+type SyncState = 'synced' | 'divergent' | 'external' | 'missing' | 'pending';
 
 function computeSyncState(local: string | null, registry: string | null): SyncState {
-  if (!local) return 'missing';
-  if (!registry) return 'external';
+  if (local === null && registry === null) return 'pending';
+  if (local === null) return 'missing';
+  if (registry === null) return 'external';
   return local === registry ? 'synced' : 'divergent';
 }
 
@@ -77,6 +78,12 @@ const STATE_STYLES: Record<SyncState, StateStyle> = {
     dot: 'bg-red-500',
     border: 'border-red-500/30',
     bg: 'bg-red-500/5',
+  },
+  pending: {
+    tooltip: 'Estado pendiente — el Agent aún no pusheó hashes para este skill',
+    dot: 'bg-gray-600',
+    border: 'border-white/10',
+    bg: 'bg-white/[0.02]',
   },
 };
 
