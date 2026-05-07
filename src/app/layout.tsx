@@ -1,15 +1,24 @@
 import { Suspense } from 'react'
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import { NavbarAuth, NavbarSkeleton } from '@/shared/components/navbar'
 import { Footer } from '@/shared/components/footer'
 import './globals.css'
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter', display: 'swap' })
 
 export const metadata: Metadata = {
   title: 'Factory Manager — Fluya Studio',
   description: 'Business OS para gestionar tu fabrica de software',
+  manifest: '/manifest.json',
+  icons: {
+    icon: '/icon-192.png',
+    apple: '/apple-touch-icon.png',
+  },
+}
+
+export const viewport: Viewport = {
+  themeColor: '#7C3AED',
 }
 
 export default function RootLayout({
@@ -18,8 +27,8 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="es">
-      <body className={`${inter.className} flex flex-col min-h-screen`}>
+    <html lang="es" className={inter.variable}>
+      <body className="font-sans flex flex-col min-h-screen">
         <Suspense fallback={<NavbarSkeleton />}>
           <NavbarAuth />
         </Suspense>
