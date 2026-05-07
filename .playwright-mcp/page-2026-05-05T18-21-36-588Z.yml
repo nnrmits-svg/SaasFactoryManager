@@ -1,0 +1,179 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - generic [ref=e3]:
+      - link "F Fluya Studio" [ref=e4] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e6]: F
+        - generic [ref=e7]: Fluya Studio
+      - generic [ref=e8]:
+        - link "Portfolio" [ref=e9] [cursor=pointer]:
+          - /url: /dashboard
+        - link "Factory" [ref=e10] [cursor=pointer]:
+          - /url: /factory
+        - link "Skills" [ref=e11] [cursor=pointer]:
+          - /url: /skills
+        - link "Reports" [ref=e12] [cursor=pointer]:
+          - /url: /reports
+        - link "Settings" [ref=e13] [cursor=pointer]:
+          - /url: /settings
+        - button "RM" [ref=e16] [cursor=pointer]:
+          - generic [ref=e18]: RM
+  - main [ref=e19]:
+    - generic [ref=e21]:
+      - generic [ref=e22]:
+        - generic [ref=e23]:
+          - heading "Portfolio" [level=1] [ref=e24]
+          - paragraph [ref=e25]: 4 proyecto(s) en tu fabrica de software.
+        - generic [ref=e27]:
+          - button "+ Agregar" [disabled] [ref=e28]
+          - button "Sincronizar" [disabled] [ref=e29]
+      - generic [ref=e43]:
+        - generic [ref=e44]:
+          - paragraph [ref=e45]: Proyectos
+          - paragraph [ref=e46]: "4"
+        - generic [ref=e47]:
+          - paragraph [ref=e48]: Tiempo Total
+          - paragraph [ref=e49]: 4443h 32m
+        - generic [ref=e50]:
+          - paragraph [ref=e51]: Commits
+          - paragraph [ref=e52]: "439"
+        - generic [ref=e53]:
+          - paragraph [ref=e54]: Mas Activo
+          - paragraph [ref=e55]: SuscriptionsMgmt
+      - generic [ref=e56]:
+        - 'link "SuscriptionsMgmt active add-security autoresearch bucle-agentico fluya-ai-agent fluya-brand memory-manager playwright-cli primer prp skill-creator supabase update: sincronización automática 2026-04-27 16:55 7d por nnrmits-svg 262 commits 3043h 34m trabajado" [ref=e57] [cursor=pointer]':
+          - /url: /project/SuscriptionsMgmt
+          - generic [ref=e58]:
+            - heading "SuscriptionsMgmt" [level=3] [ref=e60]
+            - generic [ref=e62]: active
+          - generic [ref=e63]:
+            - generic [ref=e64]: add-security
+            - generic [ref=e65]: autoresearch
+            - generic [ref=e66]: bucle-agentico
+            - generic [ref=e67]: fluya-ai-agent
+            - generic [ref=e68]: fluya-brand
+            - generic [ref=e69]: memory-manager
+            - generic [ref=e70]: playwright-cli
+            - generic [ref=e71]: primer
+            - generic [ref=e72]: prp
+            - generic [ref=e73]: skill-creator
+            - generic [ref=e74]: supabase
+          - generic [ref=e75]:
+            - paragraph [ref=e76]: "update: sincronización automática 2026-04-27 16:55"
+            - paragraph [ref=e77]: 7d por nnrmits-svg
+          - generic [ref=e78]:
+            - generic [ref=e79]: 262 commits
+            - generic [ref=e80]: 3043h 34m trabajado
+        - 'link "SaasFactoryManager active add-emails add-login add-mobile add-payments add-security agent-performance ai autoresearch bitacora bucle-agentico eject-sf image-generation memory-manager new-app playwright-cli primer project-plan prp setup-workstation skill-creator supabase update-sf website-3d wip: NNRM-iMac-275.local 2026-05-05 13:36 1h por nnrmits-svg 54 commits 566h 56m trabajado" [ref=e81] [cursor=pointer]':
+          - /url: /project/SaasFactoryManager
+          - generic [ref=e82]:
+            - heading "SaasFactoryManager" [level=3] [ref=e84]
+            - generic [ref=e86]: active
+          - generic [ref=e87]:
+            - generic [ref=e88]: add-emails
+            - generic [ref=e89]: add-login
+            - generic [ref=e90]: add-mobile
+            - generic [ref=e91]: add-payments
+            - generic [ref=e92]: add-security
+            - generic [ref=e93]: agent-performance
+            - generic [ref=e94]: ai
+            - generic [ref=e95]: autoresearch
+            - generic [ref=e96]: bitacora
+            - generic [ref=e97]: bucle-agentico
+            - generic [ref=e98]: eject-sf
+            - generic [ref=e99]: image-generation
+            - generic [ref=e100]: memory-manager
+            - generic [ref=e101]: new-app
+            - generic [ref=e102]: playwright-cli
+            - generic [ref=e103]: primer
+            - generic [ref=e104]: project-plan
+            - generic [ref=e105]: prp
+            - generic [ref=e106]: setup-workstation
+            - generic [ref=e107]: skill-creator
+            - generic [ref=e108]: supabase
+            - generic [ref=e109]: update-sf
+            - generic [ref=e110]: website-3d
+          - generic [ref=e111]:
+            - paragraph [ref=e112]: "wip: NNRM-iMac-275.local 2026-05-05 13:36"
+            - paragraph [ref=e113]: 1h por nnrmits-svg
+          - generic [ref=e114]:
+            - generic [ref=e115]: 54 commits
+            - generic [ref=e116]: 566h 56m trabajado
+        - 'link "ConsultorFinanciero active add-emails add-login add-mobile add-payments ai autoresearch bucle-agentico eject-sf image-generation memory-manager new-app playwright-cli primer prp skill-creator supabase update-sf website-3d feat(db): security and perf audit fixes 2d por nnrmits-svg 7 commits 48h 20m trabajado" [ref=e117] [cursor=pointer]':
+          - /url: /project/ConsultorFinanciero
+          - generic [ref=e118]:
+            - heading "ConsultorFinanciero" [level=3] [ref=e120]
+            - generic [ref=e122]: active
+          - generic [ref=e123]:
+            - generic [ref=e124]: add-emails
+            - generic [ref=e125]: add-login
+            - generic [ref=e126]: add-mobile
+            - generic [ref=e127]: add-payments
+            - generic [ref=e128]: ai
+            - generic [ref=e129]: autoresearch
+            - generic [ref=e130]: bucle-agentico
+            - generic [ref=e131]: eject-sf
+            - generic [ref=e132]: image-generation
+            - generic [ref=e133]: memory-manager
+            - generic [ref=e134]: new-app
+            - generic [ref=e135]: playwright-cli
+            - generic [ref=e136]: primer
+            - generic [ref=e137]: prp
+            - generic [ref=e138]: skill-creator
+            - generic [ref=e139]: supabase
+            - generic [ref=e140]: update-sf
+            - generic [ref=e141]: website-3d
+          - generic [ref=e142]:
+            - paragraph [ref=e143]: "feat(db): security and perf audit fixes"
+            - paragraph [ref=e144]: 2d por nnrmits-svg
+          - generic [ref=e145]:
+            - generic [ref=e146]: 7 commits
+            - generic [ref=e147]: 48h 20m trabajado
+        - 'link "SaasFactoryAgent active add-emails add-login add-mobile add-payments add-security agent-performance ai autoresearch bucle-agentico eject-sf image-generation memory-manager new-app playwright-cli primer prp setup-workstation skill-creator supabase update-sf website-3d wip: MacBookPro-2016.local 2026-05-04 19:15 20h por nnrmits-svg 116 commits 784h 42m trabajado" [ref=e148] [cursor=pointer]':
+          - /url: /project/SaasFactoryAgent
+          - generic [ref=e149]:
+            - heading "SaasFactoryAgent" [level=3] [ref=e151]
+            - generic [ref=e153]: active
+          - generic [ref=e154]:
+            - generic [ref=e155]: add-emails
+            - generic [ref=e156]: add-login
+            - generic [ref=e157]: add-mobile
+            - generic [ref=e158]: add-payments
+            - generic [ref=e159]: add-security
+            - generic [ref=e160]: agent-performance
+            - generic [ref=e161]: ai
+            - generic [ref=e162]: autoresearch
+            - generic [ref=e163]: bucle-agentico
+            - generic [ref=e164]: eject-sf
+            - generic [ref=e165]: image-generation
+            - generic [ref=e166]: memory-manager
+            - generic [ref=e167]: new-app
+            - generic [ref=e168]: playwright-cli
+            - generic [ref=e169]: primer
+            - generic [ref=e170]: prp
+            - generic [ref=e171]: setup-workstation
+            - generic [ref=e172]: skill-creator
+            - generic [ref=e173]: supabase
+            - generic [ref=e174]: update-sf
+            - generic [ref=e175]: website-3d
+          - generic [ref=e176]:
+            - paragraph [ref=e177]: "wip: MacBookPro-2016.local 2026-05-04 19:15"
+            - paragraph [ref=e178]: 20h por nnrmits-svg
+          - generic [ref=e179]:
+            - generic [ref=e180]: 116 commits
+            - generic [ref=e181]: 784h 42m trabajado
+  - contentinfo [ref=e31]:
+    - generic [ref=e32]:
+      - link "F Fluya Studio" [ref=e33] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e35]: F
+        - generic [ref=e36]: Fluya Studio
+      - generic [ref=e37]:
+        - link "Terminos" [ref=e38] [cursor=pointer]:
+          - /url: /terminos
+        - link "Privacidad" [ref=e39] [cursor=pointer]:
+          - /url: /privacidad
+        - link "Contacto" [ref=e40] [cursor=pointer]:
+          - /url: /contacto
+      - paragraph [ref=e41]: Fluya Studio IA • Buenos Aires, Argentina
+  - alert [ref=e42]

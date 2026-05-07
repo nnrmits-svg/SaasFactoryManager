@@ -1,0 +1,38 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - generic [ref=e3]:
+      - link "F Fluya Studio" [ref=e4] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e6]: F
+        - generic [ref=e7]: Fluya Studio
+      - generic [ref=e8]:
+        - link "Portfolio" [ref=e9] [cursor=pointer]:
+          - /url: /dashboard
+        - link "Factory" [ref=e10] [cursor=pointer]:
+          - /url: /factory
+        - link "Skills" [ref=e11] [cursor=pointer]:
+          - /url: /skills
+        - link "Reports" [ref=e12] [cursor=pointer]:
+          - /url: /reports
+        - link "Settings" [ref=e13] [cursor=pointer]:
+          - /url: /settings
+        - button "RM" [ref=e16] [cursor=pointer]:
+          - generic [ref=e18]: RM
+  - main [ref=e19]:
+    - main [ref=e20]:
+      - paragraph [ref=e22]: Cargando skill registry...
+  - contentinfo [ref=e23]:
+    - generic [ref=e24]:
+      - link "F Fluya Studio" [ref=e25] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e27]: F
+        - generic [ref=e28]: Fluya Studio
+      - generic [ref=e29]:
+        - link "Terminos" [ref=e30] [cursor=pointer]:
+          - /url: /terminos
+        - link "Privacidad" [ref=e31] [cursor=pointer]:
+          - /url: /privacidad
+        - link "Contacto" [ref=e32] [cursor=pointer]:
+          - /url: /contacto
+      - paragraph [ref=e33]: Fluya Studio IA • Buenos Aires, Argentina
+  - alert [ref=e34]

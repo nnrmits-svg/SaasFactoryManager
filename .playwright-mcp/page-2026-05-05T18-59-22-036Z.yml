@@ -1,0 +1,95 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e31]:
+    - generic [ref=e32]:
+      - link "F Fluya Studio" [ref=e33] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e35]: F
+        - generic [ref=e36]: Fluya Studio
+      - generic [ref=e37]:
+        - link "Portfolio" [ref=e38] [cursor=pointer]:
+          - /url: /dashboard
+        - link "Factory" [ref=e39] [cursor=pointer]:
+          - /url: /factory
+        - link "Skills" [ref=e40] [cursor=pointer]:
+          - /url: /skills
+        - link "Reports" [ref=e41] [cursor=pointer]:
+          - /url: /reports
+        - link "Settings" [ref=e42] [cursor=pointer]:
+          - /url: /settings
+        - button "RM" [ref=e45] [cursor=pointer]:
+          - generic [ref=e47]: RM
+  - main [ref=e10]:
+    - generic [ref=e12]:
+      - generic [ref=e13]:
+        - generic [ref=e14]:
+          - heading "Factory" [level=1] [ref=e15]
+          - paragraph [ref=e16]: Crea y gestiona tus proyectos SaaS.
+        - button "+ Nuevo Proyecto" [ref=e17] [cursor=pointer]
+      - generic [ref=e48]:
+        - generic [ref=e50]:
+          - generic [ref=e51]:
+            - generic [ref=e52]:
+              - link "SuscriptionsMgmt" [ref=e53] [cursor=pointer]:
+                - /url: /project/SuscriptionsMgmt
+              - generic [ref=e54]: Activo
+            - generic [ref=e55]:
+              - generic [ref=e56]: 262 commits
+              - generic [ref=e57]: 64h 5m trabajados
+              - generic [ref=e58]: "Creado: 28/4/2026"
+          - generic [ref=e59]:
+            - button "Editar" [ref=e60] [cursor=pointer]
+            - button "Eliminar" [ref=e61] [cursor=pointer]
+        - generic [ref=e63]:
+          - generic [ref=e64]:
+            - generic [ref=e65]:
+              - link "SaasFactoryManager" [ref=e66] [cursor=pointer]:
+                - /url: /project/SaasFactoryManager
+              - generic [ref=e67]: Activo
+            - generic [ref=e68]:
+              - generic [ref=e69]: 60 commits
+              - generic [ref=e70]: 13h 13m trabajados
+              - generic [ref=e71]: "Creado: 28/4/2026"
+          - generic [ref=e72]:
+            - button "Editar" [ref=e73] [cursor=pointer]
+            - button "Eliminar" [ref=e74] [cursor=pointer]
+        - generic [ref=e76]:
+          - generic [ref=e77]:
+            - generic [ref=e78]:
+              - link "ConsultorFinanciero" [ref=e79] [cursor=pointer]:
+                - /url: /project/ConsultorFinanciero
+              - generic [ref=e80]: Activo
+            - generic [ref=e81]:
+              - generic [ref=e82]: 7 commits
+              - generic [ref=e83]: 2h 47m trabajados
+              - generic [ref=e84]: "Creado: 23/4/2026"
+          - generic [ref=e85]:
+            - button "Editar" [ref=e86] [cursor=pointer]
+            - button "Eliminar" [ref=e87] [cursor=pointer]
+        - generic [ref=e89]:
+          - generic [ref=e90]:
+            - generic [ref=e91]:
+              - link "SaasFactoryAgent" [ref=e92] [cursor=pointer]:
+                - /url: /project/SaasFactoryAgent
+              - generic [ref=e93]: Activo
+            - generic [ref=e94]:
+              - generic [ref=e95]: 117 commits
+              - generic [ref=e96]: 18h 29m trabajados
+              - generic [ref=e97]: "Creado: 25/3/2026"
+          - generic [ref=e98]:
+            - button "Editar" [ref=e99] [cursor=pointer]
+            - button "Eliminar" [ref=e100] [cursor=pointer]
+  - contentinfo [ref=e19]:
+    - generic [ref=e20]:
+      - link "F Fluya Studio" [ref=e21] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e23]: F
+        - generic [ref=e24]: Fluya Studio
+      - generic [ref=e25]:
+        - link "Terminos" [ref=e26] [cursor=pointer]:
+          - /url: /terminos
+        - link "Privacidad" [ref=e27] [cursor=pointer]:
+          - /url: /privacidad
+        - link "Contacto" [ref=e28] [cursor=pointer]:
+          - /url: /contacto
+      - paragraph [ref=e29]: Fluya Studio IA • Buenos Aires, Argentina
+  - alert [ref=e30]
