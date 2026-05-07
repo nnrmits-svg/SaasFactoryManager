@@ -1,21 +1,14 @@
 'use client';
 
 import Link from 'next/link';
+import { FluyaLogo } from '@/shared/components/fluya-logo';
 
 export function Footer() {
   return (
-    <footer className="w-full bg-black border-t border-white/5 mt-auto">
+    <footer className="w-full bg-[#05000F] border-t border-white/5 mt-auto">
       <div className="max-w-7xl mx-auto px-6 py-8 flex flex-col items-center gap-4">
-        <Link href="/" className="flex items-center gap-2.5 group">
-          <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-gradient-to-br from-pink-500 via-purple-500 to-purple-700 shadow-lg shadow-purple-500/20">
-            <span className="text-white font-black text-xs leading-none">F</span>
-          </div>
-          <span className="text-base font-bold tracking-tight">
-            <span className="text-white">Fluya</span>{' '}
-            <span className="bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">
-              Studio
-            </span>
-          </span>
+        <Link href="/" className="transition-transform hover:scale-105">
+          <FluyaLogo className="h-6" />
         </Link>
 
         <div className="flex items-center gap-6">
