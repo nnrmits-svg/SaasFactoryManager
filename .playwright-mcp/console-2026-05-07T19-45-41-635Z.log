@@ -1,0 +1,16 @@
+[     430ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0ifwd0~._.js:2925
+[     445ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0ifwd0~._.js:2925
+[  151943ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0ifwd0~._.js:2925
+[  153327ms] [LOG] [Fast Refresh] done in 1484ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0ifwd0~._.js:2925
+[  181875ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0ifwd0~._.js:2925
+[  182554ms] [LOG] [Fast Refresh] done in 779ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0ifwd0~._.js:2925
+[  421897ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0ifwd0~._.js:2925
+[  422401ms] [LOG] [Fast Refresh] done in 604ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0ifwd0~._.js:2925
+[  451924ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0ifwd0~._.js:2925
+[  451990ms] [LOG] [Fast Refresh] done in 166ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0ifwd0~._.js:2925
+[  721817ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0ifwd0~._.js:2925
+[  722369ms] [LOG] [Fast Refresh] done in 653ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0ifwd0~._.js:2925
+[  751934ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0ifwd0~._.js:2925
+[  753181ms] [LOG] [Fast Refresh] done in 1347ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0ifwd0~._.js:2925
+[ 1682345ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0ifwd0~._.js:2925
+[ 1682405ms] [LOG] [Fast Refresh] done in 160ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0ifwd0~._.js:2925

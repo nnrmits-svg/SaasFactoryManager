@@ -1,0 +1,114 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - generic [ref=e3]:
+      - link "Fluya Studio Fluya Studio" [ref=e4] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e5]:
+          - img "Fluya Studio" [ref=e6]
+          - generic [ref=e7]: Fluya Studio
+      - generic [ref=e8]:
+        - link "Portfolio" [ref=e9] [cursor=pointer]:
+          - /url: /dashboard
+        - link "Factory" [ref=e10] [cursor=pointer]:
+          - /url: /factory
+        - link "Skills" [ref=e11] [cursor=pointer]:
+          - /url: /skills
+        - link "Reports" [ref=e12] [cursor=pointer]:
+          - /url: /reports
+        - link "Settings" [ref=e13] [cursor=pointer]:
+          - /url: /settings
+        - button "RM" [ref=e16] [cursor=pointer]:
+          - generic [ref=e18]: RM
+  - main [ref=e19]:
+    - generic [ref=e21]:
+      - generic [ref=e22]:
+        - link "← Portfolio" [ref=e23] [cursor=pointer]:
+          - /url: /dashboard
+        - generic [ref=e24]:
+          - generic [ref=e25]:
+            - heading "ConsultorFinanciero" [level=1] [ref=e26]
+            - paragraph [ref=e27]: /Users/ricardomarchetti/ProyectosIA/AplicacionesSaas/ConsultorFinanciero
+          - button "Re-sync" [disabled] [ref=e29]
+      - generic [ref=e30]:
+        - button "Overview" [ref=e31] [cursor=pointer]
+        - button "AI Activity" [ref=e32] [cursor=pointer]
+      - generic [ref=e34]:
+        - generic [ref=e37]:
+          - paragraph [ref=e38]: Auto-Commit Tracking
+          - paragraph [ref=e39]: Detecta cambios y commitea automaticamente cada 30s
+        - button "Start Tracking" [disabled] [ref=e40]
+      - generic [ref=e46]:
+        - paragraph [ref=e47]: SF Agent Desktop
+        - paragraph [ref=e48]: Verificando...
+      - generic [ref=e49]:
+        - generic [ref=e50]:
+          - paragraph [ref=e51]: Version SF
+          - paragraph [ref=e52]: "-"
+        - generic [ref=e53]:
+          - paragraph [ref=e54]: Commits
+          - paragraph [ref=e55]: "8"
+        - generic [ref=e56]:
+          - paragraph [ref=e57]: Tiempo Total
+          - paragraph [ref=e58]: 2h 47m
+        - generic [ref=e59]:
+          - paragraph [ref=e60]: Sesiones
+          - paragraph [ref=e61]: "2"
+      - paragraph [ref=e63]: Cargando skills...
+      - generic [ref=e64]:
+        - heading "Sesiones de Trabajo" [level=2] [ref=e65]
+        - generic [ref=e66]:
+          - generic [ref=e67]:
+            - generic [ref=e68]:
+              - paragraph [ref=e69]: 02 May 2026, 16:50
+              - paragraph [ref=e70]: 3 commits en esta sesion
+            - paragraph [ref=e71]: 2h 42m
+          - generic [ref=e72]:
+            - generic [ref=e73]:
+              - paragraph [ref=e74]: 30 Abr 2026, 18:29
+              - paragraph [ref=e75]: 1 commits en esta sesion
+            - paragraph [ref=e76]: 5m
+      - generic [ref=e77]:
+        - heading "Commits (8)" [level=2] [ref=e78]
+        - generic [ref=e79]:
+          - generic [ref=e82]:
+            - paragraph [ref=e83]: "wip: MacBookPro-2016.local 2026-05-07 16:53"
+            - paragraph [ref=e84]: 772007e • nnrmits-svg • 07 May 2026, 16:53
+          - generic [ref=e87]:
+            - paragraph [ref=e88]: "feat(db): security and perf audit fixes"
+            - paragraph [ref=e89]: b58ad4d • nnrmits-svg • 02 May 2026, 19:17
+          - generic [ref=e92]:
+            - paragraph [ref=e93]: "security: scrub OPENROUTER_API_KEY, untrack backup dir, add gitleaks allowlist"
+            - paragraph [ref=e94]: 0152c75 • nnrmits-svg • 02 May 2026, 17:20
+          - generic [ref=e97]:
+            - paragraph [ref=e98]: "security: scrub OPENROUTER_API_KEY from docs (placeholder)"
+            - paragraph [ref=e99]: 6b96c08 • nnrmits-svg • 02 May 2026, 16:50
+          - generic [ref=e102]:
+            - paragraph [ref=e103]: "feat: import existing project"
+            - paragraph [ref=e104]: b5add43 • nnrmits-svg • 30 Abr 2026, 18:29
+          - generic [ref=e107]:
+            - paragraph [ref=e108]: "chore: rotate sops recipient to current age pub"
+            - paragraph [ref=e109]: dbf40ed • nnrmits-svg • 30 Abr 2026, 17:52
+          - generic [ref=e112]:
+            - paragraph [ref=e113]: "wip: MB-Air-NNRM-2025.local 2026-04-24 14:49"
+            - paragraph [ref=e114]: 7cddeed • nnrmits-svg • 24 Abr 2026, 14:49
+          - generic [ref=e117]:
+            - paragraph [ref=e118]: Initial commit
+            - paragraph [ref=e119]: bafe7ab • Riki Marchetti • 03 Mar 2026, 15:43
+  - contentinfo [ref=e120]:
+    - generic [ref=e121]:
+      - link "Fluya Studio Fluya Studio" [ref=e122] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e123]:
+          - img "Fluya Studio" [ref=e124]
+          - generic [ref=e125]: Fluya Studio
+      - generic [ref=e126]:
+        - link "Terminos" [ref=e127] [cursor=pointer]:
+          - /url: /terminos
+        - link "Privacidad" [ref=e128] [cursor=pointer]:
+          - /url: /privacidad
+        - link "Contacto" [ref=e129] [cursor=pointer]:
+          - /url: /contacto
+      - paragraph [ref=e130]: Fluya Studio IA • Buenos Aires, Argentina
+  - button "Open Next.js Dev Tools" [ref=e136] [cursor=pointer]:
+    - img [ref=e137]
+  - alert [ref=e140]
