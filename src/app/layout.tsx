@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import { NavbarAuth, NavbarSkeleton } from '@/shared/components/navbar'
 import { Footer } from '@/shared/components/footer'
+import { ChatbotWidget } from '@/features/help/components/ChatbotWidget'
 import './globals.css'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter', display: 'swap' })
@@ -34,6 +35,7 @@ export default function RootLayout({
         </Suspense>
         <main className="flex-1 pt-16">{children}</main>
         <Footer />
+        <ChatbotWidget />
       </body>
     </html>
   )
