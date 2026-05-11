@@ -60,6 +60,13 @@ Thumbs.db
 # Claude Code
 .claude/skills/**/node_modules
 .claude/plugins
+
+# Playwright MCP traces (logs + snapshots — locales, no commitear)
+.playwright-mcp/
+
+# Screenshots de verificación temporal (no commitear)
+/brand-check-*.png
+/capa*-*.png
 *.mcp.json
 !example.mcp.json
 
