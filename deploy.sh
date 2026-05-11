@@ -26,7 +26,7 @@ echo -e "${BLUE}🔍 Repositorio: ${NC}$(pwd)"
 echo -e "${BLUE}🔍 Estado actual:${NC}"
 git status --short
 
-# Si no hay cambios locales, intentar solo sincronizar con remoto
+# Si no hay cambios locales sin commitear, igual puede haber commits sin pushear
 if [ -z "$(git status --porcelain)" ]; then
     echo -e "${GREEN}✅ No hay cambios pendientes localmente.${NC}"
     echo -e "${BLUE}🔄 Verificando sincronizacion con remoto...${NC}"
@@ -36,9 +36,34 @@ if [ -z "$(git status --porcelain)" ]; then
     if [ "$LOCAL" = "$REMOTE" ]; then
         echo -e "${GREEN}🟢 Local y remoto en sincronía. No hay nada que deployar.${NC}"
         exit 0
+    fi
+
+    AHEAD=$(git rev-list --count origin/main..HEAD)
+    BEHIND=$(git rev-list --count HEAD..origin/main)
+    echo -e "${YELLOW}⚠️  Local: $AHEAD adelante / $BEHIND atras de remoto.${NC}"
+
+    # Behind o diverged → pull --rebase primero
+    if [ "$BEHIND" -gt 0 ]; then
+        echo -e "${BLUE}🔄 Pulleando con rebase...${NC}"
+        if ! git pull --rebase origin main; then
+            echo -e "${RED}❌ Rebase con conflictos. Resolvelos y corre 'git rebase --continue && git push origin main'${NC}"
+            exit 1
+        fi
+    fi
+
+    # Ahead → push (recalcular despues del rebase por si cambio)
+    AHEAD=$(git rev-list --count origin/main..HEAD)
+    if [ "$AHEAD" -gt 0 ]; then
+        echo -e "${BLUE}📤 Pusheando $AHEAD commit(s) a origin main...${NC}"
+        if git push origin main; then
+            echo -e "${GREEN}🎉 Push exitoso. Vercel deployara en ~1-2 min.${NC}"
+            echo -e "${BLUE}🔗 Dashboard: https://vercel.com/dashboard${NC}"
+        else
+            echo -e "${RED}❌ Push fallo. Revisa permisos del repo.${NC}"
+            exit 1
+        fi
     else
-        echo -e "${YELLOW}⚠️  Local difiere de remoto. Pulleando...${NC}"
-        git pull --rebase origin main
+        echo -e "${GREEN}🟢 Nada que pushear despues del rebase.${NC}"
     fi
     exit 0
 fi
