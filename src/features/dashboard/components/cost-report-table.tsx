@@ -79,14 +79,14 @@ export function CostReportTable() {
 
   const monthOptions = useMemo(() => {
     const set = new Set<string>();
-    for (const s of sessions) set.add(s.startedAt.slice(0, 7));
+    for (const s of sessions) set.add((s.endedAt ?? s.startedAt).slice(0, 7));
     return Array.from(set).sort().reverse();
   }, [sessions]);
 
   const filteredSessions = useMemo(() => {
     return sessions.filter((s) => {
       if (filterModel !== ALL && s.model !== filterModel) return false;
-      if (filterMonth !== ALL && s.startedAt.slice(0, 7) !== filterMonth) return false;
+      if (filterMonth !== ALL && (s.endedAt ?? s.startedAt).slice(0, 7) !== filterMonth) return false;
       if (filterProject !== ALL && s.projectId !== filterProject) return false;
       return true;
     });
