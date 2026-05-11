@@ -3,7 +3,10 @@ import { streamText, stepCountIs } from 'ai';
 import { getHelpArticles, getFAQs } from '@/features/help/actions';
 import { helpTools } from '@/features/help/tools';
 
-const MODEL = 'google/gemini-2.0-flash-001';
+// gpt-4o-mini: tool calling confiable, costo ~$0.15/1M input. Probado vs
+// gemini-2.0-flash que via OpenRouter no ejecutaba las tools (solo generaba
+// preamble tipo "dame un toque..." y terminaba sin llamar la funcion).
+const MODEL = 'openai/gpt-4o-mini';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
