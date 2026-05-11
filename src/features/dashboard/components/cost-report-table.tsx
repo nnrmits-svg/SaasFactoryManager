@@ -112,7 +112,7 @@ export function CostReportTable() {
           promptCount: s.promptCount,
           costPerHour: null,
           topModel: '-',
-          lastSessionAt: s.startedAt,
+          lastSessionAt: s.endedAt ?? s.startedAt,
         });
       } else {
         existing.tokensInput += s.tokensInput;
@@ -120,8 +120,9 @@ export function CostReportTable() {
         existing.tokensCached += s.tokensCached;
         existing.costUsd += s.costUsd;
         existing.promptCount += s.promptCount;
-        if (!existing.lastSessionAt || s.startedAt > existing.lastSessionAt) {
-          existing.lastSessionAt = s.startedAt;
+        const candidate = s.endedAt ?? s.startedAt;
+        if (!existing.lastSessionAt || candidate > existing.lastSessionAt) {
+          existing.lastSessionAt = candidate;
         }
       }
     }
