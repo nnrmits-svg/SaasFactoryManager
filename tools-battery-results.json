@@ -1,0 +1,72 @@
+[
+  {
+    "i": 1,
+    "q": "¿qué proyectos tengo?",
+    "ms": 1460,
+    "len": 26,
+    "preview": "Aca tenes tus proyectos:\n\n"
+  },
+  {
+    "i": 2,
+    "q": "que skills tienen problemas?",
+    "ms": 1520,
+    "len": 66,
+    "preview": "A ver, dame un toque que te digo que skills estan dando drama...\n\n"
+  },
+  {
+    "i": 3,
+    "q": "como va SaasFactoryManager",
+    "ms": 1335,
+    "len": 68,
+    "preview": "A ver, dame un toque que reviso el estado de SaasFactoryManager...\n\n"
+  },
+  {
+    "i": 4,
+    "q": "cuanto gaste en mayo",
+    "ms": 1347,
+    "len": 46,
+    "preview": "Dale, ahora te digo cuánto gastaste en mayo.\n\n"
+  },
+  {
+    "i": 5,
+    "q": "cuanto gaste en total",
+    "ms": 1265,
+    "len": 40,
+    "preview": "Dejame ver cuanto gastaste en total...\n\n"
+  },
+  {
+    "i": 6,
+    "q": "que skills divergent tiene SaasFactoryAgent",
+    "ms": 1704,
+    "len": 121,
+    "preview": "Ahi te va: estoy buscando los skills divergent en el proyecto SaasFactoryAgent. Dame un toque que ya te digo cuales son.\n"
+  },
+  {
+    "i": 7,
+    "q": "cuales son los 4 estados de un skill",
+    "ms": 950,
+    "len": 119,
+    "preview": "Los 4 estados de un skill son: synced (sincronizado), divergent (divergente), missing (faltante) y external (externo).\n"
+  },
+  {
+    "i": 8,
+    "q": "como creo un proyecto nuevo",
+    "ms": 1152,
+    "len": 146,
+    "preview": "Para crear un proyecto nuevo, tenés que ir al wizard de creación de proyectos, la \"factory\". Ahí podés configurar todo lo necesario para empezar.\n"
+  },
+  {
+    "i": 9,
+    "q": "que significa missing en un skill",
+    "ms": 1440,
+    "len": 257,
+    "preview": "\"Missing\" en un skill significa que el Agent detectó que la carpeta del skill no existe en el disco de tu proyecto. Es como si se hubiera borrado accidentalmente. Para arreglarlo, podés usar `git checkout HEAD -- .claude/skills/<nombre>/` para recuperarlo.\n"
+  },
+  {
+    "i": 10,
+    "q": "el agent esta offline que hago",
+    "ms": 1300,
+    "len": 228,
+    "preview": "Si el Agent está offline, lo primero es despertarlo. Es posible que se haya dormido. Si el problema persiste, revisá la conexión a internet y asegurate de que el Agent tenga los permisos necesarios para funcionar correctamente.\n"
+  }
+]
