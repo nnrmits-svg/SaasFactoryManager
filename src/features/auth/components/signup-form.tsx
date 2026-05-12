@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { FluyaLogo } from '@/shared/components/fluya-logo';
 import { signupWithEmail, loginWithGoogle } from '../services/auth-service';
 
 export function SignupForm() {
@@ -33,9 +34,9 @@ export function SignupForm() {
 
   return (
     <div className="w-full max-w-sm mx-auto space-y-6">
-      <div className="text-center space-y-2">
-        <div className="w-12 h-12 rounded-xl mx-auto flex items-center justify-center bg-gradient-to-br from-pink-500 via-purple-500 to-purple-700 shadow-lg shadow-purple-500/30">
-          <span className="text-white font-black text-xl leading-none">F</span>
+      <div className="text-center space-y-3">
+        <div className="flex justify-center">
+          <FluyaLogo className="h-10" />
         </div>
         <h1 className="text-2xl font-bold text-white">Crear cuenta</h1>
         <p className="text-white/50 text-sm">Empieza a gestionar tu fabrica</p>
