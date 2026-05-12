@@ -80,12 +80,13 @@ export async function inviteUserAction(formData: FormData): Promise<{
       return { ok: false, error: error.message };
     }
 
-    // Crear el profile con rol asignado
+    // Crear el profile con rol asignado y status pending
     if (data?.user) {
       await admin.from('profiles').upsert({
         id: data.user.id,
         email: data.user.email ?? email,
         role,
+        status: 'pending',
       }, { onConflict: 'id' });
 
       await logAudit({
@@ -101,6 +102,203 @@ export async function inviteUserAction(formData: FormData): Promise<{
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Error invitando usuario';
     return { ok: false, error: msg };
+  }
+}
+
+// ============================================================
+// Suspender / Reactivar
+// ============================================================
+export async function setUserStatusAction(formData: FormData): Promise<{
+  ok: boolean;
+  error?: string;
+}> {
+  await requireRole(['founder']);
+
+  const userId = formData.get('user_id') as string | null;
+  const status = formData.get('status') as 'active' | 'suspended' | null;
+
+  if (!userId || !status) return { ok: false, error: 'Faltan datos' };
+
+  try {
+    const admin = getAdminClient();
+    const { error } = await admin
+      .from('profiles')
+      .update({ status })
+      .eq('id', userId);
+
+    if (error) return { ok: false, error: error.message };
+
+    await logAudit({
+      action: status === 'suspended' ? 'suspend' : 'reactivate',
+      resource: 'profile',
+      resourceId: userId,
+      details: { status },
+    });
+
+    revalidatePath('/settings');
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : 'Error' };
+  }
+}
+
+// ============================================================
+// Reenviar invitación (re-trigger inviteUserByEmail)
+// ============================================================
+export async function resendInviteAction(formData: FormData): Promise<{
+  ok: boolean;
+  error?: string;
+}> {
+  await requireRole(['founder']);
+
+  const userId = formData.get('user_id') as string | null;
+  if (!userId) return { ok: false, error: 'Faltan datos' };
+
+  try {
+    const admin = getAdminClient();
+    const { data: profile } = await admin
+      .from('profiles')
+      .select('email')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (!profile?.email) return { ok: false, error: 'Email no encontrado' };
+
+    const { error } = await admin.auth.admin.inviteUserByEmail(profile.email, {
+      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'}/auth/callback`,
+    });
+
+    if (error) return { ok: false, error: error.message };
+
+    await logAudit({
+      action: 'resend_invite',
+      resource: 'profile',
+      resourceId: userId,
+      details: { email: profile.email },
+    });
+
+    revalidatePath('/settings');
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : 'Error' };
+  }
+}
+
+// ============================================================
+// Reset password (genera link de recovery)
+// ============================================================
+export async function sendPasswordResetAction(formData: FormData): Promise<{
+  ok: boolean;
+  error?: string;
+  email?: string;
+}> {
+  await requireRole(['founder']);
+
+  const userId = formData.get('user_id') as string | null;
+  if (!userId) return { ok: false, error: 'Faltan datos' };
+
+  try {
+    const admin = getAdminClient();
+    const { data: profile } = await admin
+      .from('profiles')
+      .select('email')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (!profile?.email) return { ok: false, error: 'Email no encontrado' };
+
+    const { error } = await admin.auth.resetPasswordForEmail(profile.email, {
+      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'}/auth/callback`,
+    });
+
+    if (error) return { ok: false, error: error.message };
+
+    await logAudit({
+      action: 'password_reset_sent',
+      resource: 'profile',
+      resourceId: userId,
+      details: { email: profile.email },
+    });
+
+    revalidatePath('/settings');
+    return { ok: true, email: profile.email };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : 'Error' };
+  }
+}
+
+// ============================================================
+// Borrar usuario (auth.admin.deleteUser cascadea a profiles)
+// ============================================================
+export async function deleteUserAction(formData: FormData): Promise<{
+  ok: boolean;
+  error?: string;
+}> {
+  await requireRole(['founder']);
+
+  const userId = formData.get('user_id') as string | null;
+  if (!userId) return { ok: false, error: 'Faltan datos' };
+
+  try {
+    const admin = getAdminClient();
+
+    // Capturar info antes de borrar para auditoria
+    const { data: profile } = await admin
+      .from('profiles')
+      .select('email, role')
+      .eq('id', userId)
+      .maybeSingle();
+
+    const { error } = await admin.auth.admin.deleteUser(userId);
+    if (error) return { ok: false, error: error.message };
+
+    await logAudit({
+      action: 'delete',
+      resource: 'profile',
+      resourceId: userId,
+      details: { email: profile?.email, role: profile?.role },
+    });
+
+    revalidatePath('/settings');
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : 'Error' };
+  }
+}
+
+// ============================================================
+// Editar nombre desde founder
+// ============================================================
+export async function editUserNameAction(formData: FormData): Promise<{
+  ok: boolean;
+  error?: string;
+}> {
+  await requireRole(['founder']);
+
+  const userId = formData.get('user_id') as string | null;
+  const fullName = (formData.get('full_name') as string | null)?.trim() || null;
+  if (!userId) return { ok: false, error: 'Faltan datos' };
+
+  try {
+    const admin = getAdminClient();
+    const { error } = await admin
+      .from('profiles')
+      .update({ full_name: fullName })
+      .eq('id', userId);
+
+    if (error) return { ok: false, error: error.message };
+
+    await logAudit({
+      action: 'edit_name',
+      resource: 'profile',
+      resourceId: userId,
+      details: { full_name: fullName },
+    });
+
+    revalidatePath('/settings');
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : 'Error' };
   }
 }
 

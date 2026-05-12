@@ -1,4 +1,5 @@
 export type UserRole = 'founder' | 'operator' | 'client';
+export type UserStatus = 'active' | 'suspended' | 'pending';
 
 export interface Profile {
   id: string;
@@ -6,6 +7,7 @@ export interface Profile {
   full_name: string | null;
   avatar_url: string | null;
   role: UserRole;
+  status: UserStatus;
   invited_by: string | null;
   created_at: string;
   updated_at: string;
