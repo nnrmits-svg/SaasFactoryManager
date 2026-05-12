@@ -19,7 +19,6 @@ export async function POST(req: Request) {
     const openrouter = createOpenAI({
       baseURL: 'https://openrouter.ai/api/v1',
       apiKey,
-      compatibility: 'compatible',
     });
 
     const result = await generateText({
