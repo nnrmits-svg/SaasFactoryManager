@@ -1,26 +1,24 @@
-// Server component: lista usuarios + roles. Solo visible para founders (via
-// RLS — los policies de profiles ya filtran). Permite invitar nuevos y cambiar
-// roles existentes via server actions.
+// Server component: lista usuarios + ABM completo. Founder-only.
 
 import { createClient } from '@/lib/supabase/server';
 import { getCurrentUserRole, ROLE_CAPABILITIES, type UserRole } from '@/features/auth/services/permissions';
 import { InviteUserForm } from './invite-user-form';
-import { ChangeRoleSelect } from './change-role-select';
+import { UserRowActions } from './user-row-actions';
+import type { UserStatus } from '@/features/auth/types';
 
 interface ProfileRow {
   id: string;
   email: string;
   full_name: string | null;
   role: UserRole;
+  status: UserStatus;
   invited_by: string | null;
   created_at: string;
 }
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString('es-AR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
+    day: '2-digit', month: '2-digit', year: 'numeric',
   });
 }
 
@@ -29,9 +27,11 @@ export async function UsersRolesSection() {
   if (role !== 'founder') return null;
 
   const supabase = await createClient();
+  const { data: { user: currentUser } } = await supabase.auth.getUser();
+
   const { data: profiles, error } = await supabase
     .from('profiles')
-    .select('id, email, full_name, role, invited_by, created_at')
+    .select('id, email, full_name, role, status, invited_by, created_at')
     .order('created_at', { ascending: true });
 
   if (error) {
@@ -42,17 +42,18 @@ export async function UsersRolesSection() {
     );
   }
 
-  const founders = ((profiles ?? []) as ProfileRow[]).filter((p) => p.role === 'founder');
-  const operators = ((profiles ?? []) as ProfileRow[]).filter((p) => p.role === 'operator');
-  const clients = ((profiles ?? []) as ProfileRow[]).filter((p) => p.role === 'client');
+  const all = (profiles ?? []) as ProfileRow[];
+  const founders = all.filter((p) => p.role === 'founder');
+  const operators = all.filter((p) => p.role === 'operator');
+  const clients = all.filter((p) => p.role === 'client');
+  const currentUserId = currentUser?.id ?? '';
 
   return (
     <section className="space-y-6">
       <div>
         <h2 className="text-xl font-semibold text-white mb-1">Usuarios y Roles</h2>
         <p className="text-sm text-gray-400">
-          Invitá operadores (mantenimiento) o clientes (lectura de su proyecto). El sistema
-          de roles controla qué puede ver y hacer cada uno.
+          ABM completo de usuarios. Invitá, cambiá roles, suspendé, reseteá contraseñas o borralos.
         </p>
       </div>
 
@@ -64,20 +65,21 @@ export async function UsersRolesSection() {
           description={ROLE_CAPABILITIES.founder.description}
           users={founders}
           icon="👑"
+          currentUserId={currentUserId}
         />
         <UserGroup
           title="Operadores"
           description={ROLE_CAPABILITIES.operator.description}
           users={operators}
           icon="🔧"
-          showRoleEditor
+          currentUserId={currentUserId}
         />
         <UserGroup
           title="Clientes"
           description={ROLE_CAPABILITIES.client.description}
           users={clients}
           icon="👤"
-          showRoleEditor
+          currentUserId={currentUserId}
         />
       </div>
     </section>
@@ -89,13 +91,13 @@ function UserGroup({
   description,
   users,
   icon,
-  showRoleEditor = false,
+  currentUserId,
 }: {
   title: string;
   description: string;
   users: ProfileRow[];
   icon: string;
-  showRoleEditor?: boolean;
+  currentUserId: string;
 }) {
   return (
     <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
@@ -112,15 +114,22 @@ function UserGroup({
           {users.map((u) => (
             <li
               key={u.id}
-              className="flex items-center justify-between py-2 px-3 bg-white/5 rounded-xl"
+              className="flex items-start justify-between py-3 px-3 bg-white/5 rounded-xl gap-3"
             >
-              <div>
-                <p className="text-sm text-white">{u.full_name || u.email}</p>
-                <p className="text-xs text-gray-500">
+              <div className="min-w-0 flex-1">
+                <p className="text-sm text-white truncate">{u.full_name || u.email}</p>
+                <p className="text-xs text-gray-500 truncate">
                   {u.email} · creado {formatDate(u.created_at)}
                 </p>
               </div>
-              {showRoleEditor && <ChangeRoleSelect userId={u.id} currentRole={u.role} />}
+              <UserRowActions
+                userId={u.id}
+                email={u.email}
+                fullName={u.full_name}
+                currentRole={u.role}
+                status={u.status}
+                isSelf={u.id === currentUserId}
+              />
             </li>
           ))}
         </ul>
