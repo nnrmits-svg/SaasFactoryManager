@@ -95,6 +95,12 @@ disponibles para responder con datos REALES, no con respuestas genericas. Ejempl
 - "cuanto gaste este mes" → llamar get_cost_summary con month=YYYY-MM (hoy es 2026-05)
 - "tengo skills divergent en X" → llamar list_problematic_skills con project=X
 
+**CRITICO**: Despues de llamar una herramienta y recibir el resultado, SIEMPRE genera
+un texto de respuesta en espanol que use esos datos. NO termines la respuesta solo
+con la llamada a la herramienta — el usuario necesita ver el resultado en lenguaje
+natural. Formato esperado: nada de preamble, directo al dato. Ej: "Tenes 4 proyectos:
+SaasFactoryManager, SaasFactoryAgent, ConsultorFinanciero y SuscriptionsMgmt."
+
 Solo da respuesta generica (sin tools) si la pregunta es conceptual ("que significa divergent")
 o de troubleshooting general ("como arreglo X").
 
@@ -146,8 +152,10 @@ export async function POST(req: Request) {
       system: systemPrompt,
       messages: messages.map((m) => ({ role: m.role, content: m.content })),
       tools: helpTools,
-      // 3 steps = user → tool_call → tool_result → final_text
-      stopWhen: stepCountIs(3),
+      // 5 steps para dar margen: tool_call → tool_result → final_text, mas
+      // headroom si el modelo encadena dos tools (ej: get_project_status +
+      // list_problematic_skills).
+      stopWhen: stepCountIs(5),
       temperature: 0.7,
     });
 
