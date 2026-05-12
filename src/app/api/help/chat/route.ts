@@ -1,3 +1,4 @@
+import { after } from 'next/server';
 import { createOpenAI } from '@ai-sdk/openai';
 import { streamText, stepCountIs } from 'ai';
 import { getHelpArticles, getFAQs } from '@/features/help/actions';
@@ -158,11 +159,12 @@ export async function POST(req: Request) {
       .replace('__CURRENT_MONTH__', currentMonth)
       .replace('__TODAY__', todayStr);
 
-    // Guardar el ultimo mensaje del usuario (el del turno actual) en memoria
-    // Lo hacemos en paralelo, no esperamos — si falla no rompe la respuesta
+    // Guardar el ultimo mensaje del usuario en memoria. Usamos after() para que
+    // la operacion sobreviva al cierre del response (sin esto la BD lo cancela
+    // por serverless async cancellation — verificado en memory-debug).
     const lastUserMessage = messages[messages.length - 1];
     if (lastUserMessage?.role === 'user') {
-      saveChatMessage('user', lastUserMessage.content).catch(() => {});
+      after(saveChatMessage('user', lastUserMessage.content));
     }
 
     const openrouter = createOpenAI({
@@ -185,10 +187,11 @@ export async function POST(req: Request) {
       stopWhen: stepCountIs(5),
       temperature: 0.7,
       // Cuando el modelo termina, guardamos la respuesta del assistant en
-      // memoria. Se ejecuta despues del streaming (no bloquea).
+      // memoria. Se ejecuta despues del streaming. Usamos after() para
+      // mantener viva la operacion mas alla del cierre del response.
       onFinish: ({ text }) => {
         if (text) {
-          saveChatMessage('assistant', text).catch(() => {});
+          after(saveChatMessage('assistant', text));
         }
       },
     });
