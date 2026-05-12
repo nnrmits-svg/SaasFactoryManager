@@ -18,6 +18,40 @@
 - **SMTP Resend = trabajo del founder, no del agente**. Razon: requiere acceso a cuenta Resend + DNS provider + Supabase dashboard. Nada se escribe del lado repo. Queda como guia para cuando el founder tenga 30 min para hacerlo.
 - **Memoria local solo para preferencias del usuario y referencias externas**, no para estado del proyecto. Razon: la regla nueva de "docs vivos" lo exige y la auto-memory no viaja entre maquinas. Cualquier project memory en auto-memory contradice la fuente de verdad de git.
 
+### PRP-005 Fases 4 + 5 cerradas — PDFs (Quote/SOW/NDA) + Firma tri-modal
+**Fase 4 — PDFs (React-PDF + Supabase Storage)**:
+- Instalado `@react-pdf/renderer` (dependencia nueva).
+- Templates en [src/features/contracts/pdf/](src/features/contracts/pdf/): `styles.ts` (paleta Fluya light para print), `quote-template.tsx` (header + tabla line items + totales + condiciones), `sow-template.tsx` (referencia a quote + alcance markdown + cláusula Ley 25.506 ARG + bloque firmas), `nda-template.tsx` (partes + cuerpo + firmas).
+- [services/pdf-actions.ts](src/features/contracts/services/pdf-actions.ts) — 3 server actions: `generateQuotePdfAction(quote_id)`, `generateSowPdfAction(sow_id)`, `generateNdaPdfAction(nda_id)`. Cada una: carga datos de BD → renderiza a buffer via `renderToBuffer` → upload a bucket `contracts/<project_id>/(quotes|sows|ndas)/<NUMBER>.pdf` → devuelve `signed_url` (1h TTL).
+- Numeración consistente con Fase 2 (`SF-NNNN-NN`, `SOW-NNNN-NN`, `NDA-NNNN-NN`).
+
+**Fase 5 — Firma tri-modal**:
+- [services/signature-hash.ts](src/features/contracts/services/signature-hash.ts) — `computeSignatureHash({content, signer_email, ip_address, timestamp_iso})` con SHA-256 hex. Garantiza inmutabilidad (cualquier tampering rompe el hash). Helper `verifySignatureHash` para auditoría posterior.
+- [components/signature-canvas.tsx](src/features/contracts/components/signature-canvas.tsx) — canvas client-side con soporte mouse + touch (preventDefault explícito para iOS), exporta PNG base64. Botón "Limpiar" para rehacer.
+- [services/signature-actions.ts](src/features/contracts/services/signature-actions.ts) — 3 server actions:
+  - `signDocumentLocalAction` — provider `local`: hashea contenido + sube PNG a Storage + INSERT signature + marca documento padre como `signed` (sow/nda) o `approved` (quote). Captura IP via `headers().get('x-forwarded-for')` y user-agent.
+  - `signDocumentUploadAction` — provider `upload`: cliente sube PDF firmado externo (base64) → Storage → signature row con `uploaded_pdf_path`.
+  - `signDocumentDocusignAction` — provider `docusign`: **placeholder**. Retorna error útil si faltan `DOCUSIGN_API_KEY` + `DOCUSIGN_ACCOUNT_ID`. Implementación real pendiente para cuando se contrate la cuenta.
+- Cláusula de consentimiento Ley 25.506 ARG embedded en los templates SOW y NDA.
+
+**Validaciones**: typecheck limpio + `npm run build` completo OK (24 rutas, todas compiladas, sin errores en producción). El bucket `contracts` ya existe desde Fase 1.
+
+### PRP-005 Fase 3 cerrada — UI step Presupuesto en wizard + indicadores en línea
+- Nuevo step 11 en wizard de creación (`/factory`): "Presupuesto", después de Skills. Componente [src/features/contracts/components/budget-step.tsx](src/features/contracts/components/budget-step.tsx) (~370 líneas).
+- **Bloques implementados**:
+  - Complejidad (4 botones: simple / medium / complex / enterprise) — recalcula estimación AI al cambiar.
+  - AI Tokens — auto-estimado por `estimateAiCost(brief, complexity)`, override manual opcional, muestra tokens estimados y reasoning.
+  - Labor — operadores del proyecto (cargados via `getOperatorsAction()`), horas + $/hora editables, totales línea por línea, agregar/quitar filas.
+  - Gastos fijos — items dinámicos (label, $/mes, meses), agregar/quitar.
+  - Estructura (overhead %) — aplicado sobre subtotal AI+Labor+Fijos.
+  - Utilidad (margin %) — aplicado sobre subtotal completo.
+- **Indicadores en línea (total destacado)**: breakdown por categoría, subtotal, utilidad, **Total al cliente** con gradiente Fluya. Se actualiza con cada keystroke (memoization en lineItems + totals).
+- **Integración con wizard**:
+  - [src/features/factory-manager/components/project-wizard.tsx](src/features/factory-manager/components/project-wizard.tsx) — `BUDGET_STEP_INDEX = SKILLS_STEP_INDEX + 1`, `isLastStep = isBudgetStep`, `onComplete` signature ahora incluye `budget: BudgetPayload | null`, progress bar extendido a 2 finales.
+  - [src/features/factory-manager/components/factory-dashboard.tsx](src/features/factory-manager/components/factory-dashboard.tsx) — `pendingBudget` state, en el effect de `state.status === 'created'` llama a `createQuoteAction()` con el `project_id` real, muestra mensaje con `SF-XXXX-NN` y total resultante.
+- **Decisión**: el quote se crea DESPUÉS del proyecto (no antes) porque necesitamos el `project_id` real. Si el usuario no ingresa nada de budget (`line_items.length === 0`), no se crea quote — el proyecto se crea limpio.
+- Typecheck limpio. Sin breaking changes (signature de `onComplete` cambió pero el único consumer era `factory-dashboard.tsx`, ya actualizado).
+
 ### PRP-005 Fase 2 cerrada — Estimador AI + numeración + pricing + server actions
 - Nueva feature [src/features/contracts/](src/features/contracts/) con 5 archivos (1 types + 4 services):
   - [types/index.ts](src/features/contracts/types/index.ts) — espejos TS del schema PG (Quote, LineItem, Sow, Nda, Amendment, Signature, Client, QuoteTotals, ProjectComplexity).

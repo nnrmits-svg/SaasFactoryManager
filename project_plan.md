@@ -52,7 +52,8 @@ operando con multiples proyectos en multiples maquinas locales (una por develope
 ## Proximos pasos
 
 0. **SMTP custom Supabase via Resend** — guia entregada en [docs/smtp-resend-setup.md](docs/smtp-resend-setup.md). Bloquea en el founder (cuenta Resend, DNS, dashboard). Sin esto, invitaciones masivas se traban por rate-limit default de 2/h.
-0b. **Presupuesto al crear proyecto**: wizard de `/factory` estima AI + labor + otros antes del create. Esfuerzo M-L. Necesita PRP de scope.
+0b. **Presupuesto al crear proyecto**: wizard de `/factory` estima AI + labor + otros antes del create. Esfuerzo M-L. **PRP-005 en ejecución** (Fases 1-2 cerradas, 3-7 pendientes).
+0c. **Al final de PRP-005**: armar `docs/integration-contract-businessos.md` destilado para el Claude de BusinessOS — payload canónico de export + mapeo Manager→BusinessOS (`quote`→`proposal`, `sow`→`customer_order`, etc) + preguntas de auth/endpoint. Disparar cuando cerremos Fase 7 (Export).
 1. **Capa 2 — Skills visibles en Manager** (sprint que arranca, esfuerzo S):
    - Reemplazar `getProjectSkills(path)` (FS) por lectura de tabla `project_skills` en `<SkillPanel>`, `<PortfolioGrid>` y `<SkillRegistryDashboard>`. Pre-condicion del lado Agent **ya cubierta** (`pushInitialProjectSkills()` al boot + chokidar para cambios).
    - Estado por skill: `synced` / `divergent` / `missing`.
@@ -87,6 +88,8 @@ operando con multiples proyectos en multiples maquinas locales (una por develope
 
 ## Done
 
+- [x] 2026-05-12: **PRP-005 Fases 4 + 5 completas** — PDFs (Quote/SOW/NDA) con React-PDF + Supabase Storage + firma tri-modal (canvas local con hash SHA-256, upload de PDF firmado externo, DocuSign placeholder). Build OK 24 rutas. Cláusula Ley 25.506 ARG embedded. Skill `cross-repo-access` movido a `.claude/skills-catalog/` para detección por SF Agent.
+- [x] 2026-05-12: **PRP-005 Fase 3 completa** — UI step "Presupuesto" en wizard de `/factory`. Componente `BudgetStep` con bloques AI/Labor/Fijos/Overhead/Utilidad e indicadores en línea, integrado a la creación del proyecto (quote auto-creado post-create con `SF-XXXX-NN`). Logo del Factory Manager (SFManager.png) reemplaza favicons PWA.
 - [x] 2026-05-12: **PRP-005 Fase 2 completa** — feature `src/features/contracts/` con types + numbering + pricing + ai-estimator + quote-actions. 5 archivos, typecheck limpio. Server actions listas para que la UI (Fase 3) las consuma.
 - [x] 2026-05-12: **PRP-005 Fase 1 completa** — schema de cotización/SOW/NDA/firma/versionado aplicado. 7 tablas con RLS, 7 enums, sequence `projects_number_seq` start 1000 (backfill OK: 4 proyectos numerados 1000-1003), `format_quote_number()` retorna `SF-XXXX-NN`, bucket Storage `contracts/` privado. Auto-blindaje aplicado para `function_search_path_mutable` WARN.
 - [x] 2026-05-12: Skill `cross-repo-access` creado en `.claude/skills-custom/` — detecta proyectos hermanos del ecosistema Fluya y configura permissions.allow para lectura cross-repo. Invocable desde cualquier proyecto del ecosistema (SF Manager, SF Agent, BusinessOS).

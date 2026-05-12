@@ -11,6 +11,8 @@ import {
 import { ProjectWizard, type BusinessBrief } from './project-wizard';
 import { ProjectCreatingModal } from './project-creating-modal';
 import { useProjectCreation } from '../hooks/use-project-creation';
+import { createQuoteAction } from '@/features/contracts/services/quote-actions';
+import type { BudgetPayload } from '@/features/contracts/components/budget-step';
 
 interface ProjectRow {
   id: string;
@@ -104,6 +106,7 @@ export function FactoryDashboard() {
 
   const projectCreation = useProjectCreation();
   const [creatingName, setCreatingName] = useState<string>('');
+  const [pendingBudget, setPendingBudget] = useState<BudgetPayload | null>(null);
 
   async function handleWizardComplete(data: {
     name: string;
@@ -111,10 +114,12 @@ export function FactoryDashboard() {
     brief: BusinessBrief;
     skills: string[];
     githubOwner: string;
+    budget: BudgetPayload | null;
   }) {
     setSaving(true);
     setMessage(null);
     setCreatingName(data.name);
+    setPendingBudget(data.budget);
     setShowWizard(false);
 
     const result = await projectCreation.startCreation({
@@ -134,9 +139,28 @@ export function FactoryDashboard() {
   }
 
   useEffect(() => {
-    if (projectCreation.state.status === 'created') {
-      void loadProjects();
-    }
+    if (projectCreation.state.status !== 'created') return;
+    void (async () => {
+      const projectId = projectCreation.state.projectId;
+      if (projectId && pendingBudget && pendingBudget.line_items.length > 0) {
+        const res = await createQuoteAction({
+          project_id: projectId,
+          line_items: pendingBudget.line_items,
+          profit_margin_pct: pendingBudget.profit_margin_pct,
+          notes: pendingBudget.notes || undefined,
+        });
+        if (res.ok && res.data) {
+          setMessage({
+            type: 'success',
+            text: `Cotización ${res.data.number_label} creada (USD ${res.data.totals.grand_total_usd.toFixed(2)})`,
+          });
+        } else if (!res.ok) {
+          setMessage({ type: 'error', text: `Proyecto OK pero quote falló: ${res.error}` });
+        }
+        setPendingBudget(null);
+      }
+      await loadProjects();
+    })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectCreation.state.status]);
 
