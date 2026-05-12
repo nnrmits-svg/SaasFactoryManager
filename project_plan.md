@@ -3,8 +3,10 @@
 > Plan vivo del producto. Una sola fuente de verdad de "donde estamos y a donde vamos".
 > Mantenido por el skill `project-plan`. Cronologia detallada en `Bitacora.md`.
 >
-> Ultima actualizacion: 2026-05-06
-> Cross-ref: ver entrada del 2026-05-05 18:00 en `Bitacora.md`
+> Ultima actualizacion: 2026-05-12 (v1.1.0)
+> Cross-ref: ver entrada del 2026-05-12 en `Bitacora.md`
+>
+> **Regla del proyecto**: actualizar este archivo en cada bump de version (ver `CLAUDE.md` → "Reglas de proyecto: docs vivos").
 
 ---
 
@@ -25,7 +27,7 @@ operando con multiples proyectos en multiples maquinas locales (una por develope
 
 ## Estado actual
 
-- **Fase**: post-MVP. Capa 2 (Skills visibles) y Capa 8 (github_owner selector) completadas. Listo para Capa 3 del roadmap (CRUD remoto).
+- **Fase**: post-MVP, v1.1.0. Capa 2, Capa 8, Sprint D (labor costs en /reports) e invites administrativos completados. Listo para Capa 3 del roadmap (CRUD remoto) + enrollment 2FA.
 - **Stack**: Next.js 16 + React 19 + Supabase (proyecto ref `fxlvexilnrfkkcbzwskr`) + Vercel.
 - **Auth**: middleware Supabase activo (`src/middleware.ts`), redirect a `/login` para rutas protegidas.
 - **Wizard de creacion de proyectos**: completo — 10 pasos (9 brief + 1 skills), integrado con SF Agent via `agent_commands`.
@@ -41,9 +43,18 @@ operando con multiples proyectos en multiples maquinas locales (una por develope
 - **UI desacoplada de filesystem (Sprint Camino-3)**: 6 surfaces deshabilitadas con tooltip "⚠ Disponible próximamente vía Agent" — `<SyncButton>`, "Re-sync", "Auto-Commit Tracking", `<DirectoryPicker>`. Fallbacks ilegales eliminados. Codigo legacy borrado: `open-action.ts`, `create-action.ts`.
 - **Capa 2 completada**: `<SkillPanel>`, `<PortfolioGrid>`, `<SkillRegistryDashboard>` leen de BD (`project_skills` + `skills_catalog`) en vez de filesystem. Server actions: `project-skills-action.ts`, `skills-catalog-action.ts`. Funciones FS legacy (`getApplicableSkills`, `getProjectSkills`, `installSkillToProject`, `discoverAllSkills`, `getSkillContent`) sin consumers en UI — pendiente cleanup.
 - **Capa 8 completada**: selector de `github_owner` en wizard y settings, cableado a `user_github_orgs`. Server action: `github-orgs-action.ts`. `agent-control-panel` extendido con `'list-github-orgs'`.
+- **Sprint D — labor costs en `/reports`**: costo de operadores (horas × `profiles.hourly_rate_usd`) sumado al AI cost para TCO real.
+- **Branding Fluya + `/about`**: login/signup re-branded, pagina `/about` con versionado (v1.1.0) + changelog, footer badge.
+- **Invites administrativos** (founder → operator/client): `inviteUserAction` via `auth.admin.inviteUserByEmail`. UI en `/settings` con suspender / reactivar / reenviar / borrar / setear $/h. Callback `/auth/callback` ahora promueve `status=pending` → `active` al primer login (bug fix 2026-05-12).
+- **Audit log + rate limit** para acciones administrativas (`invite`, `role_change`, `suspend`, `reactivate`, `delete`, `password_reset`, `set_hourly_rate`).
 - **Servicios FS no eliminados** (cleanup queda para Capa 2/3): `auto-commit-service`, `git-service`, `scanner-service`, `git-sync-action`, `scan-action`, `browse-action`, `sync-action`, `sync-service`, `design-system-service`, `resolve-path`, `installSkillToProject`. Quedan en disco pero sin consumers desde la UI.
 
 ## Proximos pasos
+
+0. **TOTP enrollment por usuario** en `/me` (Supabase toggle ON, /me lee, falta UI de enrolar). Memoria: `project_pending_totp`.
+0b. **Presupuesto al crear proyecto**: wizard de `/factory` estima AI + labor + otros antes del create. Memoria: `project_budget_new_projects`.
+0c. **SMTP custom Supabase** via Resend (ya integrado en el proyecto). Default rate-limit de 2 emails/h hace inviable invites masivos. Esfuerzo S.
+0d. **Activar manualmente `rmarchetti@grupoits.com.ar`** (`UPDATE profiles SET status='active' WHERE id=...`) — pendiente autorizacion del founder.
 
 1. **Capa 2 — Skills visibles en Manager** (sprint que arranca, esfuerzo S):
    - Reemplazar `getProjectSkills(path)` (FS) por lectura de tabla `project_skills` en `<SkillPanel>`, `<PortfolioGrid>` y `<SkillRegistryDashboard>`. Pre-condicion del lado Agent **ya cubierta** (`pushInitialProjectSkills()` al boot + chokidar para cambios).
@@ -79,6 +90,10 @@ operando con multiples proyectos en multiples maquinas locales (una por develope
 
 ## Done
 
+- [x] 2026-05-12: Bug fix `/auth/callback` — promueve `profiles.status` de `pending` → `active` al primer login del invitado. Antes el operador clickeaba el link de invite, entraba a la app, pero seguia apareciendo "Pendiente" en `/settings` para siempre. Fix en [src/app/auth/callback/route.ts](src/app/auth/callback/route.ts).
+- [x] 2026-05-12: Regla "docs vivos" oficializada en `CLAUDE.md` — Bitacora.md + project_plan.md son la fuente de verdad de continuidad, no la auto-memory.
+- [x] 2026-05-11: v1.1.0 — branding Fluya en login/signup, pagina `/about` con changelog, footer badge (commit `2cec84a`).
+- [x] 2026-05-11: Sprint D — costos de labor por operador en `/reports` (commit `57736cd`).
 - [x] 2026-05-05: Filas legacy `user_id NULL` mergeadas en transactions PostgreSQL idempotentes. Loser SaasFactoryManager `27c9ca1e` mergeado en `bbd3e72a`; loser SuscriptionsMgmt `809d729f` mergeado en `953d208d`. 6 child tables reparentadas (commits, work_sessions, claude_sessions, project_skills, sync_configs, tracking_sessions) con DELETE-overlap previo en commits y project_skills por UNIQUE (project_id, hash) y (project_id, skill_name). Validacion visual en `/dashboard`: 4 proyectos unicos, SaasFactoryManager 51 commits (45 winner + 5 reparentados del loser).
 - [x] 2026-05-05: Capa 1 UI en `/reports` deployada (commit `ee4d1d5`). Tabla con tokens (compact), $ Total, $/hora, modelo mas usado, ultima sesion + filtros por modelo / mes / proyecto. Validacion en prod: 2 sesiones, $712.68, 264.8M tokens.
 - [x] 2026-05-05: Bug navbar (header sin sesion) resuelto definitivamente con `<Suspense>` boundary (commit `0de9117`). Causa raiz: `cookies()` en server component fuera de Suspense rompe build con `cacheComponents: true` (Next.js 16.1+). Validacion completa via Playwright: login, logout, re-login.

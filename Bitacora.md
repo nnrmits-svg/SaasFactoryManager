@@ -6,6 +6,26 @@
 
 ---
 
+## 2026-05-12 — Fix invite operador (status=pending eterno) + regla docs vivos
+**Maquina**: NNRM-iMac-275.local (rmarchetti)
+
+### Hecho
+- **Bug fix `/auth/callback`**: el callback intercambiaba el code por sesion via `exchangeCodeForSession` pero nunca actualizaba `profiles.status` de `pending` → `active`. Resultado: un operador invitado clickeaba el link, entraba a la app, pero seguia apareciendo "Pendiente" en `/settings` para siempre. Fix en [src/app/auth/callback/route.ts](src/app/auth/callback/route.ts) — UPDATE condicional con `.eq('status', 'pending')` para evitar tocar usuarios ya activos. Typecheck OK.
+- **Diagnostico del caso reportado**: usuario `rmarchetti@grupoits.com.ar` invitado 2026-05-12 16:18:59 UTC. `email_confirmed_at = 16:19:36` + `last_sign_in_at = 16:19:37` confirman que el email SI llego y fue clickeado (37s despues del invite). El "pending" visible en UI era el bug del callback, no un problema de delivery.
+- **Regla nueva en CLAUDE.md** — "Reglas de proyecto: docs vivos (OBLIGATORIO)": la memoria local de Claude Code NO es la fuente de verdad de este proyecto. Continuidad via `Bitacora.md` (prepend cada sesion significativa) + `project_plan.md` (actualizar en cada bump de version). Skills `/bitacora` y `/project-plan` quedan como mecanismo canonico.
+
+### Decidido
+- **Continuidad entre maquinas/sesiones = git, no auto-memory**. Razon: la auto-memory vive en `~/.claude/projects/...` por maquina y no viaja con el repo. Cualquier dato que el equipo necesite preservar tiene que estar en `Bitacora.md` o `project_plan.md`.
+- **Activacion automatica via callback**, no via webhook ni cron. Razon: el momento exacto en que un invitado pasa de "pending" a "active" es cuando intercambia el code por session. Cualquier otro trigger (cron, edge function on auth event) introduce latencia y complejidad.
+
+### Pendiente
+- Aplicar `UPDATE profiles SET status='active' WHERE email='rmarchetti@grupoits.com.ar' AND status='pending'` para el usuario afectado (el MCP bloqueo el write directo; queda autorizado por el founder en la proxima sesion).
+- **SMTP custom para Supabase Auth** — el default rate limit es 2 emails/hora en proyectos sin SMTP. Resend ya esta integrado en el proyecto via `/add-emails`; conectarlo como SMTP de Supabase Auth resolveria entregabilidad y rate. Sprint dedicado.
+- TOTP enrollment por usuario en `/me` (toggle ya HABILITADO en Supabase, /me lee, falta UI de enrolar).
+- Presupuesto al crear proyecto: wizard de `/factory` debe estimar AI + labor + otros antes del create.
+
+---
+
 ## 2026-05-05 18:00 — Capa 2 completa + Capa 8 github_owner selector
 **Maquina**: NNRM-iMac-275.local
 
