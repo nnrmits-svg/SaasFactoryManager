@@ -1,0 +1,35 @@
+{
+  "session1": [
+    "¿qué proyectos tengo?",
+    "qué skills divergent tiene SaasFactoryManager",
+    "cuanto gaste en mayo"
+  ],
+  "results1": [
+    {
+      "q": "¿qué proyectos tengo?",
+      "len": 322
+    },
+    {
+      "q": "qué skills divergent tiene SaasFactoryManager",
+      "len": 386
+    },
+    {
+      "q": "cuanto gaste en mayo",
+      "len": 368
+    }
+  ],
+  "session2": [
+    {
+      "q": "cual es el ultimo tema que hablamos?",
+      "preview": "El último tema que hablamos fue sobre los costos que tuviste en mayo de 2026, donde gastaste un total de **3078.69 USD** en tus proyectos. Si necesitas más información o quieres profundizar en algún tema, ¡avisame!"
+    },
+    {
+      "q": "y como va lo de add-emails que vimos?",
+      "preview": "El skill **add-emails** sigue en estado **divergent** en el proyecto **SaasFactoryManager**. La última sincronización fue el 12 de mayo de 2026. Esto significa que hay cambios que no se han sincronizado con el catálogo central.\n\nAdemás, hay otro skill divergent llamado **playwright-cli** y un skill **external** llamado **flow-map** en el mismo proyecto. Si necesitás ayuda para resolver el estado divergent, avisame."
+    },
+    {
+      "q": "cuanto era el costo total que mencione?",
+      "preview": "El costo total que mencionaste en mayo de 2026 fue de **3078.69 USD**. Si necesitás más detalles sobre los costos por proyecto, hacémelo saber."
+    }
+  ]
+}
