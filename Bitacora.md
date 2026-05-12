@@ -18,6 +18,33 @@
 - **SMTP Resend = trabajo del founder, no del agente**. Razon: requiere acceso a cuenta Resend + DNS provider + Supabase dashboard. Nada se escribe del lado repo. Queda como guia para cuando el founder tenga 30 min para hacerlo.
 - **Memoria local solo para preferencias del usuario y referencias externas**, no para estado del proyecto. Razon: la regla nueva de "docs vivos" lo exige y la auto-memory no viaja entre maquinas. Cualquier project memory en auto-memory contradice la fuente de verdad de git.
 
+### PRP-005 Fase 2 cerrada — Estimador AI + numeración + pricing + server actions
+- Nueva feature [src/features/contracts/](src/features/contracts/) con 5 archivos (1 types + 4 services):
+  - [types/index.ts](src/features/contracts/types/index.ts) — espejos TS del schema PG (Quote, LineItem, Sow, Nda, Amendment, Signature, Client, QuoteTotals, ProjectComplexity).
+  - [services/numbering.ts](src/features/contracts/services/numbering.ts) — `formatQuoteNumber/SowNumber/NdaNumber/AmendmentNumber` (lado app, complemento del trigger PG).
+  - [services/pricing.ts](src/features/contracts/services/pricing.ts) — `computeQuoteTotals(items, profit_margin_pct)` idempotente, agrupa por tipo (ai/labor/fixed/overhead), aplica margen sobre subtotal, soporta items de tipo `profit` como override manual.
+  - [services/ai-estimator.ts](src/features/contracts/services/ai-estimator.ts) — `estimateAiCost(input)` con baseline tokens por complejidad (simple 100k → enterprise 10M), multiplicador heurístico del brief (longitud + keywords técnicas), pricing por modelo (`claude-opus-4-7/4-6`, `sonnet-4-6`, `haiku-4-5`), mix 70% input / 30% output, calibración 60/40 con histórico real de `claude_sessions` si hay ≥3 puntos.
+  - [services/quote-actions.ts](src/features/contracts/services/quote-actions.ts) — server actions: `createQuoteAction`, `approveQuoteAction`, `rejectQuoteAction`, `estimateAiCostAction`, `getActiveQuoteForProjectAction`. Versionado automático (max(version)+1), update de `projects.estimated_*_usd` al crear quote, `revalidatePath` consistente.
+- Typecheck limpio. No toca BD de producción (Fase 1 ya dejó el schema; Fase 2 es solo código).
+- **Decisión de arquitectura**: feature separada `contracts/` en lugar de meter todo en `factory-manager/` — el dominio de cotización/SOW/firma es lo suficientemente grande para vivir aparte, y permite que evolucione hacia el package `@fluya/quote-sow-nda` si el día de mañana se reutiliza en otros proyectos.
+
+### PRP-005 Fase 1 cerrada — Schema de contratos aplicado
+- Migración `20260512090000_prp005_phase1_contracts_schema.sql` aplicada a `fxlvexilnrfkkcbzwskr`. Crea **7 tablas** (`clients`, `quotes`, `quote_line_items`, `sows`, `ndas`, `amendments`, `signatures`) con RLS multi-tenant (founders ALL, operators rw, clients read-own via `is_my_project()` helper). **7 enums** (`quote_status`, `sow_status`, `nda_status`, `amendment_status`, `line_item_type`, `signature_provider`, `document_type`). Sequence `projects_number_seq` start 1000 + trigger BEFORE INSERT en `projects` para auto-asignar `project_number`. Función `format_quote_number(int, int)` → `'SF-1042-01'` (probada). Bucket Storage `contracts/` privado con policy founders/operators.
+- **Backfill aplicado**: los 4 proyectos existentes recibieron `project_number` (1000–1003). Próximo proyecto creado → 1004.
+- 10 columnas nuevas en `projects`: `project_number`, `client_id` (FK a clients), `estimated_*_usd × 4`, `actual_*_usd × 4`.
+- **Auto-blindaje** (`20260512091000_prp005_phase1_search_path_hardening.sql`): el advisor disparó WARN `function_search_path_mutable` en las 4 funciones nuevas. Fix: `SET search_path = public, pg_temp` en `tg_projects_set_number`, `format_quote_number`, `tg_contracts_set_updated_at`, `is_my_project`. Aprendizaje documentado en PRP-005.
+- **Validación final**: `list_tables` muestra 28 tablas (21 previas + 7 nuevas), todas con RLS=true. `format_quote_number(1042, 1)` → `'SF-1042-01'` OK. Bucket `contracts` aparece en Storage como privado.
+
+### Skill nuevo: cross-repo-access
+- Creado [.claude/skills-custom/cross-repo-access/SKILL.md](.claude/skills-custom/cross-repo-access/SKILL.md) — skill workspace-aware que detecta proyectos hermanos del ecosistema Fluya (`BusinessOS`, `SaasFactoryManager`, `SaasFactoryAgent`, otros en `AplicacionesSaas/`) y genera `permissions.allow` en `.claude/settings.json` para que el agente pueda leer codigo cross-repo sin pedir permiso en cada Read/Bash. Solo lectura — write fuera del proyecto sigue requiriendo autorizacion case-by-case del usuario.
+- Pensado para invocarse **una vez desde cada proyecto del ecosistema**: SF Manager → autoriza lectura de BusinessOS + Agent. BusinessOS → autoriza lectura de Manager + Agent. SF Agent → autoriza lectura de Manager + BusinessOS. Simetria 3-way.
+- El skill maneja el bloqueo "self-modification of permission config" gracefully: si el sandbox rechaza el write, imprime el JSON completo y pide al usuario que lo pegue manual.
+
+### Cross-repo access habilitado + decisión sobre BusinessOS
+- `.claude/settings.json` con permission rules creado manualmente por el founder (sandbox bloqueó self-modification): habilita lectura de `BusinessOS/` y `SaasFactoryAgent/` desde este proyecto. Validado: `ls BusinessOS` y `ls SaasFactoryAgent` retornan OK.
+- **Descubrimiento al leer BusinessOS**: es un Business OS multi-tenant completo de Grupo ITS + Fluya (no solo contratos). Tiene schema canónico con `tenant_groups`, `organizations`, `persons`, `proposals`, `customer_orders`, `documents` polimórfico. Numeración `FIA-NNNN-AA` (Fluya) y `ITS-NNNN-AA` (ITS). Pero está en etapa de diseño temprano.
+- **Decisión del founder**: avanzar PRP-005 **standalone** en SF Manager (mismo patrón que con SF Agent). NO esperar a BusinessOS estable. Manager construye modelo propio (`SF-NNNN-NN`), expone payload canónico via `/api/exports/project/[id]`, BusinessOS se acopla cuando madure. PRP-005 actualizado con esta decisión en seccion "Integración Business OS — TBD".
+
 ### Cross-repo (SF Agent ↔ Manager)
 - **SF Agent v1.1.14**: `work_sessions.user_id` ya se puebla en cada upsert (cambio en `push.ts:130-133`). Validacion del lado Manager: 281/284 rows con `user_id` poblado, 3 NULL pendientes del **mismo batch** (created_at `2026-05-12 15:11:12.949197`, project `bbd3e72a` SaasFactoryManager, durations 107/5/56 min). El row siguiente (15:46:49) ya viene OK → fix confirmado activo. Labor cost en `/reports` no impactado (query filtra `user_id NOT NULL`).
 

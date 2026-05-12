@@ -412,9 +412,13 @@ Política RLS Storage: solo el dueño del proyecto puede leer/escribir; uploads 
 
 ## Integración Business OS — TBD
 
+**Decisión del founder (2026-05-12)**: BusinessOS está en etapa de diseño temprano. **NO esperar a que esté estable para arrancar**. El Manager construye su modelo completo de contratos/cotización/SOW/NDA standalone (mismo patrón que con SF Agent: cada uno avanza independiente y coordinan después). Cuando BusinessOS esté maduro, le damos opciones de integración (acoplarse vía API que expone el Manager, o que el Manager se acople a su API). El payload canónico abajo es la **interfaz de export** del Manager — BusinessOS la consume o transforma según necesite.
+
+> Nota: BusinessOS ya tiene un schema canónico (`tenant_groups`, `organizations`, `proposals`, `customer_orders`, `documents` polimórfico) y numeración propia (`FIA-NNNN-AA`, `ITS-NNNN-AA`). Esto NO afecta este PRP — el Manager usa `SF-NNNN-NN` interno; la traducción a numeración BusinessOS la hace el adapter de export cuando se diseñe la integración.
+
 Business OS vive en `/Users/ricardomarchetti/ProyectosIA/BusinessOS`, en desarrollo paralelo, con **DB separada**. No comparte el Supabase del Manager. El Manager debe poder **exportar** los contratos firmados.
 
-### Assumptions actuales (revisar con founder antes de Fase 6)
+### Assumptions actuales (revisar con founder antes de Fase 7)
 
 1. Business OS expondrá un endpoint REST `POST /api/contracts/intake` con autenticación por API key.
 2. El Manager guarda `BUSINESS_OS_WEBHOOK_URL` y `BUSINESS_OS_API_KEY` en env vars.
@@ -597,7 +601,14 @@ SELECT ai_complexity, ai_multiplier, ai_rationale FROM quotes WHERE id = '<id>';
 
 > Esta sección CRECE con cada error encontrado durante la implementación.
 
-*(vacía hasta ejecutar)*
+### 2026-05-12: Funciones PG sin SET search_path disparan WARN del linter (Fase 1)
+- **Error**: Las funciones nuevas `tg_projects_set_number`, `format_quote_number`, `tg_contracts_set_updated_at`, `is_my_project` se crearon sin `SET search_path = ...`, lo que disparó `function_search_path_mutable` WARN del advisor de seguridad de Supabase.
+- **Fix**: Migración complementaria `20260512091000_prp005_phase1_search_path_hardening.sql` con `SET search_path = public, pg_temp` en las 4 funciones (CREATE OR REPLACE).
+- **Aplicar en**: Todas las migraciones futuras del PRP-005 (Fases 2-8) y en cualquier función nueva del proyecto. Convertir en regla: cada `CREATE FUNCTION` debe llevar `SET search_path = public, pg_temp` salvo razón explícita.
+
+### 2026-05-12: Backfill de project_number en proyectos existentes (Fase 1)
+- **Aprendizaje**: Al agregar una columna autoincremental a una tabla con rows existentes (4 proyectos), hay que ejecutar un UPDATE de backfill ANTES de poner UNIQUE constraint (`UPDATE projects SET project_number = nextval(seq) WHERE project_number IS NULL`). Si se invierte el orden, el UNIQUE falla por duplicados NULL.
+- **Resultado**: SaasFactoryManager=1002, SaasFactoryAgent=1001, ConsultorFinanciero=1000, SuscriptionsMgmt=1003. Próximo proyecto creado → 1004.
 
 ---
 

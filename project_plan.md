@@ -87,6 +87,9 @@ operando con multiples proyectos en multiples maquinas locales (una por develope
 
 ## Done
 
+- [x] 2026-05-12: **PRP-005 Fase 2 completa** — feature `src/features/contracts/` con types + numbering + pricing + ai-estimator + quote-actions. 5 archivos, typecheck limpio. Server actions listas para que la UI (Fase 3) las consuma.
+- [x] 2026-05-12: **PRP-005 Fase 1 completa** — schema de cotización/SOW/NDA/firma/versionado aplicado. 7 tablas con RLS, 7 enums, sequence `projects_number_seq` start 1000 (backfill OK: 4 proyectos numerados 1000-1003), `format_quote_number()` retorna `SF-XXXX-NN`, bucket Storage `contracts/` privado. Auto-blindaje aplicado para `function_search_path_mutable` WARN.
+- [x] 2026-05-12: Skill `cross-repo-access` creado en `.claude/skills-custom/` — detecta proyectos hermanos del ecosistema Fluya y configura permissions.allow para lectura cross-repo. Invocable desde cualquier proyecto del ecosistema (SF Manager, SF Agent, BusinessOS).
 - [x] 2026-05-12: Guia SMTP Resend → Supabase Auth entregada en `docs/smtp-resend-setup.md` (5 pasos, bloquea en founder).
 - [x] 2026-05-12: TOTP enrollment UI verificada — el componente `mfa-setup.tsx` ya estaba completo y montado en `/me`. La memoria que decia "falta enrollment por usuario" estaba stale.
 - [x] 2026-05-12: Auto-memory podada — 4 entries stale removidas, queda solo `feedback_docs_vivos` que codifica la regla nueva.
