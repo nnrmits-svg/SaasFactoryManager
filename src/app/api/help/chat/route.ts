@@ -4,6 +4,7 @@ import { streamText, stepCountIs } from 'ai';
 import { getHelpArticles, getFAQs } from '@/features/help/actions';
 import { helpTools } from '@/features/help/tools';
 import { getRecentChatContext, saveChatMessage } from '@/features/help/memory';
+import { getCurrentUserRole } from '@/features/auth/services/permissions';
 
 // gpt-4o-mini: tool calling confiable, costo ~$0.15/1M input. Probado vs
 // gemini-2.0-flash que via OpenRouter no ejecutaba las tools (solo generaba
@@ -146,15 +147,20 @@ export async function POST(req: Request) {
     const currentMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
     const todayStr = today.toISOString().slice(0, 10);
 
-    const [baseSystemPrompt, memoryContext] = await Promise.all([
+    const [baseSystemPrompt, memoryContext, userRole] = await Promise.all([
       buildSystemPrompt(),
       getRecentChatContext(),
+      getCurrentUserRole(),
     ]);
 
+    const roleContext = userRole
+      ? `### Rol del usuario actual: **${userRole}**
+
+${userRole === 'founder' ? 'Acceso total. Puede borrar proyectos, cambiar pricing, invitar usuarios.' : ''}${userRole === 'operator' ? 'Mantenimiento. PUEDE: sincronizar skills, levantar tracking, ver todos los proyectos. NO PUEDE: borrar proyectos, cambiar pricing, invitar usuarios. Si pide algo no permitido, decile "esa accion la tiene que autorizar el founder".' : ''}${userRole === 'client' ? 'Cliente final. Ve SOLO sus proyectos. NO puede crear, sincronizar ni administrar. Si pregunta por otros proyectos, decile "solo veo tu proyecto, hablale al equipo si necesitas info de otro".' : ''}`
+      : '';
+
     const systemPrompt = (
-      memoryContext
-        ? `${baseSystemPrompt}\n\n---\n\n${memoryContext}`
-        : baseSystemPrompt
+      [baseSystemPrompt, memoryContext, roleContext].filter(Boolean).join('\n\n---\n\n')
     )
       .replace('__CURRENT_MONTH__', currentMonth)
       .replace('__TODAY__', todayStr);
