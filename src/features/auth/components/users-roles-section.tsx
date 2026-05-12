@@ -12,6 +12,7 @@ interface ProfileRow {
   full_name: string | null;
   role: UserRole;
   status: UserStatus;
+  hourly_rate_usd: number | null;
   invited_by: string | null;
   created_at: string;
 }
@@ -31,7 +32,7 @@ export async function UsersRolesSection() {
 
   const { data: profiles, error } = await supabase
     .from('profiles')
-    .select('id, email, full_name, role, status, invited_by, created_at')
+    .select('id, email, full_name, role, status, hourly_rate_usd, invited_by, created_at')
     .order('created_at', { ascending: true });
 
   if (error) {
@@ -128,6 +129,7 @@ function UserGroup({
                 fullName={u.full_name}
                 currentRole={u.role}
                 status={u.status}
+                hourlyRate={u.hourly_rate_usd}
                 isSelf={u.id === currentUserId}
               />
             </li>

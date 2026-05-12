@@ -267,6 +267,48 @@ export async function deleteUserAction(formData: FormData): Promise<{
 }
 
 // ============================================================
+// Setear $/hora de un operador
+// ============================================================
+export async function setHourlyRateAction(formData: FormData): Promise<{
+  ok: boolean;
+  error?: string;
+}> {
+  await requireRole(['founder']);
+
+  const userId = formData.get('user_id') as string | null;
+  const rateStr = formData.get('hourly_rate_usd') as string | null;
+  if (!userId) return { ok: false, error: 'Faltan datos' };
+
+  const rate = rateStr && rateStr.trim() !== '' ? Number(rateStr) : null;
+  if (rate !== null && (isNaN(rate) || rate < 0)) {
+    return { ok: false, error: 'Tarifa inválida (debe ser ≥ 0)' };
+  }
+
+  try {
+    const admin = getAdminClient();
+    const { error } = await admin
+      .from('profiles')
+      .update({ hourly_rate_usd: rate })
+      .eq('id', userId);
+
+    if (error) return { ok: false, error: error.message };
+
+    await logAudit({
+      action: 'set_hourly_rate',
+      resource: 'profile',
+      resourceId: userId,
+      details: { hourly_rate_usd: rate },
+    });
+
+    revalidatePath('/settings');
+    revalidatePath('/reports');
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : 'Error' };
+  }
+}
+
+// ============================================================
 // Editar nombre desde founder
 // ============================================================
 export async function editUserNameAction(formData: FormData): Promise<{

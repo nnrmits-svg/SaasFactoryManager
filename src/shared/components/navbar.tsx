@@ -118,6 +118,7 @@ export async function NavbarAuth() {
     avatar_url: null,
     role: 'client',
     status: 'active',
+    hourly_rate_usd: null,
     invited_by: null,
     created_at: user.created_at,
     updated_at: user.created_at,

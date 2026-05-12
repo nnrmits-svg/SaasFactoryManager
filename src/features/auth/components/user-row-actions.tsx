@@ -7,6 +7,7 @@ import {
   sendPasswordResetAction,
   deleteUserAction,
   changeRoleAction,
+  setHourlyRateAction,
 } from '@/features/auth/services/user-actions';
 import type { UserRole } from '@/features/auth/services/permissions';
 import type { UserStatus } from '@/features/auth/types';
@@ -17,6 +18,7 @@ interface Props {
   fullName: string | null;
   currentRole: UserRole;
   status: UserStatus;
+  hourlyRate: number | null;
   isSelf: boolean;
 }
 
@@ -32,9 +34,23 @@ const STATUS_BADGES: Record<UserStatus, { label: string; cls: string }> = {
   pending: { label: 'Pendiente', cls: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30' },
 };
 
-export function UserRowActions({ userId, email, fullName, currentRole, status, isSelf }: Props) {
+export function UserRowActions({ userId, email, fullName, currentRole, status, hourlyRate, isSelf }: Props) {
   const [pending, startTransition] = useTransition();
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [rateInput, setRateInput] = useState<string>(hourlyRate?.toString() ?? '');
+
+  function onRateBlur() {
+    const newVal = rateInput.trim();
+    const oldVal = hourlyRate?.toString() ?? '';
+    if (newVal === oldVal) return;
+    const fd = new FormData();
+    fd.set('user_id', userId);
+    fd.set('hourly_rate_usd', newVal);
+    startTransition(async () => {
+      const r = await setHourlyRateAction(fd);
+      flash(r.ok, r.ok ? '$/h actualizado' : (r.error ?? 'Error'));
+    });
+  }
 
   function flash(ok: boolean, text: string) {
     setMsg({ ok, text });
@@ -120,6 +136,23 @@ export function UserRowActions({ userId, email, fullName, currentRole, status, i
               <option key={r.value} value={r.value}>{r.label}</option>
             ))}
           </select>
+        )}
+
+        {(currentRole === 'operator' || currentRole === 'founder') && !isSelf && (
+          <div className="flex items-center gap-1 text-xs">
+            <span className="text-gray-500">$/h</span>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              value={rateInput}
+              onChange={(e) => setRateInput(e.target.value)}
+              onBlur={onRateBlur}
+              disabled={pending}
+              placeholder="—"
+              className="w-16 px-1.5 py-1 bg-white/5 border border-white/10 rounded text-xs text-white text-right disabled:opacity-50 focus:outline-none focus:border-fluya-purple"
+            />
+          </div>
         )}
       </div>
 
