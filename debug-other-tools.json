@@ -1,0 +1,47 @@
+[
+  {
+    "q": "que skills tienen problemas?",
+    "status": 200,
+    "text": "Se han identificado un total de 8 skills que tienen problemas. A continuación se detalla la información:\n\n1. **Proyecto:** SuscriptionsMgmt\n   - **Skill:** custom-test\n   - **Estado:** external\n   - **Última sincronización:** 12 de mayo de 2026\n\n2. **Proyecto:** ConsultorFinanciero\n   - **Skill:** new-app\n   - **Estado:** divergent\n   - **Última sincronización:** 12 de mayo de 2026\n\n3. **Proyecto:** ConsultorFinanciero\n   - **Skill:** playwright-cli\n   - **Estado:** divergent\n   - **Última sincronización:** 12 de mayo de 2026\n\n4. **Proyecto:** SaasFactoryManager\n   - **Skill:** add-emails\n   - **Estado:** divergent\n   - **Última sincronización:** 12 de mayo de 2026\n\n5. **Proyecto:** SuscriptionsMgmt\n   - **Skill:** playwright-cli\n   - **Estado:** divergent\n   - **Última sincronización:** 12 de mayo de 2026\n\n6. **Proyecto:** SaasFactoryManager\n   - **Skill:** playwright-cli\n   - **Estado:** divergent\n   - **Última sincronización:** 12 de mayo de 2026\n\n7. **Proyecto:** ConsultorFinanciero\n   - **Skill:** update-sf\n   - **Estado:** divergent\n   - **Última sincronización:** 12 de mayo de 2026\n\n8. **Proyecto:** SaasFactoryManager\n   - **Skill:** flow-map\n   - **Estado:** external\n   - **Última sincronización:** 12 de mayo de 2026\n\nEs importante revisar estos skills para asegurar su correcto funcionamiento y sincronización.",
+    "steps_count": 2,
+    "tool_calls": [
+      "list_problematic_skills"
+    ],
+    "tool_results_preview": [
+      {
+        "name": "list_problematic_skills",
+        "output": "{\"problematic\":[{\"project\":\"SuscriptionsMgmt\",\"skill\":\"custom-test\",\"state\":\"external\",\"last_synced_at\":\"2026-05-12T02:31:24.926+00:00\"},{\"project\":\"ConsultorFinanciero\",\"skill\":\"new-app\",\"state\":\"div"
+      }
+    ]
+  },
+  {
+    "q": "cuanto gaste en mayo",
+    "status": 200,
+    "text": "En mayo de 2023, no tuviste gastos registrados, ya que el total fue de 0 USD y no hubo sesiones.",
+    "steps_count": 2,
+    "tool_calls": [
+      "get_cost_summary"
+    ],
+    "tool_results_preview": [
+      {
+        "name": "get_cost_summary",
+        "output": "{\"month\":\"2023-05\",\"total_usd\":0,\"sessions\":0,\"top_projects\":[]}"
+      }
+    ]
+  },
+  {
+    "q": "busca articulos sobre divergent",
+    "status": 200,
+    "text": "He encontrado algunos artículos que pueden ser de tu interés sobre el tema \"divergent\":\n\n1. **[Los 4 estados de un skill](https://link-a-articulo.com/estados-de-skills)**  \n   Resumen: Synced, divergent, missing, external — que significa cada uno.\n\n2. **[Como arreglar un skill divergent](https://link-a-articulo.com/arreglar-skill-divergent)**  \n   Resumen: Volver el skill al catálogo o pushear tus cambios.\n\n3. **[Sincronizar un proyecto con el catálogo central](https://link-a-articulo.com/sincronizar-con-catalogo)**  \n   Resumen: Volver tus skills locales idénticos al catálogo.\n\nSi deseas más información sobre alguno de estos artículos, házmelo saber.",
+    "steps_count": 2,
+    "tool_calls": [
+      "search_articles"
+    ],
+    "tool_results_preview": [
+      {
+        "name": "search_articles",
+        "output": "{\"results\":[{\"slug\":\"estados-de-skills\",\"title\":\"Los 4 estados de un skill\",\"excerpt\":\"Synced, divergent, missing, external — que significa cada uno.\"},{\"slug\":\"arreglar-skill-divergent\",\"title\":\"Como"
+      }
+    ]
+  }
+]
