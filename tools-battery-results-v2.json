@@ -1,0 +1,72 @@
+[
+  {
+    "i": 1,
+    "q": "¿qué proyectos tengo?",
+    "ms": 2358,
+    "len": 0,
+    "preview": ""
+  },
+  {
+    "i": 2,
+    "q": "que skills tienen problemas?",
+    "ms": 1166,
+    "len": 0,
+    "preview": ""
+  },
+  {
+    "i": 3,
+    "q": "como va SaasFactoryManager",
+    "ms": 1176,
+    "len": 0,
+    "preview": ""
+  },
+  {
+    "i": 4,
+    "q": "cuanto gaste en mayo",
+    "ms": 1719,
+    "len": 0,
+    "preview": ""
+  },
+  {
+    "i": 5,
+    "q": "cuanto gaste en total",
+    "ms": 1360,
+    "len": 0,
+    "preview": ""
+  },
+  {
+    "i": 6,
+    "q": "que skills divergent tiene SaasFactoryAgent",
+    "ms": 1173,
+    "len": 0,
+    "preview": ""
+  },
+  {
+    "i": 7,
+    "q": "cuales son los 4 estados de un skill",
+    "ms": 3925,
+    "len": 772,
+    "preview": "Los cuatro estados de un skill son:\n\n1. **Synced (verde)**: El skill está sincronizado con el catálogo central, lo que significa que no hay diferencias entre la versión local y la del catálogo.\n\n2. **Divergent (ámbar)**: El skill ha sido editado directamente en el proyecto local y difiere de la versión en el catálogo. Esto puede requerir una re-sincronización o subir los cambios al catálogo.\n\n3. **Missing (rojo)**: El skill no existe en el disco local, lo que indica que la carpeta ha sido borrada. Para solucionarlo, se puede restaurar usando un comando específico.\n\n4. **External (gris)**: Este skill es custom y no está registrado en el catálogo. Esto es intencional y no necesita ser arreglad"
+  },
+  {
+    "i": 8,
+    "q": "como creo un proyecto nuevo",
+    "ms": 1736,
+    "len": 301,
+    "preview": "Para crear un proyecto nuevo, tenés que ir a la sección de \"factory\" en la plataforma. Ahí vas a encontrar un asistente que te va a guiar paso a paso en el proceso de configuración del nuevo proyecto. \n\nSi necesitás ayuda específica durante el proceso, no dudes en preguntar. ¡Estoy acá para ayudarte!"
+  },
+  {
+    "i": 9,
+    "q": "que significa missing en un skill",
+    "ms": 2773,
+    "len": 431,
+    "preview": "Un skill en estado \"missing\" significa que la carpeta correspondiente a ese skill ha sido borrada o no existe en el disco. En otras palabras, el sistema no puede encontrar el archivo necesario para ese skill en tu proyecto. \n\nPara solucionarlo, tenés que restaurar el skill a su estado anterior. Podés hacerlo utilizando el comando `git checkout HEAD -- .claude/skills/<nombre>/`, donde `<nombre>` es el nombre del skill que falta."
+  },
+  {
+    "i": 10,
+    "q": "el agent esta offline que hago",
+    "ms": 4430,
+    "len": 381,
+    "preview": "Si el Agent está offline, lo primero que podés hacer es \"despertarlo\". Para eso, revisá si está correctamente configurado y asegurate de que tenga conexión a internet. A veces, reiniciar el Agent o la máquina donde está corriendo puede ayudar.\n\nSi después de esto sigue offline, puede haber un problema más profundo que necesitemos investigar. ¡Haceme saber si necesitas más ayuda!"
+  }
+]
