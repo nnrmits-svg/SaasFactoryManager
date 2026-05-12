@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { AiAssistant } from './ai-assistant';
 import { getUserGithubOrgs } from '../services/github-orgs-action';
 import { useAgentStatus } from '../hooks/use-agent-status';
 import type { UserGithubOrg } from '../types';
+import { BudgetStep, type BudgetPayload } from '@/features/contracts/components/budget-step';
 
 export interface BusinessBrief {
   dolor: string;
@@ -26,6 +27,7 @@ interface ProjectWizardProps {
     skills: string[];
     /** Empty string → use the developer's gh-cli authenticated user. */
     githubOwner: string;
+    budget: BudgetPayload | null;
   }) => void;
   onCancel: () => void;
   saving: boolean;
@@ -180,6 +182,7 @@ export function ProjectWizard({ onComplete, onCancel, saving }: ProjectWizardPro
   const [selectedSkills, setSelectedSkills] = useState<Set<string>>(
     () => new Set(AVAILABLE_SKILLS.filter((s) => s.defaultChecked).map((s) => s.id)),
   );
+  const [budget, setBudget] = useState<BudgetPayload | null>(null);
 
   const agent = useAgentStatus();
 
@@ -219,12 +222,33 @@ export function ProjectWizard({ onComplete, onCancel, saving }: ProjectWizardPro
   }
 
   const SKILLS_STEP_INDEX = STEPS.length;
+  const BUDGET_STEP_INDEX = STEPS.length + 1;
   const currentStep = STEPS[step];
   const isInterviewStep = step >= 0 && step < STEPS.length;
   const isSkillsStep = step === SKILLS_STEP_INDEX;
-  const isLastStep = isSkillsStep;
+  const isBudgetStep = step === BUDGET_STEP_INDEX;
+  const isLastStep = isBudgetStep;
   const isNameStep = step === -1;
-  const totalSteps = STEPS.length + 1;
+  const totalSteps = STEPS.length + 2;
+
+  const briefForBudget = useMemo<BusinessBrief>(
+    () => ({
+      dolor: answers.dolor || '',
+      costo: answers.costo || '',
+      solucion: answers.solucion || '',
+      flujo: answers.flujo || '',
+      usuario: answers.usuario || '',
+      datos: answers.datos || '',
+      kpi: answers.kpi || '',
+      monetizacion: answers.monetizacion || '',
+      diseno: answers.diseno || '',
+    }),
+    [answers],
+  );
+
+  const handleBudgetChange = useCallback((payload: BudgetPayload) => {
+    setBudget(payload);
+  }, []);
 
   function toggleSkill(id: string) {
     const skill = AVAILABLE_SKILLS.find((s) => s.id === id);
@@ -255,7 +279,7 @@ export function ProjectWizard({ onComplete, onCancel, saving }: ProjectWizardPro
       const skills = AVAILABLE_SKILLS.filter(
         (s) => s.required || selectedSkills.has(s.id),
       ).map((s) => s.id);
-      onComplete({ name: projectName, description, brief, skills, githubOwner });
+      onComplete({ name: projectName, description, brief, skills, githubOwner, budget });
       return;
     }
 
@@ -272,7 +296,7 @@ export function ProjectWizard({ onComplete, onCancel, saving }: ProjectWizardPro
 
   const canProceed = isNameStep
     ? projectName.trim().length > 0
-    : isSkillsStep
+    : isSkillsStep || isBudgetStep
       ? true
       : (answers[currentStep?.id] || '').trim().length > 0;
 
@@ -311,7 +335,16 @@ export function ProjectWizard({ onComplete, onCancel, saving }: ProjectWizardPro
           ))}
           <div
             className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${
-              isSkillsStep ? 'bg-purple-400' : 'bg-white/10'
+              step > SKILLS_STEP_INDEX
+                ? 'bg-purple-500'
+                : isSkillsStep
+                  ? 'bg-purple-400'
+                  : 'bg-white/10'
+            }`}
+          />
+          <div
+            className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${
+              isBudgetStep ? 'bg-purple-400' : 'bg-white/10'
             }`}
           />
         </div>
@@ -433,6 +466,17 @@ export function ProjectWizard({ onComplete, onCancel, saving }: ProjectWizardPro
           <p className="mt-3 text-xs text-gray-500">
             Podes aplicar mas skills despues desde la pantalla Skills del agente.
           </p>
+        </>
+      )}
+
+      {/* Budget Step (final) */}
+      {isBudgetStep && (
+        <>
+          <div className="flex items-center justify-between mb-3">
+            <span />
+            <span className="text-xs text-gray-500">{totalSteps} / {totalSteps}</span>
+          </div>
+          <BudgetStep brief={briefForBudget} onChange={handleBudgetChange} />
         </>
       )}
 
