@@ -101,3 +101,5 @@ operando con multiples proyectos en multiples maquinas locales (una por develope
 - [x] 2026-05-04: `.env.local` rellenado (Plan B); `npm run dev` levanta limpio.
 - [x] 2026-04-21: Configuracion de entorno con SOPS (`.env.enc` + `.sops.yaml`) — luego reemplazada por Plan B para `NEXT_PUBLIC_*`.
 - [x] 2026-04-17: Refactor mayor de Dashboard y Skills (-177 lineas netas).
+
+## Done Test 11 de mayo 00:03
