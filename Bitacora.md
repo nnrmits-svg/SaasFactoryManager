@@ -18,8 +18,10 @@
 - **Continuidad entre maquinas/sesiones = git, no auto-memory**. Razon: la auto-memory vive en `~/.claude/projects/...` por maquina y no viaja con el repo. Cualquier dato que el equipo necesite preservar tiene que estar en `Bitacora.md` o `project_plan.md`.
 - **Activacion automatica via callback**, no via webhook ni cron. Razon: el momento exacto en que un invitado pasa de "pending" a "active" es cuando intercambia el code por session. Cualquier otro trigger (cron, edge function on auth event) introduce latencia y complejidad.
 
+### Hecho (continuacion)
+- **Activacion manual one-shot** de `rmarchetti@grupoits.com.ar` autorizada por founder y aplicada via MCP: `UPDATE profiles SET status='active' WHERE email='rmarchetti@grupoits.com.ar' AND status='pending'` → retorno: `{id: dfe4f92c..., status: active}`. Limpia el residuo del bug pre-fix.
+
 ### Pendiente
-- Aplicar `UPDATE profiles SET status='active' WHERE email='rmarchetti@grupoits.com.ar' AND status='pending'` para el usuario afectado (el MCP bloqueo el write directo; queda autorizado por el founder en la proxima sesion).
 - **SMTP custom para Supabase Auth** — el default rate limit es 2 emails/hora en proyectos sin SMTP. Resend ya esta integrado en el proyecto via `/add-emails`; conectarlo como SMTP de Supabase Auth resolveria entregabilidad y rate. Sprint dedicado.
 - TOTP enrollment por usuario en `/me` (toggle ya HABILITADO en Supabase, /me lee, falta UI de enrolar).
 - Presupuesto al crear proyecto: wizard de `/factory` debe estimar AI + labor + otros antes del create.
