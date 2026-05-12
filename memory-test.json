@@ -1,0 +1,30 @@
+{
+  "session1": [
+    {
+      "q": "¿qué proyectos tengo?",
+      "preview": "Tenés 4 proyectos: \n\n1. ConsultorFinanciero (activo, estado del agente: pendiente)\n2. SaasFactoryAgent (activo, estado del agente: pendiente)\n3. SaasFactoryManager (activo, estado del agente: pendiente)\n4. SuscriptionsMgmt (activo, estado del agente: pendiente)\n\nSi necesitás más detalles sobre alguno de ellos, no dudes en preguntar."
+    },
+    {
+      "q": "qué skills divergent tiene SaasFactoryManager",
+      "preview": "En el proyecto SaasFactoryManager tenés 2 skills en estado divergent: **add-emails** y **playwright-cli**, ambos sincronizados por última vez el 12 de mayo de 2026. También hay un skill llamado **flow-map** que está en estado external.\n\nSi necesitás re-sincronizarlos o realizar alguna acción, avisame."
+    },
+    {
+      "q": "cuanto gaste en mayo",
+      "preview": "En mayo gastaste un total de 3062.94 USD. Los proyectos que más costaron son:\n\n1. **SaasFactoryAgent**: 1352.67 USD\n2. **SaasFactoryManager**: 1153.09 USD\n3. **SuscriptionsMgmt**: 196.32 USD\n4. **ConsultorFinanciero**: 2.81 USD\n\nTambién hay una categoría sin proyecto específico que costó 358.06 USD. Si necesitas más detalles de algún proyecto, avisame."
+    }
+  ],
+  "session2": [
+    {
+      "q": "y como va add-emails que te mencione antes?",
+      "preview": "No encontré un proyecto llamado \"add-emails\". Asegurate de que el nombre esté correcto o que el proyecto no esté archivado. Si necesitas ayuda, decime y lo revisamos juntos."
+    },
+    {
+      "q": "cual era el proyecto mas caro?",
+      "preview": "El proyecto más caro es **SaasFactoryAgent**, con un costo de **1352.67 USD**. Le sigue **SaasFactoryManager**, que costó **1153.09 USD**. Si tenés más preguntas sobre costos o proyectos, ¡házmelo saber!"
+    },
+    {
+      "q": "cual es el ultimo tema que hablamos?",
+      "preview": "No tengo acceso a conversaciones previas, así que no puedo ver el último tema que hablamos. Pero estoy acá para ayudarte con cualquier pregunta o tema que necesites. ¿En qué puedo asistirte hoy?"
+    }
+  ]
+}
