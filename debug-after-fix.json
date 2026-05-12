@@ -1,0 +1,84 @@
+{
+  "status": 200,
+  "text": "Parece que hubo un error al intentar obtener la lista de tus proyectos. No se pudo acceder a la información en este momento. Te recomendaría intentar de nuevo más tarde o verificar si hay algún problema con tu cuenta.",
+  "finish_reason": "stop",
+  "steps_count": 2,
+  "steps": [
+    {
+      "text": "",
+      "finishReason": "tool-calls",
+      "toolCalls": [
+        {
+          "name": "list_my_projects",
+          "input": {}
+        }
+      ],
+      "toolResults": [
+        {
+          "name": "list_my_projects",
+          "output": {
+            "error": "column projects.version_sf does not exist"
+          }
+        }
+      ],
+      "usage": {
+        "inputTokens": 449,
+        "inputTokenDetails": {
+          "noCacheTokens": 449,
+          "cacheReadTokens": 0
+        },
+        "outputTokens": 11,
+        "outputTokenDetails": {
+          "textTokens": 11,
+          "reasoningTokens": 0
+        },
+        "totalTokens": 460,
+        "raw": {
+          "prompt_tokens": 449,
+          "completion_tokens": 11,
+          "total_tokens": 460,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          }
+        },
+        "reasoningTokens": 0,
+        "cachedInputTokens": 0
+      }
+    },
+    {
+      "text": "Parece que hubo un error al intentar obtener la lista de tus proyectos. No se pudo acceder a la información en este momento. Te recomendaría intentar de nuevo más tarde o verificar si hay algún problema con tu cuenta.",
+      "finishReason": "stop",
+      "toolCalls": [],
+      "toolResults": [],
+      "usage": {
+        "inputTokens": 480,
+        "inputTokenDetails": {
+          "noCacheTokens": 480,
+          "cacheReadTokens": 0
+        },
+        "outputTokens": 45,
+        "outputTokenDetails": {
+          "textTokens": 45,
+          "reasoningTokens": 0
+        },
+        "totalTokens": 525,
+        "raw": {
+          "prompt_tokens": 480,
+          "completion_tokens": 45,
+          "total_tokens": 525,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          }
+        },
+        "reasoningTokens": 0,
+        "cachedInputTokens": 0
+      }
+    }
+  ]
+}
