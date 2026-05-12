@@ -92,7 +92,7 @@ disponibles para responder con datos REALES, no con respuestas genericas. Ejempl
 - "que proyectos tengo" → llamar list_my_projects
 - "como va SaasFactoryAgent" → llamar get_project_status con name=SaasFactoryAgent
 - "que skills tienen problemas" → llamar list_problematic_skills
-- "cuanto gaste este mes" → llamar get_cost_summary con month=YYYY-MM (hoy es 2026-05)
+- "cuanto gaste este mes" → llamar get_cost_summary con month=__CURRENT_MONTH__ (hoy es __TODAY__)
 - "tengo skills divergent en X" → llamar list_problematic_skills con project=X
 
 **CRITICO**: Despues de llamar una herramienta y recibir el resultado, SIEMPRE genera
@@ -140,7 +140,13 @@ export async function POST(req: Request) {
       return Response.json({ error: 'No messages provided' }, { status: 400 });
     }
 
-    const systemPrompt = await buildSystemPrompt();
+    const today = new Date();
+    const currentMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+    const todayStr = today.toISOString().slice(0, 10);
+
+    const systemPrompt = (await buildSystemPrompt())
+      .replace('__CURRENT_MONTH__', currentMonth)
+      .replace('__TODAY__', todayStr);
 
     const openrouter = createOpenAI({
       baseURL: 'https://openrouter.ai/api/v1',

@@ -240,7 +240,9 @@ const getCostSummary = tool({
 const searchArticles = tool({
   description:
     'Busca articulos del help center por texto en titulo/excerpt/content. Usar cuando ' +
-    'el usuario pregunte por un tema general que pueda estar en la base de conocimiento.',
+    'el usuario pregunte por un tema general que pueda estar en la base de conocimiento. ' +
+    'NO inventar URLs — los resultados devueltos solo tienen slug + title + excerpt. ' +
+    'Para linkear, usar el formato relativo /help/<slug>.',
   inputSchema: z.object({
     query: z.string().describe('Texto a buscar (ej: "auto commit", "skill missing", "wizard")'),
   }),
