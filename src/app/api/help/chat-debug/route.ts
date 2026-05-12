@@ -19,10 +19,11 @@ export async function POST(req: Request) {
     const openrouter = createOpenAI({
       baseURL: 'https://openrouter.ai/api/v1',
       apiKey,
+      compatibility: 'compatible',
     });
 
     const result = await generateText({
-      model: openrouter(MODEL),
+      model: openrouter.chat(MODEL),
       system:
         'Eres un asistente operativo. Usa las herramientas para responder con datos REALES. ' +
         'Despues de llamar una herramienta, SIEMPRE genera un texto en espanol que use los datos.',

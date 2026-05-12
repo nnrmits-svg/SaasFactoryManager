@@ -145,10 +145,15 @@ export async function POST(req: Request) {
     const openrouter = createOpenAI({
       baseURL: 'https://openrouter.ai/api/v1',
       apiKey,
+      // compatibility: 'compatible' fuerza Chat Completions API. Sin esto el
+      // SDK intenta usar la Responses API (nueva, para o1/o3) que OpenRouter
+      // no soporta — el error en debug era "AI_APICallError: Invalid Responses
+      // API request".
+      compatibility: 'compatible',
     });
 
     const result = streamText({
-      model: openrouter(MODEL),
+      model: openrouter.chat(MODEL),
       system: systemPrompt,
       messages: messages.map((m) => ({ role: m.role, content: m.content })),
       tools: helpTools,
