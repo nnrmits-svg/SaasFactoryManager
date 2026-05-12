@@ -1,0 +1,20 @@
+[
+  {
+    "q": "¿qué proyectos tengo?",
+    "status": 500,
+    "error": "Invalid Responses API request",
+    "stack": "AI_APICallError: Invalid Responses API request\n    at /var/task/.next/server/chunks/[root-of-the-server]__0c2-zma._.js:14:15115\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async aP (/var/task/.next/server/chunks/[root-of-the-server]__0c2-zma._.js:14:13694)\n    at async fE.doGenerate (/var/task/.next/server/chunks/[root-of-the-server]__0c2-zma._.js:83:55161)\n    at async fn (/var/task/.next/server/chunks/[root-of-the-server]__0c2-zma._.js:108:29190)\n    at async /var/task/.next/server/chunks/[root-of-the-server]__0c2-zma._.js:108:1487\n    at async vm (/var/task/.next/server/chunks/[root-of-the-server]__0c2-zma._.js:108:5310)\n    at async fn (/var/task/.next/server/chunks/[root-of-the-server]__0c2-zma._.js:108:28352)\n    at async /var/task/.next/server/chunks/[root-of-the-server]__0c2-zma._.js:108:1487\n    at async vq (/var/task/.next/server/chunks/[root-of-the-server]__0c2-zma._.js:108:25606)"
+  },
+  {
+    "q": "que skills tienen problemas?",
+    "status": 500,
+    "error": "Invalid Responses API request",
+    "stack": "AI_APICallError: Invalid Responses API request\n    at /var/task/.next/server/chunks/[root-of-the-server]__0c2-zma._.js:14:15115\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async aP (/var/task/.next/server/chunks/[root-of-the-server]__0c2-zma._.js:14:13694)\n    at async fE.doGenerate (/var/task/.next/server/chunks/[root-of-the-server]__0c2-zma._.js:83:55161)\n    at async fn (/var/task/.next/server/chunks/[root-of-the-server]__0c2-zma._.js:108:29190)\n    at async /var/task/.next/server/chunks/[root-of-the-server]__0c2-zma._.js:108:1487\n    at async vm (/var/task/.next/server/chunks/[root-of-the-server]__0c2-zma._.js:108:5310)\n    at async fn (/var/task/.next/server/chunks/[root-of-the-server]__0c2-zma._.js:108:28352)\n    at async /var/task/.next/server/chunks/[root-of-the-server]__0c2-zma._.js:108:1487\n    at async vq (/var/task/.next/server/chunks/[root-of-the-server]__0c2-zma._.js:108:25606)"
+  },
+  {
+    "q": "cuanto gaste en mayo",
+    "status": 500,
+    "error": "Invalid Responses API request",
+    "stack": "AI_APICallError: Invalid Responses API request\n    at /var/task/.next/server/chunks/[root-of-the-server]__0c2-zma._.js:14:15115\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async aP (/var/task/.next/server/chunks/[root-of-the-server]__0c2-zma._.js:14:13694)\n    at async fE.doGenerate (/var/task/.next/server/chunks/[root-of-the-server]__0c2-zma._.js:83:55161)\n    at async fn (/var/task/.next/server/chunks/[root-of-the-server]__0c2-zma._.js:108:29190)\n    at async /var/task/.next/server/chunks/[root-of-the-server]__0c2-zma._.js:108:1487\n    at async vm (/var/task/.next/server/chunks/[root-of-the-server]__0c2-zma._.js:108:5310)\n    at async fn (/var/task/.next/server/chunks/[root-of-the-server]__0c2-zma._.js:108:28352)\n    at async /var/task/.next/server/chunks/[root-of-the-server]__0c2-zma._.js:108:1487\n    at async vq (/var/task/.next/server/chunks/[root-of-the-server]__0c2-zma._.js:108:25606)"
+  }
+]
