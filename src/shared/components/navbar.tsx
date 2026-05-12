@@ -52,12 +52,14 @@ function AuthedRight({ profile }: { profile: Profile }) {
       >
         Reports
       </Link>
-      <Link
-        href="/settings"
-        className="px-3 py-1.5 text-sm text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-all duration-300"
-      >
-        Settings
-      </Link>
+      {profile.role === 'founder' && (
+        <Link
+          href="/settings"
+          className="px-3 py-1.5 text-sm text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-all duration-300"
+        >
+          Settings
+        </Link>
+      )}
       <div className="ml-2 pl-2 border-l border-white/10">
         <UserMenu profile={profile} />
       </div>
