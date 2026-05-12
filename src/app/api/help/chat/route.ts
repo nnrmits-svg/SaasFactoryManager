@@ -2,6 +2,7 @@ import { createOpenAI } from '@ai-sdk/openai';
 import { streamText, stepCountIs } from 'ai';
 import { getHelpArticles, getFAQs } from '@/features/help/actions';
 import { helpTools } from '@/features/help/tools';
+import { getRecentChatContext, saveChatMessage } from '@/features/help/memory';
 
 // gpt-4o-mini: tool calling confiable, costo ~$0.15/1M input. Probado vs
 // gemini-2.0-flash que via OpenRouter no ejecutaba las tools (solo generaba
@@ -144,9 +145,25 @@ export async function POST(req: Request) {
     const currentMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
     const todayStr = today.toISOString().slice(0, 10);
 
-    const systemPrompt = (await buildSystemPrompt())
+    const [baseSystemPrompt, memoryContext] = await Promise.all([
+      buildSystemPrompt(),
+      getRecentChatContext(),
+    ]);
+
+    const systemPrompt = (
+      memoryContext
+        ? `${baseSystemPrompt}\n\n---\n\n${memoryContext}`
+        : baseSystemPrompt
+    )
       .replace('__CURRENT_MONTH__', currentMonth)
       .replace('__TODAY__', todayStr);
+
+    // Guardar el ultimo mensaje del usuario (el del turno actual) en memoria
+    // Lo hacemos en paralelo, no esperamos — si falla no rompe la respuesta
+    const lastUserMessage = messages[messages.length - 1];
+    if (lastUserMessage?.role === 'user') {
+      saveChatMessage('user', lastUserMessage.content).catch(() => {});
+    }
 
     const openrouter = createOpenAI({
       baseURL: 'https://openrouter.ai/api/v1',
@@ -167,6 +184,13 @@ export async function POST(req: Request) {
       // list_problematic_skills).
       stopWhen: stepCountIs(5),
       temperature: 0.7,
+      // Cuando el modelo termina, guardamos la respuesta del assistant en
+      // memoria. Se ejecuta despues del streaming (no bloquea).
+      onFinish: ({ text }) => {
+        if (text) {
+          saveChatMessage('assistant', text).catch(() => {});
+        }
+      },
     });
 
     return result.toTextStreamResponse();
