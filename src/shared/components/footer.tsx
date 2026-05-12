@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { FluyaLogo } from '@/shared/components/fluya-logo';
+import { APP_VERSION } from '@/shared/lib/version';
 
 export function Footer() {
   return (
@@ -15,9 +16,15 @@ export function Footer() {
           <Link href="/terminos" className="text-white/40 hover:text-white text-sm transition-colors">Terminos</Link>
           <Link href="/privacidad" className="text-white/40 hover:text-white text-sm transition-colors">Privacidad</Link>
           <Link href="/contacto" className="text-white/40 hover:text-white text-sm transition-colors">Contacto</Link>
+          <Link href="/about" className="text-white/40 hover:text-white text-sm transition-colors">About</Link>
         </div>
 
-        <p className="text-white/25 text-xs">Fluya Studio IA &bull; Buenos Aires, Argentina</p>
+        <p className="text-white/25 text-xs">
+          Fluya Studio IA &bull; Buenos Aires, Argentina &bull;{' '}
+          <Link href="/about" className="hover:text-white/50 transition-colors font-mono">
+            v{APP_VERSION}
+          </Link>
+        </p>
       </div>
     </footer>
   );
