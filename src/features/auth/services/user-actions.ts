@@ -8,6 +8,7 @@ import { createClient } from '@supabase/supabase-js';
 import { revalidatePath } from 'next/cache';
 import { requireRole, type UserRole } from './permissions';
 import { logAudit } from './audit';
+import { checkRateLimit, RATE_LIMITS } from './rate-limit';
 
 function getAdminClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -24,6 +25,11 @@ export async function inviteUserAction(formData: FormData): Promise<{
   email?: string;
 }> {
   await requireRole(['founder']);
+
+  const okRate = await checkRateLimit({ action: 'invite_user', ...RATE_LIMITS.invite_user });
+  if (!okRate) {
+    return { ok: false, error: 'Demasiadas invitaciones en poco tiempo. Esperá un rato.' };
+  }
 
   const email = (formData.get('email') as string | null)?.trim().toLowerCase();
   const role = formData.get('role') as UserRole | null;
@@ -103,6 +109,11 @@ export async function changeRoleAction(formData: FormData): Promise<{
   error?: string;
 }> {
   await requireRole(['founder']);
+
+  const okRate = await checkRateLimit({ action: 'role_change', ...RATE_LIMITS.role_change });
+  if (!okRate) {
+    return { ok: false, error: 'Demasiados cambios de rol en poco tiempo. Esperá un rato.' };
+  }
 
   const userId = formData.get('user_id') as string | null;
   const newRole = formData.get('new_role') as UserRole | null;

@@ -1,8 +1,10 @@
 import Link from 'next/link';
+import { after } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import type { Profile } from '@/features/auth/types';
 import { UserMenu } from '@/features/auth/components/user-menu';
 import { FluyaLogo } from '@/shared/components/fluya-logo';
+import { trackSession } from '@/features/auth/services/sessions';
 
 interface NavbarShellProps {
   /** Right-side content. Auth-aware in NavbarAuth, neutral in NavbarSkeleton. */
@@ -95,6 +97,9 @@ export async function NavbarAuth() {
   if (!user) {
     return <NavbarShell rightSlot={<GuestRight />} />;
   }
+
+  // Track session de forma diferida — no bloquea el render
+  after(trackSession());
 
   const { data: dbProfile } = await supabase
     .from('profiles')
