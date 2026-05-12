@@ -109,6 +109,8 @@ export async function NavbarAuth() {
     email: user.email ?? '',
     full_name: null,
     avatar_url: null,
+    role: 'client',
+    invited_by: null,
     created_at: user.created_at,
     updated_at: user.created_at,
   };
