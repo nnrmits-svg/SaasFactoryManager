@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(/Users/ricardomarchetti/ProyectosIA/BusinessOS/**)",
+      "Read(/Users/ricardomarchetti/ProyectosIA/AplicacionesSaas/SaasFactoryAgent/**)",
+      "Bash(ls /Users/ricardomarchetti/ProyectosIA/BusinessOS:*)",
+      "Bash(ls /Users/ricardomarchetti/ProyectosIA/AplicacionesSaas/SaasFactoryAgent:*)",
+      "Bash(find /Users/ricardomarchetti/ProyectosIA/BusinessOS:*)",
+      "Bash(find /Users/ricardomarchetti/ProyectosIA/AplicacionesSaas/SaasFactoryAgent:*)",
+      "Bash(grep:* /Users/ricardomarchetti/ProyectosIA/BusinessOS/*)",
+      "Bash(grep:* /Users/ricardomarchetti/ProyectosIA/AplicacionesSaas/SaasFactoryAgent/*)"
+    ]
+  }
+}
