@@ -334,12 +334,37 @@ npm run lint         # ESLint
 
 ---
 
+## Reglas de proyecto: docs vivos (OBLIGATORIO)
+
+En **este** proyecto la memoria local de Claude Code NO es la fuente de verdad. La continuidad entre
+sesiones y maquinas se mantiene via dos archivos versionados en git:
+
+| Archivo | Que es | Cuando actualizarlo |
+|---------|--------|---------------------|
+| `Bitacora.md` (raiz) | Cronologico, prepend (mas reciente arriba) | Cada sesion significativa: feature cerrada, bug fix relevante, decision arquitectonica, antes de `/compact`, antes de cerrar conversacion larga |
+| `project_plan.md` (raiz) | Plan vivo (se reescribe seccion por seccion) | Cada version nueva (cuando se bumpea version en `/about`) Y cuando cambian: Estado actual, Proximos pasos, Decisiones, Riesgos, Done |
+
+**Reglas concretas:**
+1. **Antes de bumpear version** (ej. v1.1.0 → v1.2.0): actualizar `project_plan.md` SI o SI.
+2. **Despues de un fix/feature relevante**: prepend entrada en `Bitacora.md` con timestamp y maquina.
+3. **No depender de la auto-memory** de Claude Code (`~/.claude/projects/.../memory/`) para informacion del proyecto. La memoria local solo vale para preferencias del usuario o referencias externas.
+4. Cross-link: el header de `project_plan.md` cita la entrada mas reciente de `Bitacora.md`.
+
+Skills disponibles: `/bitacora` y `/project-plan` — usar proactivamente.
+
+---
+
 ## Aprendizajes (Auto-Blindaje Activo)
 
 ### 2025-01-09: Usar npm run dev, no next dev
 - **Error**: Puerto hardcodeado causa conflictos
 - **Fix**: Siempre usar `npm run dev` (auto-detecta puerto)
 - **Aplicar en**: Todos los proyectos
+
+### 2026-05-12: Invite operador deja status=pending para siempre
+- **Error**: El callback de auth (`/auth/callback`) intercambiaba el code por sesion pero nunca actualizaba `profiles.status` de `pending` → `active`. El invitado clickeaba el link, entraba a la app, pero la UI lo seguia mostrando "Pendiente".
+- **Fix**: En [src/app/auth/callback/route.ts](src/app/auth/callback/route.ts) hacer `UPDATE profiles SET status='active' WHERE id=user.id AND status='pending'` despues del `exchangeCodeForSession`.
+- **Aplicar en**: Cualquier proyecto con `add-login` + invites administrativos.
 
 ---
 

@@ -8,8 +8,16 @@ export async function GET(request: Request) {
 
   if (code) {
     const supabase = await createClient();
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
+      // Si el usuario venía de un invite (status=pending), activarlo al primer login.
+      if (data?.user) {
+        await supabase
+          .from('profiles')
+          .update({ status: 'active' })
+          .eq('id', data.user.id)
+          .eq('status', 'pending');
+      }
       return NextResponse.redirect(`${origin}${next}`);
     }
   }
