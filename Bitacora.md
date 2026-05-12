@@ -6,7 +6,27 @@
 
 ---
 
-## 2026-05-12 — Fix invite operador (status=pending eterno) + regla docs vivos
+## 2026-05-12 (tarde) — SMTP Resend doc + TOTP UI verificado + memoria limpia
+**Maquina**: NNRM-iMac-275.local (rmarchetti)
+
+### Hecho
+- **Guia SMTP Resend → Supabase Auth** en [docs/smtp-resend-setup.md](docs/smtp-resend-setup.md). 5 pasos: verificar dominio en Resend, crear API key, configurar SMTP en Supabase Dashboard, testear, customizar templates. No requiere codigo en el repo (Supabase usa el SMTP custom automaticamente para `inviteUserByEmail`, `resetPasswordForEmail`, etc).
+- **TOTP enrollment UI verificada**: el componente [src/features/auth/components/mfa-setup.tsx](src/features/auth/components/mfa-setup.tsx) ya estaba **completo** (enrollment con QR + secret manual, verify 6 digitos, unenroll, todos los estados). Montado en `/me`. La memoria `project_pending_totp` estaba stale — la realidad es que la UI funciona. Solo limpie un `import Image` sin usar.
+- **Auto-memory limpiada**: removidas 4 memorias stale (`project_pending_totp`, `project_operator_labor_cost`, `project_role_config_pages`, `project_budget_new_projects`). MEMORY.md ahora solo tiene un entry de feedback (`feedback_docs_vivos`) que codifica la regla nueva.
+
+### Decidido
+- **SMTP Resend = trabajo del founder, no del agente**. Razon: requiere acceso a cuenta Resend + DNS provider + Supabase dashboard. Nada se escribe del lado repo. Queda como guia para cuando el founder tenga 30 min para hacerlo.
+- **Memoria local solo para preferencias del usuario y referencias externas**, no para estado del proyecto. Razon: la regla nueva de "docs vivos" lo exige y la auto-memory no viaja entre maquinas. Cualquier project memory en auto-memory contradice la fuente de verdad de git.
+
+### Cross-repo (SF Agent ↔ Manager)
+- **SF Agent v1.1.14**: `work_sessions.user_id` ya se puebla en cada upsert (cambio en `push.ts:130-133`). Validacion del lado Manager: 281/284 rows con `user_id` poblado, 3 NULL pendientes del **mismo batch** (created_at `2026-05-12 15:11:12.949197`, project `bbd3e72a` SaasFactoryManager, durations 107/5/56 min). El row siguiente (15:46:49) ya viene OK → fix confirmado activo. Labor cost en `/reports` no impactado (query filtra `user_id NOT NULL`).
+
+### Pendiente (proximo sprint)
+- **Presupuesto al crear proyecto + SOW + versionado + firma** (#3 ampliado por el founder): scope mucho mayor a lo planeado — sistema de cotizacion + SOW (`SF-xxxx-NN` / `SOW-xxxx-NN`) + ampliaciones que recotizan + firma in-app + export a Business OS externo. Esfuerzo L+. Arrancando PRP.
+
+---
+
+## 2026-05-12 (mañana) — Fix invite operador (status=pending eterno) + regla docs vivos
 **Maquina**: NNRM-iMac-275.local (rmarchetti)
 
 ### Hecho

@@ -51,9 +51,8 @@ operando con multiples proyectos en multiples maquinas locales (una por develope
 
 ## Proximos pasos
 
-0. **TOTP enrollment por usuario** en `/me` (Supabase toggle ON, /me lee, falta UI de enrolar). Memoria: `project_pending_totp`.
-0b. **Presupuesto al crear proyecto**: wizard de `/factory` estima AI + labor + otros antes del create. Memoria: `project_budget_new_projects`.
-0c. **SMTP custom Supabase** via Resend (ya integrado en el proyecto). Default rate-limit de 2 emails/h hace inviable invites masivos. Esfuerzo S.
+0. **SMTP custom Supabase via Resend** — guia entregada en [docs/smtp-resend-setup.md](docs/smtp-resend-setup.md). Bloquea en el founder (cuenta Resend, DNS, dashboard). Sin esto, invitaciones masivas se traban por rate-limit default de 2/h.
+0b. **Presupuesto al crear proyecto**: wizard de `/factory` estima AI + labor + otros antes del create. Esfuerzo M-L. Necesita PRP de scope.
 1. **Capa 2 — Skills visibles en Manager** (sprint que arranca, esfuerzo S):
    - Reemplazar `getProjectSkills(path)` (FS) por lectura de tabla `project_skills` en `<SkillPanel>`, `<PortfolioGrid>` y `<SkillRegistryDashboard>`. Pre-condicion del lado Agent **ya cubierta** (`pushInitialProjectSkills()` al boot + chokidar para cambios).
    - Estado por skill: `synced` / `divergent` / `missing`.
@@ -88,6 +87,9 @@ operando con multiples proyectos en multiples maquinas locales (una por develope
 
 ## Done
 
+- [x] 2026-05-12: Guia SMTP Resend → Supabase Auth entregada en `docs/smtp-resend-setup.md` (5 pasos, bloquea en founder).
+- [x] 2026-05-12: TOTP enrollment UI verificada — el componente `mfa-setup.tsx` ya estaba completo y montado en `/me`. La memoria que decia "falta enrollment por usuario" estaba stale.
+- [x] 2026-05-12: Auto-memory podada — 4 entries stale removidas, queda solo `feedback_docs_vivos` que codifica la regla nueva.
 - [x] 2026-05-12: Activacion manual one-shot de `rmarchetti@grupoits.com.ar` (`UPDATE profiles SET status='active'` autorizado por founder vias MCP). Limpieza del residuo del bug pre-fix.
 - [x] 2026-05-12: Bug fix `/auth/callback` — promueve `profiles.status` de `pending` → `active` al primer login del invitado. Antes el operador clickeaba el link de invite, entraba a la app, pero seguia apareciendo "Pendiente" en `/settings` para siempre. Fix en [src/app/auth/callback/route.ts](src/app/auth/callback/route.ts).
 - [x] 2026-05-12: Regla "docs vivos" oficializada en `CLAUDE.md` — Bitacora.md + project_plan.md son la fuente de verdad de continuidad, no la auto-memory.
