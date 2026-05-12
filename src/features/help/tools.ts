@@ -29,7 +29,7 @@ const listMyProjects = tool({
     const supabase = await createClient();
     const { data, error } = await supabase
       .from('projects')
-      .select('id, name, status, agent_status, local_path, version_sf, updated_at')
+      .select('id, name, status, agent_status, local_path, sf_version, updated_at')
       .eq('user_id', userId)
       .order('name');
 
@@ -59,7 +59,7 @@ const getProjectStatus = tool({
     const supabase = await createClient();
     const { data: project, error: pe } = await supabase
       .from('projects')
-      .select('id, name, status, agent_status, local_path, version_sf, updated_at')
+      .select('id, name, status, agent_status, local_path, sf_version, updated_at')
       .eq('user_id', userId)
       .ilike('name', name)
       .maybeSingle();
