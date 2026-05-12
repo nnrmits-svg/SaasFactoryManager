@@ -54,8 +54,6 @@ operando con multiples proyectos en multiples maquinas locales (una por develope
 0. **TOTP enrollment por usuario** en `/me` (Supabase toggle ON, /me lee, falta UI de enrolar). Memoria: `project_pending_totp`.
 0b. **Presupuesto al crear proyecto**: wizard de `/factory` estima AI + labor + otros antes del create. Memoria: `project_budget_new_projects`.
 0c. **SMTP custom Supabase** via Resend (ya integrado en el proyecto). Default rate-limit de 2 emails/h hace inviable invites masivos. Esfuerzo S.
-0d. **Activar manualmente `rmarchetti@grupoits.com.ar`** (`UPDATE profiles SET status='active' WHERE id=...`) — pendiente autorizacion del founder.
-
 1. **Capa 2 — Skills visibles en Manager** (sprint que arranca, esfuerzo S):
    - Reemplazar `getProjectSkills(path)` (FS) por lectura de tabla `project_skills` en `<SkillPanel>`, `<PortfolioGrid>` y `<SkillRegistryDashboard>`. Pre-condicion del lado Agent **ya cubierta** (`pushInitialProjectSkills()` al boot + chokidar para cambios).
    - Estado por skill: `synced` / `divergent` / `missing`.
@@ -90,6 +88,7 @@ operando con multiples proyectos en multiples maquinas locales (una por develope
 
 ## Done
 
+- [x] 2026-05-12: Activacion manual one-shot de `rmarchetti@grupoits.com.ar` (`UPDATE profiles SET status='active'` autorizado por founder vias MCP). Limpieza del residuo del bug pre-fix.
 - [x] 2026-05-12: Bug fix `/auth/callback` — promueve `profiles.status` de `pending` → `active` al primer login del invitado. Antes el operador clickeaba el link de invite, entraba a la app, pero seguia apareciendo "Pendiente" en `/settings` para siempre. Fix en [src/app/auth/callback/route.ts](src/app/auth/callback/route.ts).
 - [x] 2026-05-12: Regla "docs vivos" oficializada en `CLAUDE.md` — Bitacora.md + project_plan.md son la fuente de verdad de continuidad, no la auto-memory.
 - [x] 2026-05-11: v1.1.0 — branding Fluya en login/signup, pagina `/about` con changelog, footer badge (commit `2cec84a`).
