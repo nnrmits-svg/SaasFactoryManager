@@ -1,8 +1,15 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import Link from 'next/link';
 import { logout } from '../services/auth-service';
 import type { Profile } from '../types';
+
+const ROLE_LABEL: Record<Profile['role'], string> = {
+  founder: '👑 Founder',
+  operator: '🔧 Operador',
+  client: '👤 Cliente',
+};
 
 interface Props {
   profile: Profile;
@@ -55,11 +62,28 @@ export function UserMenu({ profile }: Props) {
               {profile.full_name || 'Sin nombre'}
             </p>
             <p className="text-xs text-white/40 truncate">{profile.email}</p>
+            <p className="text-xs text-white/50 mt-1">{ROLE_LABEL[profile.role]}</p>
           </div>
+          <Link
+            href="/me"
+            onClick={() => setOpen(false)}
+            className="block px-4 py-2.5 text-sm text-white/60 hover:text-white hover:bg-white/5 transition"
+          >
+            Mi cuenta
+          </Link>
+          {profile.role === 'founder' && (
+            <Link
+              href="/settings"
+              onClick={() => setOpen(false)}
+              className="block px-4 py-2.5 text-sm text-white/60 hover:text-white hover:bg-white/5 transition"
+            >
+              Settings (founder)
+            </Link>
+          )}
           <form action={logout}>
             <button
               type="submit"
-              className="w-full px-4 py-2.5 text-left text-sm text-white/60 hover:text-white hover:bg-white/5 transition"
+              className="w-full px-4 py-2.5 text-left text-sm text-white/60 hover:text-white hover:bg-white/5 transition border-t border-white/5"
             >
               Cerrar sesion
             </button>

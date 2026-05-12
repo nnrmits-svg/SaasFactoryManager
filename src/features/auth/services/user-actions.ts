@@ -104,6 +104,37 @@ export async function inviteUserAction(formData: FormData): Promise<{
   }
 }
 
+/**
+ * Update own profile (full_name). Cualquier usuario puede actualizar el suyo.
+ */
+export async function updateProfileAction(formData: FormData): Promise<{
+  ok: boolean;
+  error?: string;
+}> {
+  const fullName = (formData.get('full_name') as string | null)?.trim() || null;
+
+  try {
+    const { createClient: createServerClient } = await import('@/lib/supabase/server');
+    const supabase = await createServerClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { ok: false, error: 'No autenticado' };
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({ full_name: fullName })
+      .eq('id', user.id);
+
+    if (error) return { ok: false, error: error.message };
+
+    revalidatePath('/me');
+    revalidatePath('/settings');
+    return { ok: true };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Error';
+    return { ok: false, error: msg };
+  }
+}
+
 export async function changeRoleAction(formData: FormData): Promise<{
   ok: boolean;
   error?: string;
