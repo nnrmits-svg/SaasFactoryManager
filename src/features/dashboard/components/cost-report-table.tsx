@@ -37,10 +37,16 @@ interface AggregatedRow {
   tokensInput: number;
   tokensOutput: number;
   tokensCached: number;
+  /** AI cost — suma de cost_usd de claude_sessions filtradas */
   costUsd: number;
+  /** Labor cost — suma de duration_minutes × profiles.hourly_rate_usd. NO
+   *  filtra por month/model (es por proyecto agregado, viene en ProjectMeta) */
+  laborCostUsd: number;
+  /** Total = AI + Labor */
+  totalCostUsd: number;
   promptCount: number;
-  /** USD per hour, computed only over sessions linked to a `work_session` so
-   *  we can divide by real human work time. Null when no linked sessions. */
+  /** USD per hour basado en Total Cost (AI + Labor) / horas humanas. Null cuando
+   *  no hay work_sessions linkeadas. */
   costPerHour: number | null;
   topModel: string;
   lastSessionAt: string | null;
@@ -109,6 +115,8 @@ export function CostReportTable() {
           tokensOutput: s.tokensOutput,
           tokensCached: s.tokensCached,
           costUsd: s.costUsd,
+          laborCostUsd: 0,
+          totalCostUsd: 0,
           promptCount: s.promptCount,
           costPerHour: null,
           topModel: '-',
@@ -148,17 +156,18 @@ export function CostReportTable() {
       }
       row.topModel = topModel;
 
-      // $/hour: divide the (filtered) project cost by the project's TOTAL
-      // work-session minutes. Project-level — no per-session linking — so the
-      // ratio stays in scale even when a single long claude_session aligns to
-      // a brief work_session. (Asymmetry under month filters is intentional;
-      // see ProjectMeta.totalWorkMinutes docstring.)
+      // Labor cost viene del ProjectMeta (project-level, no se filtra por mes/model
+      // — sale del agregado total de work_sessions × hourly_rate).
       const projectMeta = projectsById.get(row.projectId ?? '');
+      row.laborCostUsd = projectMeta?.laborCostUsd ?? 0;
+      row.totalCostUsd = row.costUsd + row.laborCostUsd;
+
+      // $/hour: ahora usa Total Cost (AI + Labor) / horas humanas.
       const totalMinutes = projectMeta?.totalWorkMinutes ?? 0;
-      row.costPerHour = totalMinutes > 0 ? row.costUsd / (totalMinutes / 60) : null;
+      row.costPerHour = totalMinutes > 0 ? row.totalCostUsd / (totalMinutes / 60) : null;
     }
 
-    return Array.from(byProject.values()).sort((a, b) => b.costUsd - a.costUsd);
+    return Array.from(byProject.values()).sort((a, b) => b.totalCostUsd - a.totalCostUsd);
   }, [filteredSessions, projects]);
 
   const totals = useMemo(() => {
@@ -168,9 +177,11 @@ export function CostReportTable() {
         tokensOutput: acc.tokensOutput + r.tokensOutput,
         tokensCached: acc.tokensCached + r.tokensCached,
         costUsd: acc.costUsd + r.costUsd,
+        laborCostUsd: acc.laborCostUsd + r.laborCostUsd,
+        totalCostUsd: acc.totalCostUsd + r.totalCostUsd,
         promptCount: acc.promptCount + r.promptCount,
       }),
-      { tokensInput: 0, tokensOutput: 0, tokensCached: 0, costUsd: 0, promptCount: 0 },
+      { tokensInput: 0, tokensOutput: 0, tokensCached: 0, costUsd: 0, laborCostUsd: 0, totalCostUsd: 0, promptCount: 0 },
     );
   }, [rows]);
 
@@ -255,8 +266,10 @@ export function CostReportTable() {
               <th className="px-4 py-3 text-gray-400 font-medium text-right">
                 Tokens (in / out / cached)
               </th>
-              <th className="px-4 py-3 text-gray-400 font-medium text-right">$ Total</th>
-              <th className="px-4 py-3 text-gray-400 font-medium text-right">$/hora</th>
+              <th className="px-4 py-3 text-gray-400 font-medium text-right" title="Costo de IA (tokens × precio)">$ IA</th>
+              <th className="px-4 py-3 text-gray-400 font-medium text-right" title="Costo de mano de obra (horas × $/h operador)">$ Labor</th>
+              <th className="px-4 py-3 text-gray-400 font-medium text-right" title="Total = IA + Labor">$ Total</th>
+              <th className="px-4 py-3 text-gray-400 font-medium text-right" title="Total / horas humanas trabajadas">$/hora</th>
               <th className="px-4 py-3 text-gray-400 font-medium">Modelo más usado</th>
               <th className="px-4 py-3 text-gray-400 font-medium text-right">Última sesión</th>
             </tr>
@@ -264,7 +277,7 @@ export function CostReportTable() {
           <tbody className="divide-y divide-white/5">
             {rows.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-4 py-12 text-center text-gray-500">
+                <td colSpan={9} className="px-4 py-12 text-center text-gray-500">
                   {sessions.length === 0
                     ? 'No hay sesiones de Claude registradas todavía. El SF Agent las pushea cada ~5 min.'
                     : 'No hay sesiones que coincidan con los filtros.'}
@@ -295,6 +308,12 @@ export function CostReportTable() {
                   {fmtCurrency(r.costUsd)}
                 </td>
                 <td className="px-4 py-3 text-gray-300 text-right font-mono">
+                  {r.laborCostUsd > 0 ? fmtCurrency(r.laborCostUsd) : <span className="text-gray-600">—</span>}
+                </td>
+                <td className="px-4 py-3 text-fluya-purple text-right font-mono font-medium">
+                  {fmtCurrency(r.totalCostUsd)}
+                </td>
+                <td className="px-4 py-3 text-gray-300 text-right font-mono">
                   {r.costPerHour !== null ? fmtCurrency(r.costPerHour) : '-'}
                 </td>
                 <td className="px-4 py-3 text-gray-300 font-mono text-xs">{r.topModel}</td>
@@ -313,8 +332,14 @@ export function CostReportTable() {
                   {compactNumber(totals.tokensInput)} / {compactNumber(totals.tokensOutput)} /{' '}
                   {compactNumber(totals.tokensCached)}
                 </td>
-                <td className="px-4 py-3 text-fluya-green text-right font-mono font-bold">
+                <td className="px-4 py-3 text-fluya-green text-right font-mono">
                   {fmtCurrency(totals.costUsd)}
+                </td>
+                <td className="px-4 py-3 text-gray-300 text-right font-mono">
+                  {totals.laborCostUsd > 0 ? fmtCurrency(totals.laborCostUsd) : <span className="text-gray-600">—</span>}
+                </td>
+                <td className="px-4 py-3 text-fluya-purple text-right font-mono font-bold">
+                  {fmtCurrency(totals.totalCostUsd)}
                 </td>
                 <td className="px-4 py-3" />
                 <td className="px-4 py-3" />

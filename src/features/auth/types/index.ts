@@ -8,6 +8,7 @@ export interface Profile {
   avatar_url: string | null;
   role: UserRole;
   status: UserStatus;
+  hourly_rate_usd: number | null;
   invited_by: string | null;
   created_at: string;
   updated_at: string;

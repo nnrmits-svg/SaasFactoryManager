@@ -10,6 +10,10 @@ export interface ProjectMeta {
    *  not filter-dependent, so $/h stays stable regardless of how the user
    *  slices `claude_sessions` by model/month. */
   totalWorkMinutes: number;
+  /** Labor cost: sum(duration_minutes/60 × profiles.hourly_rate_usd) JOIN
+   *  work_sessions.user_id. Solo cuenta work_sessions con user_id seteado
+   *  y operador con rate definido. NULL si no hay data. */
+  laborCostUsd: number;
 }
 
 export interface ClaudeSessionRow {
@@ -61,12 +65,22 @@ export async function getReportsData(): Promise<ReportsData> {
     return { projects: [], sessions: [], generatedAt: new Date().toISOString() };
   }
 
-  const [projectsRes, sessionsRes] = await Promise.all([
+  const [projectsRes, workSessionsRes, ratesRes, sessionsRes] = await Promise.all([
     supabase
       .from('projects')
       .select('id, name, status, work_sessions(duration_minutes)')
       .eq('user_id', user.id)
       .order('name'),
+    // Fetch work_sessions con user_id y duracion para calcular labor cost
+    supabase
+      .from('work_sessions')
+      .select('project_id, user_id, duration_minutes')
+      .not('user_id', 'is', null),
+    // Profiles con hourly_rate para mapear user_id -> rate
+    supabase
+      .from('profiles')
+      .select('id, hourly_rate_usd')
+      .not('hourly_rate_usd', 'is', null),
     supabase
       .from('claude_sessions')
       .select(`
@@ -82,6 +96,25 @@ export async function getReportsData(): Promise<ReportsData> {
       .limit(5000),
   ]);
 
+  // Map user_id -> rate
+  const rateByUser = new Map<string, number>();
+  for (const r of (ratesRes.data ?? []) as Array<{ id: string; hourly_rate_usd: number | string }>) {
+    rateByUser.set(r.id, Number(r.hourly_rate_usd) || 0);
+  }
+
+  // Sum labor cost por proyecto
+  const laborByProject = new Map<string, number>();
+  for (const ws of (workSessionsRes.data ?? []) as Array<{
+    project_id: string;
+    user_id: string;
+    duration_minutes: number;
+  }>) {
+    const rate = rateByUser.get(ws.user_id);
+    if (!rate || !ws.duration_minutes) continue;
+    const cost = (Number(ws.duration_minutes) / 60) * rate;
+    laborByProject.set(ws.project_id, (laborByProject.get(ws.project_id) ?? 0) + cost);
+  }
+
   const projects: ProjectMeta[] = (projectsRes.data ?? []).map((p) => {
     const ws = (p.work_sessions as Array<{ duration_minutes: number }> | null) ?? [];
     const totalWorkMinutes = ws.reduce(
@@ -93,6 +126,7 @@ export async function getReportsData(): Promise<ReportsData> {
       name: p.name as string,
       status: (p.status as string | null) ?? 'active',
       totalWorkMinutes,
+      laborCostUsd: Number((laborByProject.get(p.id as string) ?? 0).toFixed(4)),
     };
   });
 
