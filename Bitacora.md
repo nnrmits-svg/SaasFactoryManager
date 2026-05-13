@@ -6,6 +6,60 @@
 
 ---
 
+## 2026-05-13 (tarde) — Selector de SF Agent en wizard + limpieza pre-prueba
+**Maquina**: NNRM-iMac-275.local (rmarchetti)
+
+### Contexto
+- El founder probó el wizard y quedó colgado en "Esperando que el agente tome el comando…" porque ningún SF Agent estaba pulseando (los `active` en `agent_instances` eran stale: último heartbeat hace 11h+). El flow original insertaba `agent_commands.instance_id = NULL` (first-come-first-served), no había selector ni visibilidad.
+
+### Hecho
+- **Limpieza BD**: borrados comando pending del wizard (`24169885-…`), proyecto "Gneracion de Contenido" pendiente (`ca0fd426-…`) y todos los datos `_TEST_` del PRP-005 (cliente + quote + line_items + SOW + NDA + signature). Conservados los 4 proyectos legítimos (ConsultorFinanciero, SaasFactoryAgent, SaasFactoryManager, SuscriptionsMgmt). `projects.estimated_*` del SaasFactoryManager reseteados a NULL.
+- **Selector de SF Agent en wizard**:
+  - Nueva server action [services/get-my-agents-action.ts](src/features/factory-manager/services/get-my-agents-action.ts) — lista `agent_instances` del founder con flag `is_online` (heartbeat < 60s) y `freshness_label` legible.
+  - Wizard ([project-wizard.tsx](src/features/factory-manager/components/project-wizard.tsx)) ahora trae los agents al montar, auto-selecciona el primer online, muestra selector con emoji 🟢/⚪ + máquina + OS + freshness. Si no hay online, warning amarillo.
+  - `createProjectWithAgent` ahora acepta `instanceId` y lo escribe en `agent_commands.instance_id`. Si se deja vacío → null = FCFS legacy.
+  - Factory dashboard pasa `agentInstanceId` desde el wizard a la action.
+
+### Validaciones
+- `npx tsc --noEmit` limpio.
+- `npm run build` → 24 rutas OK.
+
+### Pendiente del lado SF Agent
+- **Filtrar comandos por `instance_id`**: el Agent debe procesar `WHERE instance_id = MY_ID OR instance_id IS NULL` (cubre selección explícita + legacy FCFS).
+- **Heartbeat más activo**: el `last_heartbeat` debe actualizarse cada N segundos (≤30) para que `is_online` sea preciso del lado web.
+
+---
+
+## 2026-05-13 — PRP-005 Fase 6 cerrada + skill movido + Build OK
+**Maquina**: NNRM-iMac-275.local (rmarchetti)
+
+### Hecho
+- **Skill `cross-repo-access` movido** de `.claude/skills-custom/` a `.claude/skills-catalog/` para que el SF Agent lo detecte cuando escanea filesystem.
+- **PRP-005 Fase 6 cerrada — UI de gestión de contratos**:
+  - **Server actions nuevas**:
+    - [services/contracts-read-action.ts](src/features/contracts/services/contracts-read-action.ts) — `getProjectContractsAction(project_id)` devuelve bundle completo: cliente + quotes + sows + ndas + amendments + signatures con números formateados.
+    - [services/sow-nda-actions.ts](src/features/contracts/services/sow-nda-actions.ts) — `createSowAction`, `createNdaAction` (con guard de `is_new`), `createAmendmentAction` que crea AMP-XXXX-MM + nuevo quote `SF-XXXX-(NN+1)` y marca el anterior como `superseded`. Templates de content_md por defecto leídos del brief si no se especifican.
+  - **Componentes UI nuevos** en `src/features/contracts/components/`:
+    - `signature-dialog.tsx` — modal con 3 modos (canvas local / upload PDF / DocuSign), captura nombre+email del firmante, dispara las actions de firma.
+    - `amendment-form.tsx` — form para crear ampliación con razón + items extras (labor/fijo) + nuevo margen.
+    - `contracts-tab.tsx` — UI principal: cliente + presupuesto activo con acciones (generar PDF, aprobar, generar SOW) + SOWs + NDAs (solo si cliente.is_new) + historial de ampliaciones + versiones anteriores.
+  - **Integrado en `/project/[name]`**: nuevo tab "Contratos" agregado en [src/features/dashboard/components/project-detail-view.tsx](src/features/dashboard/components/project-detail-view.tsx) junto a Overview y AI Activity.
+
+### Validaciones end-to-end
+- `npx tsc --noEmit` → limpio.
+- `npm run build` → 24 rutas compiladas OK incluyendo `/project/[name]` con tab Contratos.
+- Test data insertada en BD para `SaasFactoryManager` (project_number=1002): 1 cliente `_TEST_ Cliente Prueba PRP005` (`is_new=true`), 1 quote SF-1002-01 con 4 line items ($15k total/margen 20%), 1 SOW-1002-01 draft, 1 NDA-1002-01 draft, 1 signature simulada. Listo para que el founder vea el tab Contratos con datos reales antes de la prueba conjunta con SF Agent.
+
+### Decidido
+- **El cleanup de datos `_TEST_` queda al founder** — los rows están claramente etiquetados con prefijo `_TEST_` en `clients.name`. Cuando termine de probar, `DELETE FROM clients WHERE name LIKE '_TEST_%'` cascadea por las FK (proyectos NULL en client_id, quotes/sows/ndas heredan).
+
+### Pendiente
+- **Fase 7 (Export Business OS)** y **Fase 8 (Validación final)** del PRP-005.
+- **Prueba conjunta** con SF Agent cuando termine de configurarse.
+- Configurar SMTP Resend + TOTP enrollment UI (pendientes pre-PRP-005).
+
+---
+
 ## 2026-05-12 (tarde) — SMTP Resend doc + TOTP UI verificado + memoria limpia
 **Maquina**: NNRM-iMac-275.local (rmarchetti)
 

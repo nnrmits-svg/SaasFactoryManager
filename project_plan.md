@@ -88,6 +88,7 @@ operando con multiples proyectos en multiples maquinas locales (una por develope
 
 ## Done
 
+- [x] 2026-05-13: **PRP-005 Fase 6 completa** — UI de gestión en tab "Contratos" de `/project/[name]`. Componentes: ContractsTab (vista principal), SignatureDialog (3 modos), AmendmentForm. Server actions: getProjectContracts, createSow, createNda, createAmendment (con versionado automático SF/SOW/NDA/AMP y supersede del quote anterior). Test data insertado para project 1002 (SaasFactoryManager). Build OK 24 rutas. Skill cross-repo-access movido a `.claude/skills-catalog/`.
 - [x] 2026-05-12: **PRP-005 Fases 4 + 5 completas** — PDFs (Quote/SOW/NDA) con React-PDF + Supabase Storage + firma tri-modal (canvas local con hash SHA-256, upload de PDF firmado externo, DocuSign placeholder). Build OK 24 rutas. Cláusula Ley 25.506 ARG embedded. Skill `cross-repo-access` movido a `.claude/skills-catalog/` para detección por SF Agent.
 - [x] 2026-05-12: **PRP-005 Fase 3 completa** — UI step "Presupuesto" en wizard de `/factory`. Componente `BudgetStep` con bloques AI/Labor/Fijos/Overhead/Utilidad e indicadores en línea, integrado a la creación del proyecto (quote auto-creado post-create con `SF-XXXX-NN`). Logo del Factory Manager (SFManager.png) reemplaza favicons PWA.
 - [x] 2026-05-12: **PRP-005 Fase 2 completa** — feature `src/features/contracts/` con types + numbering + pricing + ai-estimator + quote-actions. 5 archivos, typecheck limpio. Server actions listas para que la UI (Fase 3) las consuma.

@@ -115,6 +115,7 @@ export function FactoryDashboard() {
     skills: string[];
     githubOwner: string;
     budget: BudgetPayload | null;
+    agentInstanceId: string | null;
   }) {
     setSaving(true);
     setMessage(null);
@@ -129,6 +130,7 @@ export function FactoryDashboard() {
       skillsToApply: data.skills,
       isPrivate: true,
       githubOwner: data.githubOwner || null,
+      instanceId: data.agentInstanceId,
     });
 
     if (!result.ok) {
