@@ -6,6 +6,29 @@
 
 ---
 
+## 2026-05-13 (noche) — Cleanup duplicado + regla: proyectos válidos fuera del wizard
+**Maquina**: NNRM-iMac-275.local (rmarchetti)
+
+### Contexto
+- Pre-prueba conjunta con SF Agent. Founder vio en Dashboard del Manager 2 proyectos nuevos (`Yuseff-inmobiliaria` y `SucriptionsMgmt` con typo) creados desde el MacBook Pro 2016 (user `rmarchetti`), no desde el wizard.
+- Investigación: ningún `create-project` en `agent_commands` últimos 7 días. Los 2 proyectos fueron descubiertos por `scan` del SF Agent del MBP 2016, no por el wizard del founder.
+
+### Hecho
+- **Borrado `SucriptionsMgmt` (project_number 1293, typo)** — duplicado lógico de `SuscriptionsMgmt` (1003) que vive en la iMac del founder. Mismas 274 commits + 159 sessions + 14 skills exactos (mismo repo git clonado/copiado en otra Mac con typo en el nombre del folder). CASCADE limpió sus child rows.
+- **Conservado `Yuseff-inmobiliaria`** (1292) — proyecto real arrancado desde Claude Agent en el MBP 2016 con estructura SaaS Factory válida.
+
+### Regla nueva del proyecto
+- **Proyectos pueden entrar a la BD por dos caminos legítimos**:
+  1. **Wizard del Manager**: dispara `agent_command:create-project` → Agent procesa → status `created`. Path canonico `/Users/<user>/ProyectosIA/AplicacionesSaas/<name>`.
+  2. **Scan del SF Agent**: Agent escanea filesystem buscando folders con estructura SaaS Factory (`.claude/skills/`, `bitacora.md`, etc) y los pushea a `projects` directamente. `created_by_command_id = NULL`, `agent_status='pending'` (no significa "creando", solo "no creado por wizard").
+- **NO confundir con duplicación**: dos rows del MISMO repo en distintas máquinas son duplicados lógicos. Anti-dedup necesita corrida por `repo_url` o por hash del primer commit, NO por nombre (typos cambian el nombre del folder pero no la identidad del repo).
+
+### Pendiente del lado Agent
+- **Anti-duplicación en scan**: antes de insertar un proyecto descubierto en filesystem, chequear si ya existe un row en `projects` con el mismo `github_repo_url` o el mismo hash de primer commit. Si sí, **reparentar el folder local** al row existente (update `local_path` por máquina, o mejor: tabla `project_local_paths(project_id, machine_id, path)` 1:N). Si no, crear como nuevo.
+- **Status semántico**: `agent_status='pending'` está saturando dos significados. Sería más claro: `pending` (wizard esperando Agent) vs `discovered` (Agent descubrió por scan, sin acción pendiente) vs `created` (wizard completó).
+
+---
+
 ## 2026-05-13 (noche) — v1.2.1: Fix bug useTracking en /project/[name]
 **Maquina**: NNRM-iMac-275.local (rmarchetti)
 
