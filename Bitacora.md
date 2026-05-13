@@ -6,6 +6,27 @@
 
 ---
 
+## 2026-05-13 (noche) — v1.2.1: Fix bug useTracking en /project/[name]
+**Maquina**: NNRM-iMac-275.local (rmarchetti)
+
+### Bug
+- `useTracking` hook ([src/features/factory-manager/hooks/use-tracking.ts](src/features/factory-manager/hooks/use-tracking.ts)) disparaba `fetch('/api/tracking?...')` en cada montaje de `/project/[name]`, incluso con `projectPath` vacío. El comentario decía "short-circuits" pero el código nunca lo hacía.
+- `/api/tracking` GET importaba `AutoCommitService` (`auto-commit-service.ts`, servicio filesystem dead-but-not-deleted) que en Vercel Lambda revienta. Resultado: **500 en logs por cada page load** del project detail.
+
+### Fix
+- **Hook**: short-circuit explícito si `projectPath` está vacío — retorna estado neutral sin fetch.
+- **Route `GET /api/tracking`**: retorna `{ isTracking: false, sessionId: null, commitCount: 0 }` sin tocar `AutoCommitService`. Comentario in-file documenta que cuando el SF Agent acepte estos comandos via `agent_commands`, este endpoint puede leer de `tracking_sessions` directamente o eliminarse.
+- El POST sigue intacto (los botones Start/Stop están disabled en UI, no se llama).
+
+### Validaciones
+- `npx tsc --noEmit` limpio.
+- `npm run build` → 24 rutas OK.
+
+### Pendiente
+- PRP de migración real del tracking al SF Agent (queda en backlog según project_plan).
+
+---
+
 ## 2026-05-13 (tarde) — Bump a v1.2.0 + regla de versionado
 **Maquina**: NNRM-iMac-275.local (rmarchetti)
 

@@ -3,20 +3,22 @@ import { AutoCommitService } from '@/features/factory-manager/services/auto-comm
 import { createClient } from '@/lib/supabase/server';
 
 /**
- * GET /api/tracking — Returns all active tracking sessions + status for a specific project
- * Query: ?projectPath=/path/to/project (optional, returns all if omitted)
+ * GET /api/tracking — Estado del tracking de un proyecto.
+ *
+ * NOTA (2026-05-13): el botón "Start Tracking" está deshabilitado en UI esperando
+ * que el SF Agent acepte estos comandos via `agent_commands`. Hasta entonces, este
+ * endpoint retorna estado neutral sin tocar `AutoCommitService` (servicio filesystem
+ * que no funciona en Vercel Lambdas y disparaba 500 en cada page load de /project/[name]).
+ *
+ * Cuando se migre el tracking al Agent, este endpoint puede devolver lo que reporte
+ * el Agent via heartbeat o eliminarse en favor de un read directo a `tracking_sessions`.
  */
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const projectPath = searchParams.get('projectPath');
-
-  if (projectPath) {
-    const status = AutoCommitService.getStatus(projectPath);
-    return NextResponse.json(status);
-  }
-
-  const active = AutoCommitService.getAllActive();
-  return NextResponse.json({ active });
+export async function GET() {
+  return NextResponse.json({
+    isTracking: false,
+    sessionId: null,
+    commitCount: 0,
+  });
 }
 
 /**
