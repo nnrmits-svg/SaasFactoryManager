@@ -4,6 +4,10 @@ import { useState, useMemo, useEffect, useCallback } from 'react';
 import { AiAssistant } from './ai-assistant';
 import { getUserGithubOrgs } from '../services/github-orgs-action';
 import { getMyAgentsAction, type AgentOption } from '../services/get-my-agents-action';
+import {
+  getAvailableSkillsAction,
+  type SkillCatalogOption,
+} from '../services/get-available-skills-action';
 import { useAgentStatus } from '../hooks/use-agent-status';
 import type { UserGithubOrg } from '../types';
 import { BudgetStep, type BudgetPayload } from '@/features/contracts/components/budget-step';
@@ -36,72 +40,9 @@ interface ProjectWizardProps {
   saving: boolean;
 }
 
-interface SkillOption {
-  id: string;
-  label: string;
-  description: string;
-  required: boolean;
-  defaultChecked: boolean;
-}
-
-const AVAILABLE_SKILLS: SkillOption[] = [
-  {
-    id: 'bitacora',
-    label: 'Bitacora',
-    description: 'Registro cronologico de sesiones por proyecto (obligatorio)',
-    required: true,
-    defaultChecked: true,
-  },
-  {
-    id: 'project-plan',
-    label: 'Project Plan',
-    description: 'Plan vivo del proyecto: vision, estado, decisiones (obligatorio)',
-    required: true,
-    defaultChecked: true,
-  },
-  {
-    id: 'add-login',
-    label: 'Login + Auth',
-    description: 'Autenticacion completa: signup, login, password reset, OAuth Google',
-    required: false,
-    defaultChecked: false,
-  },
-  {
-    id: 'add-payments',
-    label: 'Pagos (Polar)',
-    description: 'Checkout + webhooks + suscripciones con Polar (Merchant of Record)',
-    required: false,
-    defaultChecked: false,
-  },
-  {
-    id: 'add-emails',
-    label: 'Emails (Resend)',
-    description: 'Emails transaccionales: welcome, magic link, batch sending',
-    required: false,
-    defaultChecked: false,
-  },
-  {
-    id: 'add-mobile',
-    label: 'PWA + Push',
-    description: 'PWA instalable + push notifications (iOS compatible)',
-    required: false,
-    defaultChecked: false,
-  },
-  {
-    id: 'add-security',
-    label: 'Seguridad enterprise',
-    description: 'Roles + RLS, 2FA/MFA, rate limiting, audit logs',
-    required: false,
-    defaultChecked: false,
-  },
-  {
-    id: 'fluya-brand',
-    label: 'Branding Fluya',
-    description: 'Logo, header, footer, paleta dark, gradientes, manifest PWA',
-    required: false,
-    defaultChecked: false,
-  },
-];
+// La lista de skills se carga al montar desde getAvailableSkillsAction()
+// que lee `skills_catalog` (populated por el SF Agent al escanear el template).
+// Tipo importado: SkillCatalogOption.
 
 const STEPS = [
   {
@@ -182,9 +123,8 @@ export function ProjectWizard({ onComplete, onCancel, saving }: ProjectWizardPro
   const [orgs, setOrgs] = useState<UserGithubOrg[]>([]);
   const [isSyncingOrgs, setIsSyncingOrgs] = useState(false);
   const [orgsSyncMsg, setOrgsSyncMsg] = useState<string | null>(null);
-  const [selectedSkills, setSelectedSkills] = useState<Set<string>>(
-    () => new Set(AVAILABLE_SKILLS.filter((s) => s.defaultChecked).map((s) => s.id)),
-  );
+  const [availableSkills, setAvailableSkills] = useState<SkillCatalogOption[]>([]);
+  const [selectedSkills, setSelectedSkills] = useState<Set<string>>(new Set());
   const [budget, setBudget] = useState<BudgetPayload | null>(null);
   const [agents, setAgents] = useState<AgentOption[]>([]);
   const [selectedAgentId, setSelectedAgentId] = useState<string>('');
@@ -198,6 +138,11 @@ export function ProjectWizard({ onComplete, onCancel, saving }: ProjectWizardPro
       // Auto-seleccionar el primer agent online si hay alguno
       const firstOnline = rows.find((r) => r.is_online);
       if (firstOnline) setSelectedAgentId(firstOnline.id);
+    });
+    getAvailableSkillsAction().then((rows) => {
+      setAvailableSkills(rows);
+      // Pre-seleccionar los marcados como defaultChecked (incluye obligatorios bitacora/project-plan)
+      setSelectedSkills(new Set(rows.filter((r) => r.defaultChecked).map((r) => r.id)));
     });
   }, []);
 
@@ -262,7 +207,7 @@ export function ProjectWizard({ onComplete, onCancel, saving }: ProjectWizardPro
   }, []);
 
   function toggleSkill(id: string) {
-    const skill = AVAILABLE_SKILLS.find((s) => s.id === id);
+    const skill = availableSkills.find((s) => s.id === id);
     if (!skill || skill.required) return;
     setSelectedSkills((prev) => {
       const next = new Set(prev);
@@ -287,7 +232,7 @@ export function ProjectWizard({ onComplete, onCancel, saving }: ProjectWizardPro
       };
 
       const description = answers.solucion || '';
-      const skills = AVAILABLE_SKILLS.filter(
+      const skills = availableSkills.filter(
         (s) => s.required || selectedSkills.has(s.id),
       ).map((s) => s.id);
       onComplete({
@@ -490,7 +435,7 @@ export function ProjectWizard({ onComplete, onCancel, saving }: ProjectWizardPro
             Que skills aplicar al proyecto al crearlo? Bitacora y Project Plan son obligatorios.
           </p>
           <div className="space-y-2 max-h-[420px] overflow-y-auto pr-1">
-            {AVAILABLE_SKILLS.map((skill) => {
+            {availableSkills.map((skill) => {
               const checked = skill.required || selectedSkills.has(skill.id);
               return (
                 <label
