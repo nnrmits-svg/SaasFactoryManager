@@ -13,6 +13,9 @@ export interface CreateProjectWithAgentInput {
   /** GitHub login (org_login or user) under which the Agent should create the
    *  repo. Empty/undefined → Agent uses the gh-cli authenticated user. */
   githubOwner?: string | null;
+  /** ID de la instancia del SF Agent que debe procesar el comando. NULL/undefined
+   *  = first-come-first-served entre todos los agents online. */
+  instanceId?: string | null;
 }
 
 export interface CreateProjectWithAgentResult {
@@ -81,7 +84,7 @@ export async function createProjectWithAgent(
     .from('agent_commands')
     .insert({
       user_id: user.id,
-      instance_id: null,
+      instance_id: input.instanceId ?? null,
       command: 'create-project',
       payload: payload as unknown as Record<string, unknown>,
       status: 'pending',

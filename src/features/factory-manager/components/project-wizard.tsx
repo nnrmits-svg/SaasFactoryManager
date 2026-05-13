@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { AiAssistant } from './ai-assistant';
 import { getUserGithubOrgs } from '../services/github-orgs-action';
+import { getMyAgentsAction, type AgentOption } from '../services/get-my-agents-action';
 import { useAgentStatus } from '../hooks/use-agent-status';
 import type { UserGithubOrg } from '../types';
 import { BudgetStep, type BudgetPayload } from '@/features/contracts/components/budget-step';
@@ -28,6 +29,8 @@ interface ProjectWizardProps {
     /** Empty string → use the developer's gh-cli authenticated user. */
     githubOwner: string;
     budget: BudgetPayload | null;
+    /** instance_id del SF Agent que procesará el comando. null = first-come-first-served. */
+    agentInstanceId: string | null;
   }) => void;
   onCancel: () => void;
   saving: boolean;
@@ -183,11 +186,19 @@ export function ProjectWizard({ onComplete, onCancel, saving }: ProjectWizardPro
     () => new Set(AVAILABLE_SKILLS.filter((s) => s.defaultChecked).map((s) => s.id)),
   );
   const [budget, setBudget] = useState<BudgetPayload | null>(null);
+  const [agents, setAgents] = useState<AgentOption[]>([]);
+  const [selectedAgentId, setSelectedAgentId] = useState<string>('');
 
   const agent = useAgentStatus();
 
   useEffect(() => {
     getUserGithubOrgs().then((rows) => setOrgs(rows));
+    getMyAgentsAction().then((rows) => {
+      setAgents(rows);
+      // Auto-seleccionar el primer agent online si hay alguno
+      const firstOnline = rows.find((r) => r.is_online);
+      if (firstOnline) setSelectedAgentId(firstOnline.id);
+    });
   }, []);
 
   // Watch the dispatched orgs-sync command. We match by `command` rather than
@@ -279,7 +290,15 @@ export function ProjectWizard({ onComplete, onCancel, saving }: ProjectWizardPro
       const skills = AVAILABLE_SKILLS.filter(
         (s) => s.required || selectedSkills.has(s.id),
       ).map((s) => s.id);
-      onComplete({ name: projectName, description, brief, skills, githubOwner, budget });
+      onComplete({
+        name: projectName,
+        description,
+        brief,
+        skills,
+        githubOwner,
+        budget,
+        agentInstanceId: selectedAgentId || null,
+      });
       return;
     }
 
@@ -415,6 +434,47 @@ export function ProjectWizard({ onComplete, onCancel, saving }: ProjectWizardPro
               <code className="font-mono text-gray-400">gh auth refresh -s read:org</code>{' '}
               en la terminal del Agent (gh login default no incluye ese scope).
             </p>
+          </div>
+
+          {/* SF Agent selector */}
+          <div className="mt-5">
+            <div className="flex items-center justify-between mb-2">
+              <label htmlFor="agent-instance" className="text-sm font-medium text-white">
+                SF Agent que procesa
+              </label>
+              {agents.some((a) => a.is_online) ? (
+                <span className="text-xs text-fluya-green">
+                  {agents.filter((a) => a.is_online).length} online
+                </span>
+              ) : (
+                <span className="text-xs text-yellow-400">⚠ Ningún Agent online</span>
+              )}
+            </div>
+            <select
+              id="agent-instance"
+              value={selectedAgentId}
+              onChange={(e) => setSelectedAgentId(e.target.value)}
+              className="w-full px-4 py-3 bg-black/30 border border-white/10 rounded-xl text-white focus:outline-none focus:border-purple-500/50 transition-colors"
+            >
+              <option value="">Primero disponible (FCFS)</option>
+              {agents.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.is_online ? '🟢' : '⚪'} {a.machine_name}
+                  {a.os_type ? ` · ${a.os_type}` : ''}
+                  {' · '}{a.freshness_label}
+                </option>
+              ))}
+            </select>
+            {agents.length === 0 && (
+              <p className="mt-2 text-xs text-gray-500">
+                Sin SF Agents registrados. Prendé el SF Agent en alguna máquina para que aparezca.
+              </p>
+            )}
+            {agents.length > 0 && !agents.some((a) => a.is_online) && (
+              <p className="mt-2 text-xs text-yellow-400">
+                Ninguna máquina está pulseando ahora. El comando va a quedar pending hasta que prendas un Agent.
+              </p>
+            )}
           </div>
         </>
       )}
