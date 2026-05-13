@@ -1,15 +1,17 @@
 // Versionado del Factory Manager.
 //
-// Convención:
-//   - MAJOR.MINOR.PATCH (semver)
-//   - PATCH: bug fixes, polish
-//   - MINOR: features nuevas
-//   - MAJOR: cambios de arquitectura / breaking
+// Convención confirmada por founder (2026-05-13): semver canónico MAJOR.MINOR.PATCH.
+//   - PATCH (cambio menor): 1.2.0 → 1.2.1 → 1.2.2 → ... → 1.2.n
+//     Bug fixes, polish, ajustes UX, cambios incrementales.
+//   - MINOR (cambio mayor): 1.2.n → 1.3.0 → 1.4.0 → ...
+//     Features nuevas significativas (PRPs cerrados, capas completas).
+//   - MAJOR (breaking): 1.x.x → 2.0.0
+//     Cambios de arquitectura o que rompen compatibilidad.
 //
-// Incrementar APP_VERSION manualmente antes de cada deploy con cambios visibles.
-// Al final del desarrollo se resetea con la version final.
+// REGLA: bumpear APP_VERSION con CADA cambio que llegue a prod. Sin wip silenciosos.
+// Cada deploy queda reflejado en el changelog que ve el founder en /about.
 
-export const APP_VERSION = '1.1.0';
+export const APP_VERSION = '1.2.0';
 
 export interface ChangelogEntry {
   version: string;
@@ -19,6 +21,22 @@ export interface ChangelogEntry {
 
 // Cronológico inverso: lo último arriba.
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.2.0',
+    date: '2026-05-13',
+    highlights: [
+      'PRP-005 Fase 1 — schema completo de contratos (clients, quotes, line_items, sows, ndas, amendments, signatures + numeración SF/SOW/NDA/AMP + bucket Storage contracts/)',
+      'PRP-005 Fase 2 — estimador AI por complejidad + brief + calibración con histórico; pricing idempotente; server actions create/approve/reject quote',
+      'PRP-005 Fase 3 — step "Presupuesto" en wizard (11 steps): AI tokens, Labor, Gastos fijos, Estructura, Utilidad, con indicadores en línea',
+      'PRP-005 Fase 4 — PDFs Quote/SOW/NDA con React-PDF + cláusula Ley 25.506 ARG embedded',
+      'PRP-005 Fase 5 — firma tri-modal: canvas local con SHA-256 + IP + timestamp, upload de PDF firmado externo, DocuSign placeholder',
+      'PRP-005 Fase 6 — tab "Contratos" en /project/[name]: aprobar quotes, generar PDFs, firmar, crear SOW/NDA, ampliaciones con recotización versionada',
+      'Selector de SF Agent en wizard (auto-selecciona online, warning si nadie pulsea, soporte targeted por instance_id)',
+      'Auto-fix invite operador: status pending→active al primer login',
+      'Skill cross-repo-access en .claude/skills-catalog/ (detectado por SF Agent para distribuir entre proyectos)',
+      'Logo del Factory Manager (SFManager.png) como PWA icon',
+    ],
+  },
   {
     version: '1.1.0',
     date: '2026-05-12',

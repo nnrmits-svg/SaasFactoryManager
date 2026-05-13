@@ -6,6 +6,20 @@
 
 ---
 
+## 2026-05-13 (tarde) — Bump a v1.2.0 + regla de versionado
+**Maquina**: NNRM-iMac-275.local (rmarchetti)
+
+### Hecho
+- **Bump APP_VERSION**: `1.1.0` → `1.2.0` en [src/shared/lib/version.ts](src/shared/lib/version.ts). MINOR porque PRP-005 agrega features grandes (sistema de contratos completo) sin breaking changes.
+- **Changelog v1.2.0 cargado** con 10 highlights: las 6 fases de PRP-005, selector de Agent, fix invite, skill cross-repo, logo PWA.
+- **Nueva regla del proyecto** documentada en el header de `version.ts` y `project_plan.md`: "bumpear APP_VERSION con cada cambio que llegue a prod — sea PATCH o MINOR. Sin wip silenciosos. Cada deploy queda reflejado en el changelog que ve el founder en /about".
+- URL prod confirmada: `https://saasfactory.grupo-its.com.ar` (Vercel + Cloudflare). Sirviendo con `x-vercel-cache: PRERENDER`.
+
+### Pendiente
+- Push a `origin/main` para que Vercel redeploye con `v1.2.0` visible en `/about`.
+
+---
+
 ## 2026-05-13 (tarde) — Selector de SF Agent en wizard + limpieza pre-prueba
 **Maquina**: NNRM-iMac-275.local (rmarchetti)
 
