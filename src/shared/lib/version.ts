@@ -11,7 +11,7 @@
 // REGLA: bumpear APP_VERSION con CADA cambio que llegue a prod. Sin wip silenciosos.
 // Cada deploy queda reflejado en el changelog que ve el founder en /about.
 
-export const APP_VERSION = '1.2.0';
+export const APP_VERSION = '1.2.1';
 
 export interface ChangelogEntry {
   version: string;
@@ -21,6 +21,13 @@ export interface ChangelogEntry {
 
 // Cronológico inverso: lo último arriba.
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.2.1',
+    date: '2026-05-13',
+    highlights: [
+      'Fix bug useTracking: short-circuit cuando projectPath está vacío; /api/tracking GET retorna estado neutral en vez de importar AutoCommitService (servicio FS incompatible con Vercel Lambdas). Elimina los 500 en logs de cada page load de /project/[name]',
+    ],
+  },
   {
     version: '1.2.0',
     date: '2026-05-13',

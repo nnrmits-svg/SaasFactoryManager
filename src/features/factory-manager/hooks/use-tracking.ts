@@ -21,8 +21,14 @@ export function useTracking(projectPath: string, projectId: string) {
     error: null,
   });
 
-  // Check current status on mount
+  // Check current status on mount.
+  // Short-circuit si projectPath está vacío (proyecto sin localPath todavía):
+  // evita disparar /api/tracking con query vacío en cada page load (500 en Vercel).
   useEffect(() => {
+    if (!projectPath) {
+      setState((prev) => ({ ...prev, isLoading: false }));
+      return;
+    }
     async function checkStatus() {
       try {
         const res = await fetch(`/api/tracking?projectPath=${encodeURIComponent(projectPath)}`);
