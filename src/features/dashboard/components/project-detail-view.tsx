@@ -8,9 +8,10 @@ import { useTracking } from '@/features/factory-manager/hooks/use-tracking';
 import { AgentControlPanel } from '@/features/factory-manager/components/agent-control-panel';
 import { SkillPanel } from './skill-panel';
 import { AiActivityTab } from './ai-activity-tab';
+import { ContractsTab } from '@/features/contracts/components/contracts-tab';
 import { filesystemPath } from '@/features/factory-manager/types';
 
-type DetailTab = 'overview' | 'ai-activity';
+type DetailTab = 'overview' | 'ai-activity' | 'contracts';
 
 interface Props {
   detail: ProjectDetail;
@@ -111,9 +112,21 @@ export function ProjectDetailView({ detail }: Props) {
         >
           AI Activity
         </button>
+        <button
+          type="button"
+          onClick={() => setTab('contracts')}
+          className={`px-4 py-2 text-sm rounded-lg transition-all ${
+            tab === 'contracts'
+              ? 'bg-fluya-purple/20 text-fluya-purple'
+              : 'text-gray-400 hover:text-white'
+          }`}
+        >
+          Contratos
+        </button>
       </div>
 
       {tab === 'ai-activity' && <AiActivityTab projectId={project.id} />}
+      {tab === 'contracts' && <ContractsTab projectId={project.id} />}
 
       {tab === 'overview' && (
       <>
