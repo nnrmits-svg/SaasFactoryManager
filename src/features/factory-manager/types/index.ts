@@ -168,14 +168,30 @@ export interface CreateProjectCommandPayload {
   is_private: boolean;
 }
 
-/** Result shape returned by agent in agent_commands.result for create-project */
+/** Result shape returned by agent in agent_commands.result for create-project.
+ *  Extendido en SF Agent v1.1.23: agrega failed_skills, template_version,
+ *  y nuevos stages 'template-copy' / 'record-skills'. */
 export interface CreateProjectCommandResult {
   success: boolean;
   local_path?: string;
   github_url?: string;
   github_owner?: string;
   applied_skills?: string[];
-  stage?: 'folder' | 'git-init' | 'initial-commit' | 'gh-create' | 'apply-skills' | 'final-commit' | 'done';
+  /** Skills pedidos en payload.skills_to_apply que NO se encontraron ni en el
+   *  template ni en el catálogo del Agent. Si length > 0 → success=false. */
+  failed_skills?: string[];
+  /** Versión del template usado (V3 / V4 / V5+). Default V4 si no se especificó. */
+  template_version?: string;
+  stage?:
+    | 'folder'
+    | 'git-init'
+    | 'initial-commit'
+    | 'template-copy'
+    | 'gh-create'
+    | 'apply-skills'
+    | 'record-skills'
+    | 'final-commit'
+    | 'done';
   error?: string;
 }
 

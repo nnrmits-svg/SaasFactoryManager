@@ -6,6 +6,24 @@
 
 ---
 
+## 2026-05-13 (noche) — v1.2.3: Modal con visibilidad de template_version + failed_skills
+**Maquina**: NNRM-iMac-275.local (rmarchetti)
+
+### Contexto
+- SF Agent release 1.1.23 (mensaje recibido) extiende `CreateProjectCommandResult` con `failed_skills`, `template_version`, y nuevos stages `template-copy` / `record-skills`. Pre-verificada la migration acompañante: TODA ya está aplicada en BD prod (`github_repo_url`, unique index, `project_local_paths` con RLS, backfill OK).
+- Founder confirmó: no agregamos selector de `template_version` al wizard hasta que exista V5 real (documentado como pendiente 0d en `project_plan.md`). Mientras tanto, mostramos los campos nuevos en el modal de creación para diagnóstico mejor en la prueba conjunta.
+
+### Hecho
+- **Types extendidos** [src/features/factory-manager/types/index.ts](src/features/factory-manager/types/index.ts) — `CreateProjectCommandResult` ahora tiene: `failed_skills: string[]` (skills pedidos no encontrados), `template_version: string` (V3/V4/V5+), y stages adicionales `template-copy` + `record-skills`.
+- **Hook stage labels** [hooks/use-project-creation.ts](src/features/factory-manager/hooks/use-project-creation.ts) — 2 labels nuevos: "Copiando template SaaS Factory..." y "Registrando skills aplicados en BD...".
+- **Modal mejorado** [components/project-creating-modal.tsx](src/features/factory-manager/components/project-creating-modal.tsx) — en estado `created`: muestra `template_version`, contador de skills aplicados, warning amarillo si `failed_skills.length > 0`. En estado `failed`: stage canónico en `code` + descripción legible, listado de failed_skills, folder parcial si hay.
+- Typecheck + build OK (24 rutas).
+
+### Roadmap actualizado (V5 future)
+- Documentado item 0d en `project_plan.md` Proximos pasos: cuando salga V5 del template, agregar (i) selector `template_version` en wizard, (ii) comando `upgrade-project` del lado Agent que aplique diff template nuevo → proyecto existente preservando skills-custom y archivos editados.
+
+---
+
 ## 2026-05-13 (noche) — v1.2.2: Wizard lee skills dinámicamente de skills_catalog
 **Maquina**: NNRM-iMac-275.local (rmarchetti)
 

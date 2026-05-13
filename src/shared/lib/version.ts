@@ -11,7 +11,7 @@
 // REGLA: bumpear APP_VERSION con CADA cambio que llegue a prod. Sin wip silenciosos.
 // Cada deploy queda reflejado en el changelog que ve el founder en /about.
 
-export const APP_VERSION = '1.2.2';
+export const APP_VERSION = '1.2.3';
 
 export interface ChangelogEntry {
   version: string;
@@ -21,6 +21,13 @@ export interface ChangelogEntry {
 
 // Cronológico inverso: lo último arriba.
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.2.3',
+    date: '2026-05-13',
+    highlights: [
+      'Wizard create-project: modal de progreso ahora muestra template_version usado, failed_skills (skills pedidos pero no encontrados), y stage canónico de error en formato code. Soporta los nuevos stages del SF Agent 1.1.23: template-copy y record-skills',
+    ],
+  },
   {
     version: '1.2.2',
     date: '2026-05-13',

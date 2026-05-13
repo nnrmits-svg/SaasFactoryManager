@@ -49,6 +49,12 @@ export function ProjectCreatingModal({
               <div className="h-3 w-3 rounded-full bg-green-500" />
               <span className="text-sm text-green-300">Listo</span>
             </div>
+            {state.result?.template_version && (
+              <p className="text-xs text-gray-400">
+                Template:{' '}
+                <code className="text-gray-300">{state.result.template_version}</code>
+              </p>
+            )}
             {state.result?.local_path && (
               <p className="text-xs text-gray-400">
                 Carpeta:{' '}
@@ -70,7 +76,14 @@ export function ProjectCreatingModal({
             )}
             {state.result?.applied_skills && state.result.applied_skills.length > 0 && (
               <p className="text-xs text-gray-400">
-                Skills aplicados: {state.result.applied_skills.join(', ')}
+                Skills aplicados ({state.result.applied_skills.length}):{' '}
+                {state.result.applied_skills.join(', ')}
+              </p>
+            )}
+            {state.result?.failed_skills && state.result.failed_skills.length > 0 && (
+              <p className="text-xs text-yellow-300 bg-yellow-500/5 border border-yellow-500/20 rounded-lg p-2">
+                ⚠ Skills no aplicados ({state.result.failed_skills.length}):{' '}
+                {state.result.failed_skills.join(', ')}
               </p>
             )}
           </div>
@@ -87,7 +100,21 @@ export function ProjectCreatingModal({
             </p>
             {state.stage && (
               <p className="text-xs text-gray-500">
-                Ultima etapa: {stageLabel(state.stage)}
+                Ultima etapa:{' '}
+                <code className="text-gray-400">{state.stage}</code>{' '}
+                <span className="text-gray-600">— {stageLabel(state.stage)}</span>
+              </p>
+            )}
+            {state.result?.failed_skills && state.result.failed_skills.length > 0 && (
+              <p className="text-xs text-yellow-300 bg-yellow-500/5 border border-yellow-500/20 rounded-lg p-2">
+                ⚠ Skills no encontrados ({state.result.failed_skills.length}):{' '}
+                {state.result.failed_skills.join(', ')}
+              </p>
+            )}
+            {state.result?.local_path && (
+              <p className="text-xs text-gray-500">
+                Folder parcial:{' '}
+                <code className="text-gray-400">{state.result.local_path}</code>
               </p>
             )}
           </div>
