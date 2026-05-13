@@ -91,6 +91,7 @@ operando con multiples proyectos en multiples maquinas locales (una por develope
 
 ## Done
 
+- [x] 2026-05-13: **v1.2.3 — Modal con visibilidad de template_version + failed_skills + stage canónico** para diagnosticar la prueba conjunta con SF Agent 1.1.23 (alineado con CreateProjectCommandResult extendido).
 - [x] 2026-05-13: **v1.2.2 — Wizard lee skills dinámicamente de `skills_catalog`** (25 únicos vs los 8 hardcoded anteriores). Metadata curado para destacados, humanize fallback para los demás. `bitacora` + `project-plan` siguen obligatorios.
 - [x] 2026-05-13: **v1.2.1 — fix bug useTracking** que disparaba 500 en `/api/tracking` cada page load de `/project/[name]`. Hook short-circuit cuando `projectPath` vacío + route GET retorna neutral sin importar `AutoCommitService` (servicio FS dead-but-not-deleted incompatible con Vercel Lambdas).
 - [x] 2026-05-13: **Bump a v1.2.0** + regla de versionado: bumpear con cada deploy a prod (PATCH o MINOR), cada cambio reflejado en changelog visible en `/about`. URL prod: `https://saasfactory.grupo-its.com.ar`.
