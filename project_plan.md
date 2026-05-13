@@ -3,7 +3,7 @@
 > Plan vivo del producto. Una sola fuente de verdad de "donde estamos y a donde vamos".
 > Mantenido por el skill `project-plan`. Cronologia detallada en `Bitacora.md`.
 >
-> Ultima actualizacion: 2026-05-13 (v1.2.1)
+> Ultima actualizacion: 2026-05-13 (v1.2.2)
 > URL prod: https://saasfactory.grupo-its.com.ar
 > Cross-ref: ver entrada del 2026-05-13 en `Bitacora.md`
 >
@@ -90,6 +90,7 @@ operando con multiples proyectos en multiples maquinas locales (una por develope
 
 ## Done
 
+- [x] 2026-05-13: **v1.2.2 — Wizard lee skills dinámicamente de `skills_catalog`** (25 únicos vs los 8 hardcoded anteriores). Metadata curado para destacados, humanize fallback para los demás. `bitacora` + `project-plan` siguen obligatorios.
 - [x] 2026-05-13: **v1.2.1 — fix bug useTracking** que disparaba 500 en `/api/tracking` cada page load de `/project/[name]`. Hook short-circuit cuando `projectPath` vacío + route GET retorna neutral sin importar `AutoCommitService` (servicio FS dead-but-not-deleted incompatible con Vercel Lambdas).
 - [x] 2026-05-13: **Bump a v1.2.0** + regla de versionado: bumpear con cada deploy a prod (PATCH o MINOR), cada cambio reflejado en changelog visible en `/about`. URL prod: `https://saasfactory.grupo-its.com.ar`.
 - [x] 2026-05-13: **Selector de SF Agent en wizard** — `getMyAgentsAction()` lista agents con flag online (heartbeat <60s), wizard auto-selecciona el primero online, comando se inserta con `instance_id` explícito (no más FCFS ciego). Mensaje al Claude del SF Agent enviado con instrucciones para filter por instance_id + heartbeat frecuente + shortcut a Factory Manager.

@@ -11,7 +11,7 @@
 // REGLA: bumpear APP_VERSION con CADA cambio que llegue a prod. Sin wip silenciosos.
 // Cada deploy queda reflejado en el changelog que ve el founder en /about.
 
-export const APP_VERSION = '1.2.1';
+export const APP_VERSION = '1.2.2';
 
 export interface ChangelogEntry {
   version: string;
@@ -21,6 +21,13 @@ export interface ChangelogEntry {
 
 // Cronológico inverso: lo último arriba.
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.2.2',
+    date: '2026-05-13',
+    highlights: [
+      'Wizard de creación: el step "Skills iniciales" ahora lee dinámicamente de skills_catalog (25 skills disponibles vs los 8 hardcoded anteriores). Mantiene bitacora + project-plan como obligatorios. Metadata curado (label, description) para los destacados; fallback autoderivado para el resto',
+    ],
+  },
   {
     version: '1.2.1',
     date: '2026-05-13',

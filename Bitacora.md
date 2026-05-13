@@ -6,6 +6,23 @@
 
 ---
 
+## 2026-05-13 (noche) — v1.2.2: Wizard lee skills dinámicamente de skills_catalog
+**Maquina**: NNRM-iMac-275.local (rmarchetti)
+
+### Contexto
+- Durante la prueba conjunta, el founder notó que el wizard solo mostraba ~11 skills aunque `skills_catalog` tiene 25 únicos populated por el SF Agent.
+- Causa: `AVAILABLE_SKILLS` hardcoded en `project-wizard.tsx` con 8 entries fijos. No leía de la tabla.
+
+### Hecho
+- **Nueva server action** [services/get-available-skills-action.ts](src/features/factory-manager/services/get-available-skills-action.ts) — lee `skills_catalog`, deduplica por `skill_name`, enriquece con metadata curado (`CURATED` dict) para los 25 skills conocidos, fallback a `humanize()` autoderivado + description del catalog para los desconocidos. Si el catalog está vacío, retorna fallback con bitácora + project-plan obligatorios.
+- **Wizard refactor**: eliminado `AVAILABLE_SKILLS` hardcoded. State `availableSkills` se llena al montar via `getAvailableSkillsAction()`. `selectedSkills` se pre-puebla con los marcados `defaultChecked` (bitacora + project-plan obligatorios). Todas las referencias `AVAILABLE_SKILLS` → `availableSkills`.
+- Typecheck + build OK (24 rutas).
+
+### Pendiente del lado SF Agent (mensaje ya enviado por founder)
+- Bug crítico: el Agent reporta `done` con `applied_skills` mentiroso. El folder local solo tiene README.md vacío y `project_skills` queda en 0 rows. Debe copiar el template SaaS Factory V4 + aplicar cada skill (copiar `.claude/skills/<skill>/` + insertar row en `project_skills`).
+
+---
+
 ## 2026-05-13 (noche) — Cleanup duplicado + regla: proyectos válidos fuera del wizard
 **Maquina**: NNRM-iMac-275.local (rmarchetti)
 
