@@ -29,8 +29,10 @@ const STAGE_LABEL: Record<NonNullable<CreateProjectCommandResult['stage']>, stri
   folder: 'Creando carpeta del proyecto...',
   'git-init': 'Iniciando repo git...',
   'initial-commit': 'Primer commit...',
+  'template-copy': 'Copiando template SaaS Factory...',
   'gh-create': 'Creando repo en GitHub...',
   'apply-skills': 'Aplicando skills (bitacora, project-plan, ...)',
+  'record-skills': 'Registrando skills aplicados en BD...',
   'final-commit': 'Commit final + push...',
   done: 'Listo',
 };

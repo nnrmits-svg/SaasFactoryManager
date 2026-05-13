@@ -3,7 +3,7 @@
 > Plan vivo del producto. Una sola fuente de verdad de "donde estamos y a donde vamos".
 > Mantenido por el skill `project-plan`. Cronologia detallada en `Bitacora.md`.
 >
-> Ultima actualizacion: 2026-05-13 (v1.2.2)
+> Ultima actualizacion: 2026-05-13 (v1.2.3)
 > URL prod: https://saasfactory.grupo-its.com.ar
 > Cross-ref: ver entrada del 2026-05-13 en `Bitacora.md`
 >
@@ -56,6 +56,7 @@ operando con multiples proyectos en multiples maquinas locales (una por develope
 0. **SMTP custom Supabase via Resend** — guia entregada en [docs/smtp-resend-setup.md](docs/smtp-resend-setup.md). Bloquea en el founder (cuenta Resend, DNS, dashboard). Sin esto, invitaciones masivas se traban por rate-limit default de 2/h.
 0b. **Presupuesto al crear proyecto**: wizard de `/factory` estima AI + labor + otros antes del create. Esfuerzo M-L. **PRP-005 en ejecución** (Fases 1-2 cerradas, 3-7 pendientes).
 0c. **Al final de PRP-005**: armar `docs/integration-contract-businessos.md` destilado para el Claude de BusinessOS — payload canónico de export + mapeo Manager→BusinessOS (`quote`→`proposal`, `sow`→`customer_order`, etc) + preguntas de auth/endpoint. Disparar cuando cerremos Fase 7 (Export).
+0d. **Cuando salga V5 del template SaaS Factory**: (i) agregar selector `template_version` en el wizard (dropdown, payload `template_version: 'V4'|'V5'`, ~10 min); (ii) diseñar comando `upgrade-project` del lado SF Agent que compare template nuevo vs folder de proyecto existente y aplique diff seguro (preservar skills-custom + archivos editados, sobreescribir core no-tocado). Hoy default V4 funciona — agregar selector sin V5 real es ruido visual.
 1. **Capa 2 — Skills visibles en Manager** (sprint que arranca, esfuerzo S):
    - Reemplazar `getProjectSkills(path)` (FS) por lectura de tabla `project_skills` en `<SkillPanel>`, `<PortfolioGrid>` y `<SkillRegistryDashboard>`. Pre-condicion del lado Agent **ya cubierta** (`pushInitialProjectSkills()` al boot + chokidar para cambios).
    - Estado por skill: `synced` / `divergent` / `missing`.
