@@ -48,7 +48,9 @@ export interface CorporateMeta {
   client_responsible_name?: string | null;
   client_responsible_email?: string | null;
   client_address?: string | null;
-  /** Responsables del proveedor. */
+  /** Responsables del proveedor.
+   *  Si no se setea, se usa el `commercial` del provider config (COMPANY_COMMERCIAL).
+   *  Se puede overridear por proyecto/quote en el futuro. */
   account_executive?: string | null;
   /** Si null, usa el director_engineering del provider config. */
   engineering_director?: string | null;
@@ -95,6 +97,7 @@ function CoverPage({
   const ceo = meta.ceo ?? provider.ceo;
   const directorEng = meta.engineering_director ?? provider.director_engineering;
   const directorDev = meta.development_director ?? provider.director_development;
+  const commercial = meta.account_executive ?? provider.commercial;
 
   return (
     <Page size="A4" style={pdfStyles.page}>
@@ -156,9 +159,9 @@ function CoverPage({
           </View>
         </MetaRow>
 
-        {meta.account_executive && (
-          <MetaRow label="Ejecutivo de Cuenta">
-            <Text style={pdfStyles.metaValue}>{meta.account_executive}</Text>
+        {commercial && (
+          <MetaRow label="Ejecutivo Comercial">
+            <Text style={pdfStyles.metaValue}>{commercial}</Text>
           </MetaRow>
         )}
 
