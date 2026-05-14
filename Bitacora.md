@@ -6,6 +6,25 @@
 
 ---
 
+## 2026-05-14 — v1.2.4: Fix bug crítico de firma (RLS auth.users)
+**Maquina**: NNRM-iMac-275.local (rmarchetti)
+
+### Bug
+- En la prueba conjunta v2, founder firmó un SOW desde el modal `SignatureDialog`. El INSERT a `signatures` rompió con `permission denied for table users`. UI mostró ese error sin que la firma quede guardada.
+- **Root cause**: la policy `clients_read_signatures` tenía un subquery inline `(SELECT email FROM auth.users WHERE id = auth.uid())`. El rol `authenticated` no tiene grant directo sobre `auth.users`. Como mi server action `signDocumentLocalAction` hace `.insert(...).select('id').single()`, el RETURNING dispara la evaluación de las policies FOR SELECT — y la subquery a `auth.users` falla.
+
+### Fix
+- **Migration** [supabase/migrations/20260514000000_prp005_fix_signatures_clients_policy.sql](supabase/migrations/20260514000000_prp005_fix_signatures_clients_policy.sql) — aplicada en BD prod.
+  - Nueva función `public.current_user_email()` con `SECURITY DEFINER` (`SET search_path = public, auth, pg_temp`).
+  - Policy `clients_read_signatures` reescrita: `signer_email = current_user_email()` en lugar del subquery inline.
+- Aprendizaje genérico: **policies RLS que necesitan leer auth.users → siempre via SECURITY DEFINER function**, nunca subquery inline. Aplicar al resto de tablas si se detecta el patrón.
+
+### Validaciones
+- Función creada y policy reescrita confirmadas en BD.
+- Pendiente: founder reintenta firma con el flujo completo desde UI para confirmar.
+
+---
+
 ## 2026-05-13 (noche) — v1.2.3: Modal con visibilidad de template_version + failed_skills
 **Maquina**: NNRM-iMac-275.local (rmarchetti)
 
