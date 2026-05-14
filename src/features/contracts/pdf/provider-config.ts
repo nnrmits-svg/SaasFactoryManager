@@ -13,6 +13,7 @@
 //   COMPANY_CEO="Ricardo Marchetti"
 //   COMPANY_DIRECTOR_ING="Ricardo Marchetti"    # Director de Ingeniería
 //   COMPANY_DIRECTOR_DES="Leandro Santoro"       # Director de Desarrollo
+//   COMPANY_COMMERCIAL="Ariana Salum"            # Ejecutivo Comercial
 //   COMPANY_DIRECTOR="<fallback legacy>"         # Si no hay DIRECTOR_ING, usa éste
 
 export interface ProviderConfig {
@@ -36,6 +37,9 @@ export interface ProviderConfig {
   director_engineering: string;
   /** Director de Desarrollo (aparece en portada si seteado). */
   director_development: string | null;
+  /** Ejecutivo Comercial / Ventas (aparece en portada si seteado). Se puede
+   *  overridear por proyecto pasando `account_executive` en CorporateMeta. */
+  commercial: string | null;
 }
 
 export function getProviderConfig(): ProviderConfig {
@@ -56,5 +60,6 @@ export function getProviderConfig(): ProviderConfig {
       process.env.COMPANY_DIRECTOR ??
       'Ricardo Marchetti',
     director_development: process.env.COMPANY_DIRECTOR_DES ?? null,
+    commercial: process.env.COMPANY_COMMERCIAL ?? null,
   };
 }
