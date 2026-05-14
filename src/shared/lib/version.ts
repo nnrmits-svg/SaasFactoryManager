@@ -11,7 +11,7 @@
 // REGLA: bumpear APP_VERSION con CADA cambio que llegue a prod. Sin wip silenciosos.
 // Cada deploy queda reflejado en el changelog que ve el founder en /about.
 
-export const APP_VERSION = '1.2.4';
+export const APP_VERSION = '1.2.5';
 
 export interface ChangelogEntry {
   version: string;
@@ -21,6 +21,13 @@ export interface ChangelogEntry {
 
 // Cronológico inverso: lo último arriba.
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.2.5',
+    date: '2026-05-14',
+    highlights: [
+      'Eliminar proyecto coordinado: modal con confirmación tipo GitHub (tipear nombre) + 3 checkboxes (folder local · repo GitHub · PDFs del bucket contracts/). Manager dispara agent_command:delete-project con safety checks de path, polling del result del Agent, y DELETE FROM projects con CASCADE solo si el Agent confirma. Requiere SF Agent v1.1.24+ para los stages delete-local / delete-github',
+    ],
+  },
   {
     version: '1.2.4',
     date: '2026-05-14',

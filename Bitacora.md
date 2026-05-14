@@ -6,6 +6,27 @@
 
 ---
 
+## 2026-05-14 — v1.2.5: Eliminar proyecto coordinado (Manager + Agent)
+**Maquina**: NNRM-iMac-275.local (rmarchetti)
+
+### Contexto
+- Founder reportó que el botón "Eliminar" del Manager solo borra el row de Supabase. Folder local y repo GitHub quedaban huérfanos. La pregunta: ¿cómo borrar coordinadamente? Acordamos PRP propio.
+
+### Hecho — lado Manager
+- **Server action** [services/delete-project-full-action.ts](src/features/factory-manager/services/delete-project-full-action.ts) — 2 actions: `deleteProjectFullyAction()` que (1) borra PDFs del bucket `contracts/<project_id>/`, (2) dispara `agent_command:delete-project` si se pidió folder/repo, (3) si NO necesita agent → DELETE inmediato. `finalizeDeleteProjectAction()` corre el DELETE FROM projects (CASCADE) cuando el agent confirma success.
+- **Modal** [components/delete-project-dialog.tsx](src/features/factory-manager/components/delete-project-dialog.tsx) — confirmación tipo GitHub (tipear nombre del proyecto), 3 checkboxes (folder local / repo GitHub / Storage PDFs) con defaults inteligentes (folder default si `localPath`, repo default si `repoUrl`). Polling del `agent_commands` cada 2s mientras espera al Agent. Estados: idle / submitting / waiting-agent / finalizing / done / error. Muestra stage del Agent en error.
+- **Reemplazo del flow viejo** [factory-dashboard.tsx](src/features/factory-manager/components/factory-dashboard.tsx) — el `confirm()` nativo del botón Eliminar fue reemplazado por el nuevo dialog. Eliminado `handleDelete`, `setDeleting` y el import de `deleteProject` legacy.
+- Typecheck OK.
+
+### Pendiente — lado SF Agent (mensaje ya pasado al otro Claude)
+- Comando `delete-project` con stages `validate → delete-local → delete-github → done`.
+- Safety rules: path debe empezar con `/Users/.../ProyectosIA/`, folder debe tener `.claude/` o git remote matcheando, `gh repo delete --yes` con scope `delete_repo`, NUNCA borrar parent.
+
+### Roadmap actualizado
+- **0e. Hoja membretada para PDFs Quote/SOW/NDA**: founder va a pasar modelo (logo, datos empresa, footer), refactorizamos `styles.ts` + agregamos `<Image>` con logo. Esfuerzo S (1-2h).
+
+---
+
 ## 2026-05-14 — v1.2.4: Fix bug crítico de firma (RLS auth.users)
 **Maquina**: NNRM-iMac-275.local (rmarchetti)
 

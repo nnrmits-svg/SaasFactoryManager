@@ -4,10 +4,10 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   updateProject,
-  deleteProject,
   getProjects,
   type UpdateProjectInput,
 } from '../services/project-crud-action';
+import { DeleteProjectDialog } from './delete-project-dialog';
 import { ProjectWizard, type BusinessBrief } from './project-wizard';
 import { ProjectCreatingModal } from './project-creating-modal';
 import { useProjectCreation } from '../hooks/use-project-creation';
@@ -62,7 +62,6 @@ export function FactoryDashboard() {
   const [showWizard, setShowWizard] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
   const [editingProject, setEditingProject] = useState<ProjectRow | null>(null);
-  const [deleting, setDeleting] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
@@ -194,19 +193,17 @@ export function FactoryDashboard() {
     setSaving(false);
   }
 
-  async function handleDelete(project: ProjectRow) {
-    setDeleting(project.id);
-    setMessage(null);
+  const [deleteDialogProject, setDeleteDialogProject] = useState<ProjectRow | null>(null);
 
-    const result = await deleteProject(project.id);
-    if (result.success) {
-      setMessage({ type: 'success', text: `"${project.name}" eliminado` });
-      await loadProjects();
-    } else {
-      setMessage({ type: 'error', text: result.error || 'Error al eliminar' });
+  function openDeleteDialog(project: ProjectRow) {
+    setDeleteDialogProject(project);
+  }
+
+  function handleDeleted() {
+    if (deleteDialogProject) {
+      setMessage({ type: 'success', text: `"${deleteDialogProject.name}" eliminado` });
     }
-
-    setDeleting(null);
+    void loadProjects();
   }
 
   return (
@@ -394,15 +391,10 @@ export function FactoryDashboard() {
                   </button>
                   <button
                     type="button"
-                    disabled={deleting === project.id}
-                    onClick={() => {
-                      if (confirm(`Eliminar "${project.name}"? Se borran commits y sesiones asociadas.`)) {
-                        handleDelete(project);
-                      }
-                    }}
-                    className="px-3 py-1.5 text-xs bg-red-500/10 text-red-400 border border-red-500/20 rounded-lg hover:bg-red-500/20 disabled:opacity-40 transition-all"
+                    onClick={() => openDeleteDialog(project)}
+                    className="px-3 py-1.5 text-xs bg-red-500/10 text-red-400 border border-red-500/20 rounded-lg hover:bg-red-500/20 transition-all"
                   >
-                    {deleting === project.id ? '...' : 'Eliminar'}
+                    Eliminar
                   </button>
                 </div>
               </div>
@@ -441,6 +433,26 @@ export function FactoryDashboard() {
         onGoToProject={() => {
           projectCreation.reset();
           window.location.href = `/project/${encodeURIComponent(creatingName)}`;
+        }}
+      />
+
+      <DeleteProjectDialog
+        open={deleteDialogProject !== null}
+        project={
+          deleteDialogProject
+            ? {
+                id: deleteDialogProject.id,
+                name: deleteDialogProject.name,
+                localPath: (deleteDialogProject as ProjectRow & { localPath?: string | null }).localPath ?? null,
+                repoUrl: deleteDialogProject.repoUrl,
+                commitCount: deleteDialogProject.commitCount,
+              }
+            : null
+        }
+        onClose={() => setDeleteDialogProject(null)}
+        onDeleted={() => {
+          handleDeleted();
+          setDeleteDialogProject(null);
         }}
       />
     </div>
