@@ -3,7 +3,7 @@
 > Plan vivo del producto. Una sola fuente de verdad de "donde estamos y a donde vamos".
 > Mantenido por el skill `project-plan`. Cronologia detallada en `Bitacora.md`.
 >
-> Ultima actualizacion: 2026-05-14 (v1.2.5)
+> Ultima actualizacion: 2026-05-14 (v1.2.6)
 > URL prod: https://saasfactory.grupo-its.com.ar
 > Cross-ref: ver entrada del 2026-05-13 en `Bitacora.md`
 >
@@ -92,6 +92,7 @@ operando con multiples proyectos en multiples maquinas locales (una por develope
 
 ## Done
 
+- [x] 2026-05-14: **v1.2.6 — Fix UI bug modal Eliminar**: el checkbox "Borrar folder local" quedaba deshabilitado aunque la BD tuviera el path. Causa: `getProjects()` no traía `local_path` ni `github_repo_url`. Now fixed — próximos delete muestran el checkbox correctamente.
 - [x] 2026-05-14: **v1.2.5 — Eliminar proyecto coordinado** (Manager + Agent). Modal con confirmación tipo GitHub + 3 checkboxes (folder local · repo GitHub · PDFs Storage). Requiere SF Agent v1.1.24+ para `agent_command:delete-project`.
 - [x] 2026-05-14: **v1.2.4 — Fix bug crítico de firma** (RLS auth.users). Policy `clients_read_signatures` reescrita usando función SECURITY DEFINER `current_user_email()`. Regla aprendida: nunca subquery inline a `auth.users` en RLS.
 - [x] 2026-05-13: **v1.2.3 — Modal con visibilidad de template_version + failed_skills + stage canónico** para diagnosticar la prueba conjunta con SF Agent 1.1.23 (alineado con CreateProjectCommandResult extendido).

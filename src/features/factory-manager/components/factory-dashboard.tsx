@@ -18,6 +18,11 @@ interface ProjectRow {
   id: string;
   name: string;
   path: string;
+  /** Path real escrito por el SF Agent al completar create-project. Null para
+   *  proyectos legacy descubiertos por scan sin que el Agent confirme. */
+  localPath: string | null;
+  /** URL del repo en GitHub, escrita por el Agent post-create. */
+  githubRepoUrl: string | null;
   sfVersion: string | null;
   designSystem: string;
   status: 'active' | 'archived' | 'paused';
@@ -443,8 +448,8 @@ export function FactoryDashboard() {
             ? {
                 id: deleteDialogProject.id,
                 name: deleteDialogProject.name,
-                localPath: (deleteDialogProject as ProjectRow & { localPath?: string | null }).localPath ?? null,
-                repoUrl: deleteDialogProject.repoUrl,
+                localPath: deleteDialogProject.localPath,
+                repoUrl: deleteDialogProject.githubRepoUrl ?? deleteDialogProject.repoUrl,
                 commitCount: deleteDialogProject.commitCount,
               }
             : null

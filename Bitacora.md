@@ -6,6 +6,24 @@
 
 ---
 
+## 2026-05-14 — v1.2.6: Fix UI bug en modal Eliminar (folder local checkbox)
+**Maquina**: NNRM-iMac-275.local (rmarchetti)
+
+### Bug detectado en primera prueba E2E de delete-project
+- Founder borró el proyecto `Test` end-to-end: repo GitHub borrado OK + row de BD borrado OK. Pero el **folder local quedó huérfano** en `/Users/ricardomarchetti/ProyectosIA/AplicacionesSaas/Test`.
+- Investigación: el `agent_command.payload` tenía `local_path` correcto (la server action `deleteProjectFullyAction` lo encontró en BD) pero `options.delete_local_folder = false` (el founder NO marcó el checkbox).
+- Causa raíz: el modal `DeleteProjectDialog` recibía `localPath: null` porque `ProjectRow` en `factory-dashboard.tsx` no exponía `localPath`, y `getProjects()` en `project-crud-action.ts` no incluía `local_path` ni `github_repo_url` en el SELECT. El cast con default `?? null` daba siempre null → checkbox disabled "Sin local_path".
+
+### Fix
+- [services/project-crud-action.ts](src/features/factory-manager/services/project-crud-action.ts) — `getProjects()` ahora trae `local_path` y `github_repo_url`, mapeados a `localPath` y `githubRepoUrl`.
+- [components/factory-dashboard.tsx](src/features/factory-manager/components/factory-dashboard.tsx) — `ProjectRow` extendido con ambos campos. El cast feo `as ProjectRow & { localPath?: ... }` eliminado.
+- Próximos delete del modal van a mostrar el checkbox habilitado cuando el proyecto tenga local_path real.
+
+### Cleanup pendiente del founder
+- Folder `/Users/ricardomarchetti/ProyectosIA/AplicacionesSaas/Test` sigue en disco. Borrarlo manual con `rm -rf` desde terminal.
+
+---
+
 ## 2026-05-14 — Aclaración SF Agent: regla cross-repo de auto-sync
 **Maquina**: NNRM-iMac-275.local (rmarchetti) · vía mensaje del Claude del SF Agent.
 

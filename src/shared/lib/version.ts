@@ -11,7 +11,7 @@
 // REGLA: bumpear APP_VERSION con CADA cambio que llegue a prod. Sin wip silenciosos.
 // Cada deploy queda reflejado en el changelog que ve el founder en /about.
 
-export const APP_VERSION = '1.2.5';
+export const APP_VERSION = '1.2.6';
 
 export interface ChangelogEntry {
   version: string;
@@ -21,6 +21,13 @@ export interface ChangelogEntry {
 
 // Cronológico inverso: lo último arriba.
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.2.6',
+    date: '2026-05-14',
+    highlights: [
+      'Fix bug en modal Eliminar: el checkbox "Borrar folder local" aparecía deshabilitado aunque la BD tuviera local_path. Causa: getProjects() no traía local_path ni github_repo_url, y ProjectRow no exponía esos campos. Ahora el modal recibe los valores reales y el founder puede marcar el checkbox cuando corresponde',
+    ],
+  },
   {
     version: '1.2.5',
     date: '2026-05-14',
