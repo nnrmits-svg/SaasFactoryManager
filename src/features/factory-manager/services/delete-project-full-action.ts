@@ -29,6 +29,19 @@ export interface DeleteProjectInput {
   agent_instance_id?: string | null;
 }
 
+/** Cómo resolvimos el instance_id del Agent que debe procesar el delete:
+ *  - 'manual'            → el UI mandó instance_id explícito (poco común).
+ *  - 'project_local_paths' → una sola Mac tiene el folder (mejor caso).
+ *  - 'created_by_command_id' → fallback: usa el Agent que creó el proyecto via wizard.
+ *  - 'fcfs'              → ninguna pista; va al primer Agent online (riesgoso).
+ *  - 'none'              → no necesitamos Agent (puro DB delete). */
+export type AgentResolutionSource =
+  | 'manual'
+  | 'project_local_paths'
+  | 'created_by_command_id'
+  | 'fcfs'
+  | 'none';
+
 export interface DeleteProjectResult {
   ok: boolean;
   error?: string;
@@ -36,6 +49,9 @@ export interface DeleteProjectResult {
   command_id?: string;
   /** True si el folder no requería acción del Agent (puro DB delete). */
   skipped_agent?: boolean;
+  /** Cómo resolvimos el Agent que debe procesar. La UI usa esto para mostrar
+   *  warnings cuando es 'fcfs' (riesgo de comando mal ruteado). */
+  resolution_source?: AgentResolutionSource;
 }
 
 export async function deleteProjectFullyAction(
@@ -45,10 +61,10 @@ export async function deleteProjectFullyAction(
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: 'No autenticado' };
 
-  // 1. Cargar info del proyecto (local_path, github_repo_url)
+  // 1. Cargar info del proyecto (local_path, github_repo_url, created_by_command_id)
   const { data: project, error: pErr } = await supabase
     .from('projects')
-    .select('id, name, local_path, path, github_repo_url, github_owner')
+    .select('id, name, local_path, path, github_repo_url, github_owner, created_by_command_id')
     .eq('id', input.project_id)
     .maybeSingle();
   if (pErr) return { ok: false, error: pErr.message };
@@ -71,6 +87,7 @@ export async function deleteProjectFullyAction(
   const needsAgent = input.delete_local_folder || input.delete_github_repo;
   let commandId: string | undefined;
   let skippedAgent = false;
+  let finalResolutionSource: AgentResolutionSource = 'none';
 
   if (needsAgent) {
     const local_path = project.local_path ?? project.path ?? null;
@@ -78,11 +95,16 @@ export async function deleteProjectFullyAction(
       (project.github_repo_url as string | null) ?? null,
     );
 
-    // Resolver instance_id si no vino del UI: buscar en project_local_paths
-    // qué máquina tiene el folder. Si solo una máquina lo tiene, targeted;
-    // si hay >1 o ninguna, NULL = FCFS (cualquier Agent del user lo toma).
+    // Resolver instance_id en cascada (v1.2.7):
+    //   1. Si el UI mandó instance_id explícito → 'manual'.
+    //   2. project_local_paths con 1 row exact → 'project_local_paths'.
+    //   3. Fallback: agent_commands del create original (created_by_command_id) → 'created_by_command_id'.
+    //   4. Último recurso: NULL = FCFS → 'fcfs' (riesgoso, warning al user).
     let resolvedInstanceId = input.agent_instance_id ?? null;
+    let resolutionSource: AgentResolutionSource = resolvedInstanceId ? 'manual' : 'fcfs';
+
     if (!resolvedInstanceId) {
+      // 2. project_local_paths (1 row)
       const { data: paths } = await supabase
         .from('project_local_paths')
         .select('machine_id')
@@ -95,7 +117,35 @@ export async function deleteProjectFullyAction(
           .eq('machine_id', paths[0].machine_id as string)
           .eq('user_id', user.id)
           .maybeSingle();
-        if (instance) resolvedInstanceId = instance.id as string;
+        if (instance) {
+          resolvedInstanceId = instance.id as string;
+          resolutionSource = 'project_local_paths';
+        }
+      }
+
+      // 3. Fallback: created_by_command_id del proyecto
+      if (!resolvedInstanceId && project.created_by_command_id) {
+        const { data: createCmd } = await supabase
+          .from('agent_commands')
+          .select('instance_id')
+          .eq('id', project.created_by_command_id as string)
+          .maybeSingle();
+        if (createCmd?.instance_id) {
+          const { data: instance } = await supabase
+            .from('agent_instances')
+            .select('id')
+            .eq('id', createCmd.instance_id as string)
+            .maybeSingle();
+          if (instance) {
+            resolvedInstanceId = instance.id as string;
+            resolutionSource = 'created_by_command_id';
+          }
+        }
+      }
+
+      // 4. Nada funcionó → FCFS
+      if (!resolvedInstanceId) {
+        resolutionSource = 'fcfs';
       }
     }
 
@@ -139,6 +189,7 @@ export async function deleteProjectFullyAction(
       return { ok: false, error: cmdErr?.message ?? 'No se pudo crear el comando' };
     }
     commandId = command.id as string;
+    finalResolutionSource = resolutionSource;
   } else {
     skippedAgent = true;
   }
@@ -160,7 +211,12 @@ export async function deleteProjectFullyAction(
   revalidatePath('/factory');
   revalidatePath('/dashboard');
 
-  return { ok: true, command_id: commandId, skipped_agent: skippedAgent };
+  return {
+    ok: true,
+    command_id: commandId,
+    skipped_agent: skippedAgent,
+    resolution_source: skippedAgent ? 'none' : finalResolutionSource,
+  };
 }
 
 /**

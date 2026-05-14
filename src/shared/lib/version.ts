@@ -11,7 +11,7 @@
 // REGLA: bumpear APP_VERSION con CADA cambio que llegue a prod. Sin wip silenciosos.
 // Cada deploy queda reflejado en el changelog que ve el founder en /about.
 
-export const APP_VERSION = '1.2.6';
+export const APP_VERSION = '1.2.7';
 
 export interface ChangelogEntry {
   version: string;
@@ -21,6 +21,13 @@ export interface ChangelogEntry {
 
 // Cronológico inverso: lo último arriba.
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.2.7',
+    date: '2026-05-14',
+    highlights: [
+      'Delete-project: resolveInstanceId en cascada (project_local_paths → created_by_command_id → FCFS) — antes caía a FCFS si project_local_paths estaba vacío y el comando llegaba a la máquina equivocada. Modal ahora muestra el resolution_source con warnings claros: FCFS amarillo (riesgo de ruteo) o created_by_command_id celeste (info). Detección del error "Path no existe" del Agent 1.1.25 con sugerencia de retry. Compatible con Agent 1.1.25 (poblado de project_local_paths post-create + validate honesto)',
+    ],
+  },
   {
     version: '1.2.6',
     date: '2026-05-14',

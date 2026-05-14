@@ -8,6 +8,7 @@ import { useState, useEffect } from 'react';
 import {
   deleteProjectFullyAction,
   finalizeDeleteProjectAction,
+  type AgentResolutionSource,
 } from '../services/delete-project-full-action';
 import { createClient } from '@/lib/supabase/client';
 
@@ -40,6 +41,7 @@ export function DeleteProjectDialog({
   const [error, setError] = useState<string | null>(null);
   const [commandId, setCommandId] = useState<string | null>(null);
   const [agentResult, setAgentResult] = useState<Record<string, unknown> | null>(null);
+  const [resolutionSource, setResolutionSource] = useState<AgentResolutionSource | null>(null);
 
   // Reset al abrir/cerrar
   useEffect(() => {
@@ -136,6 +138,7 @@ export function DeleteProjectDialog({
       return;
     }
     setCommandId(res.command_id ?? null);
+    setResolutionSource(res.resolution_source ?? null);
     setPhase('waiting-agent');
   }
 
@@ -207,11 +210,25 @@ export function DeleteProjectDialog({
           </p>
         )}
         {phase === 'waiting-agent' && (
-          <p className="text-xs text-purple-300 bg-purple-500/5 border border-purple-500/20 rounded-lg p-2 mb-3">
-            ⏳ Esperando al Agent (borrando {deleteLocal ? 'folder' : ''}
-            {deleteLocal && deleteRepo ? ' + ' : ''}
-            {deleteRepo ? 'repo GitHub' : ''})...
-          </p>
+          <>
+            <p className="text-xs text-purple-300 bg-purple-500/5 border border-purple-500/20 rounded-lg p-2 mb-3">
+              ⏳ Esperando al Agent (borrando {deleteLocal ? 'folder' : ''}
+              {deleteLocal && deleteRepo ? ' + ' : ''}
+              {deleteRepo ? 'repo GitHub' : ''})...
+            </p>
+            {resolutionSource === 'fcfs' && (
+              <p className="text-xs text-yellow-300 bg-yellow-500/5 border border-yellow-500/20 rounded-lg p-2 mb-3">
+                ⚠ Sin info de qué máquina tiene el folder. El comando va al primer Agent disponible (FCFS).
+                Si el path no existe en esa Mac, va a fallar — vas a tener que reintentar cuando la Mac
+                correcta esté online.
+              </p>
+            )}
+            {resolutionSource === 'created_by_command_id' && (
+              <p className="text-xs text-blue-300 bg-blue-500/5 border border-blue-500/20 rounded-lg p-2 mb-3">
+                💡 Targeted al Agent que creó este proyecto via wizard (fallback por created_by_command_id).
+              </p>
+            )}
+          </>
         )}
         {phase === 'finalizing' && (
           <p className="text-xs text-purple-300 bg-purple-500/5 border border-purple-500/20 rounded-lg p-2 mb-3">
@@ -231,6 +248,13 @@ export function DeleteProjectDialog({
                 stage: {String((agentResult as { stage?: string }).stage ?? '—')}
               </p>
             ) : null}
+            {agentResult && isPathNotFoundError(agentResult) && (
+              <p className="text-yellow-300 mt-2">
+                💡 El path no existe en la máquina que tomó el comando. Asegurate que el SF Agent
+                esté corriendo en la Mac que tiene el folder, después cerrá este modal y volvé a
+                clickear "Eliminar" — la resolución va a usar info más fresca.
+              </p>
+            )}
           </div>
         )}
 
@@ -257,6 +281,14 @@ export function DeleteProjectDialog({
       </div>
     </div>
   );
+}
+
+// Detecta el error específico del SF Agent 1.1.25 cuando un comando fue ruteado
+// a la máquina equivocada (FCFS sin entry en project_local_paths).
+function isPathNotFoundError(result: Record<string, unknown>): boolean {
+  const stage = result.stage as string | undefined;
+  const error = String(result.error ?? '');
+  return stage === 'validate' && /path no existe/i.test(error);
 }
 
 function Checkbox({

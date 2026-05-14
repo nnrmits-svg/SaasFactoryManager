@@ -6,6 +6,37 @@
 
 ---
 
+## 2026-05-14 — v1.2.7: Resolución de instance_id en cascada + warnings en modal
+**Maquina**: NNRM-iMac-275.local (rmarchetti)
+
+### Contexto
+- Segunda prueba E2E de delete-project (`GeneracionContenido`) reportó `success: true, local_deleted: true` pero el folder seguía en disco del MBP-2016. Investigación: `project_local_paths` estaba vacío para ese project_id (el SF Agent < 1.1.25 nunca lo populaba post-create), entonces mi resolveInstanceId cayó a FCFS, otro Agent tomó el comando, `rm -rf` con path no existente reportó idempotencia mentirosa.
+- SF Agent confirmó release 1.1.25 con 2 fixes: (1) create-project ahora popula `project_local_paths` con MACHINE_ID local; (2) delete-project stage `validate` reporta honestamente `success: false` cuando el path no existe en esa Mac.
+
+### Hecho — lado Manager (v1.2.7)
+- [services/delete-project-full-action.ts](src/features/factory-manager/services/delete-project-full-action.ts):
+  - Nuevo type `AgentResolutionSource = 'manual' | 'project_local_paths' | 'created_by_command_id' | 'fcfs' | 'none'`.
+  - Resolución en cascada: (1) input.agent_instance_id explícito, (2) `project_local_paths` con 1 row, (3) **NEW**: `projects.created_by_command_id` → buscar el `instance_id` del `agent_command:create-project` original, (4) FCFS.
+  - Result extendido con `resolution_source` para que el UI muestre warnings cuando aplique.
+- [components/delete-project-dialog.tsx](src/features/factory-manager/components/delete-project-dialog.tsx):
+  - Muestra warning amarillo si `resolution_source === 'fcfs'` mientras espera al Agent.
+  - Muestra hint celeste si `resolution_source === 'created_by_command_id'` (fallback funcionó).
+  - Detección del error específico del Agent 1.1.25 (`stage='validate'` + mensaje "Path no existe") con sugerencia de retry.
+
+### Cleanup pendiente
+- `GeneracionContenido` ya fue borrado de BD por idempotencia mentirosa. Su folder + repo siguen en alguna Mac (probablemente iMac-275 o MB-Air-NNRM-2025, no MBP-2016 según el Agent). El founder identifica cuál y limpia manual:
+  ```
+  rm -rf /Users/<user>/ProyectosIA/AplicacionesSaas/GeneracionContenido
+  gh repo delete <owner>/GeneracionContenido --yes
+  ```
+
+### Plan de pruebas post-deploy (acordado con SF Agent)
+1. Crear proyecto nuevo desde wizard → verificar `project_local_paths` tiene 1 row con la Mac correcta.
+2. Borrarlo → verificar folder borrado + BD limpia.
+3. Borrar proyecto pre-1.1.25 sin entry → verificar fallback FCFS con warning amarillo en UI.
+
+---
+
 ## 2026-05-14 — v1.2.6: Fix UI bug en modal Eliminar (folder local checkbox)
 **Maquina**: NNRM-iMac-275.local (rmarchetti)
 
