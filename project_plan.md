@@ -3,7 +3,7 @@
 > Plan vivo del producto. Una sola fuente de verdad de "donde estamos y a donde vamos".
 > Mantenido por el skill `project-plan`. Cronologia detallada en `Bitacora.md`.
 >
-> Ultima actualizacion: 2026-05-14 (v1.2.7)
+> Ultima actualizacion: 2026-05-14 (v1.2.8)
 > URL prod: https://saasfactory.grupo-its.com.ar
 > Cross-ref: ver entrada del 2026-05-13 en `Bitacora.md`
 >

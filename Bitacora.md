@@ -6,6 +6,35 @@
 
 ---
 
+## 2026-05-14 — v1.2.8: Hoja membretada corporativa unificada
+**Maquina**: NNRM-iMac-275.local (rmarchetti)
+
+### Contexto
+- Founder pasó modelo de propuesta de Grupo ITS (PDF real "4219_IV_25 BOM Tech Refresh") con formato corporativo: portada estructurada con tabla EMPRESA/RESPONSABLE/FECHA/NRO/Ejecutivo/Director/DATOS EMPRESA/Versión + páginas siguientes con índice, confidencialidad, objeto del documento, tablas BOM por categoría (HARDWARE/SOFTWARE/SERVICIOS). Pidió combinarlo con el branding Fluya (purple accent + glassmorphism mental) y aplicarlo a TODOS los documentos del sistema (Propuesta, SOW, NDA, OC, Remito, etc).
+
+### Hecho
+- [pdf/provider-config.ts](src/features/contracts/pdf/provider-config.ts) — config del proveedor leída de env vars. Defaults Fluya Studio. Switch a Grupo ITS sin tocar código (COMPANY_NAME, COMPANY_LEGAL_NAME, COMPANY_TAX_ID, COMPANY_VAT_STATUS, COMPANY_TAGLINE, COMPANY_LOGO_URL, COMPANY_ADDRESS, COMPANY_DIRECTOR).
+- [pdf/corporate-document.tsx](src/features/contracts/pdf/corporate-document.tsx) — wrapper reusable: `<CorporateDocument meta={...}>{children}</CorporateDocument>`. Genera portada automática con tabla de meta estilo Grupo ITS. Exports: `CorporatePage` (página interna con header chico + footer paginación auto), `NumberedSection`, `NumberedSubSection`, `ConfidentialityClause`, `TableOfContents`. Logo del proveedor arriba a la derecha, logo del cliente embedded en row "EMPRESA" si se provee `client_logo_url`.
+- [pdf/styles.ts](src/features/contracts/pdf/styles.ts) — agregados estilos `coverHeader`, `metaTable`, `metaRow`, `metaLabel`, `metaValue*`, `internalHeader`, `numberedSectionTitle`, `bomTableHeader` (header azul), `bomCell*` (numerado # / SKU / Description / Qty / Price / Total), etc.
+- [pdf/quote-template.tsx](src/features/contracts/pdf/quote-template.tsx) — refactor completo: usa `CorporateDocument`. Items agrupados por tipo en tablas BOM separadas (IA Tokens / Labor / Licencias / Estructura). Cláusula de confidencialidad + objeto + condiciones.
+- [pdf/sow-template.tsx](src/features/contracts/pdf/sow-template.tsx) — refactor: portada corporate + 4 secciones numeradas (Confidencialidad, Referencia al quote, Alcance markdown-parsed, Aceptación + firmas).
+- [pdf/nda-template.tsx](src/features/contracts/pdf/nda-template.tsx) — refactor: 3 secciones (Partes, Términos en markdown, Aceptación + firmas).
+- [services/pdf-actions.ts](src/features/contracts/services/pdf-actions.ts) — helper `loadClientInfo(supabase, client_id)` que trae name + primary_contact_name + primary_contact_email + address. Pasado a los 3 templates.
+
+### Resultado visual
+- Portada con tabla limpia: EMPRESA + logo cliente, RESPONSABLE (nombre + email + dirección), FECHA, NRO. PROPUESTA con subtítulo del proyecto, Ejecutivo de Cuenta (si seteado), Director de Ingeniería (default Ricardo Marchetti via env), DATOS EMPRESA (legal_name + CUIT + IVA status), Versión.
+- Páginas internas: header chico con `documento · número` + logo Fluya + footer `Página X | Y`.
+- Headers de sección numerados en purple `#A961FF`.
+- Tablas BOM con header azul intenso `#1E3A8A`.
+
+### Pendientes opcionales (próximas iteraciones)
+- Página 2 dedicada a Índice con TOC auto-generado (el componente existe pero no se está usando todavía).
+- Logo del cliente cargado real (hoy queda placeholder si no se provee `client_logo_url`).
+- Tabla `clients` extender con `logo_url` column si quieren tener logos por cliente.
+- Templates futuros: OrderPdfTemplate (OC), DeliveryNotePdfTemplate (Remito), InvoicePdfTemplate (Factura) — mismo wrapper, distinto body.
+
+---
+
 ## 2026-05-14 — v1.2.7: Resolución de instance_id en cascada + warnings en modal
 **Maquina**: NNRM-iMac-275.local (rmarchetti)
 
