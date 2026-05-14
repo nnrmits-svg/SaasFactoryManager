@@ -6,6 +6,19 @@
 
 ---
 
+## 2026-05-14 — Aclaración SF Agent: regla cross-repo de auto-sync
+**Maquina**: NNRM-iMac-275.local (rmarchetti) · vía mensaje del Claude del SF Agent.
+
+### Regla codificada
+- **El SF Agent NUNCA pushea directo a `main` de un repo compartido** (como SaasFactoryManager). Para repos en su `sharedRepos`, abre auto-PR pusheando a un branch `agent/<hostname>` (ej. `origin/agent/macbookpro-2016-local`).
+- Solo pushea a main del **repo propio del Agent** (SaasFactoryAgent, default branch `master`).
+
+### Implicación
+- Cuando mi cliente Manager local tiene commits locales (`ahead N`), el Agent NO los va a pushear a main automáticamente. El founder (o yo, con OK explícito) tenemos que correr `git push origin main`.
+- Los branches `agent/<hostname>` en origin son normales — no son commits "no-aplicados", son el flow Capa 3 del Agent funcionando bien (auto-PR, no auto-merge).
+
+---
+
 ## 2026-05-14 — v1.2.5: Eliminar proyecto coordinado (Manager + Agent)
 **Maquina**: NNRM-iMac-275.local (rmarchetti)
 
