@@ -11,7 +11,7 @@
 // REGLA: bumpear APP_VERSION con CADA cambio que llegue a prod. Sin wip silenciosos.
 // Cada deploy queda reflejado en el changelog que ve el founder en /about.
 
-export const APP_VERSION = '1.2.7';
+export const APP_VERSION = '1.2.8';
 
 export interface ChangelogEntry {
   version: string;
@@ -21,6 +21,13 @@ export interface ChangelogEntry {
 
 // Cronológico inverso: lo último arriba.
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.2.8',
+    date: '2026-05-14',
+    highlights: [
+      'Hoja membretada corporativa unificada para PDFs: nuevo wrapper CorporateDocument con portada estructurada (EMPRESA, RESPONSABLE, FECHA, NRO, Ejecutivo, Director, DATOS EMPRESA, Versión) inspirado en formato Grupo ITS + accent purple Fluya en headers. Aplicado a Propuesta (con tablas BOM por categoría AI/Labor/Fijos/Overhead), SOW, NDA. Provider config via env vars (COMPANY_NAME, COMPANY_TAX_ID, COMPANY_LOGO_URL, etc) para switch fácil Fluya↔ITS sin tocar código',
+    ],
+  },
   {
     version: '1.2.7',
     date: '2026-05-14',

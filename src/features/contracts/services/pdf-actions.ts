@@ -56,15 +56,7 @@ export async function generateQuotePdfAction(
     return { ok: false, error: 'Proyecto sin project_number' };
   }
 
-  let clientName: string | null = null;
-  if (project.client_id) {
-    const { data: client } = await supabase
-      .from('clients')
-      .select('name')
-      .eq('id', project.client_id)
-      .maybeSingle();
-    clientName = (client?.name as string | null) ?? null;
-  }
+  const clientInfo = await loadClientInfo(supabase, project.client_id as string | null);
 
   // Recompute totals para el PDF (siempre desde line_items, no del campo total cached)
   const items = (lineItems ?? []).map((it) => ({
@@ -83,7 +75,10 @@ export async function generateQuotePdfAction(
   const data: QuotePdfData = {
     number_label: formatQuoteNumber(project.project_number, quote.version),
     project_name: project.name,
-    client_name: clientName,
+    client_name: clientInfo.name,
+    client_responsible_name: clientInfo.responsible_name,
+    client_responsible_email: clientInfo.responsible_email,
+    client_address: clientInfo.address,
     date_iso: (quote.created_at as string) ?? new Date().toISOString(),
     line_items: items,
     totals: {
@@ -139,15 +134,7 @@ export async function generateSowPdfAction(
     .eq('id', sow.quote_id)
     .maybeSingle();
 
-  let clientName: string | null = null;
-  if (project.client_id) {
-    const { data: client } = await supabase
-      .from('clients')
-      .select('name')
-      .eq('id', project.client_id)
-      .maybeSingle();
-    clientName = (client?.name as string | null) ?? null;
-  }
+  const clientInfo = await loadClientInfo(supabase, project.client_id as string | null);
 
   const data: SowPdfData = {
     number_label: formatSowNumber(project.project_number, sow.version),
@@ -155,7 +142,10 @@ export async function generateSowPdfAction(
       ? formatQuoteNumber(project.project_number, quote.version)
       : '—',
     project_name: project.name,
-    client_name: clientName,
+    client_name: clientInfo.name,
+    client_responsible_name: clientInfo.responsible_name,
+    client_responsible_email: clientInfo.responsible_email,
+    client_address: clientInfo.address,
     date_iso: (sow.created_at as string) ?? new Date().toISOString(),
     content_md: (sow.content_md as string) ?? '',
     grand_total_usd: Number(quote?.total_usd ?? 0),
@@ -193,7 +183,7 @@ export async function generateNdaPdfAction(
 
   const { data: client } = await supabase
     .from('clients')
-    .select('name, tax_id')
+    .select('name, tax_id, primary_contact_name, primary_contact_email, address')
     .eq('id', nda.client_id)
     .maybeSingle();
   if (!client) return { ok: false, error: 'Cliente no encontrado' };
@@ -202,6 +192,9 @@ export async function generateNdaPdfAction(
     number_label: formatNdaNumber(project.project_number, nda.version),
     client_name: client.name as string,
     client_tax_id: (client.tax_id as string | null) ?? null,
+    client_responsible_name: (client.primary_contact_name as string | null) ?? null,
+    client_responsible_email: (client.primary_contact_email as string | null) ?? null,
+    client_address: (client.address as string | null) ?? null,
     date_iso: (nda.created_at as string) ?? new Date().toISOString(),
     content_md: (nda.content_md as string) ?? '',
   };
@@ -213,9 +206,43 @@ export async function generateNdaPdfAction(
 }
 
 // ============================================================
-// Helper: subir buffer al bucket + devolver signed URL
+// Helper: cargar datos extendidos del cliente
 // ============================================================
 type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
+
+interface ClientInfo {
+  name: string | null;
+  responsible_name: string | null;
+  responsible_email: string | null;
+  address: string | null;
+}
+
+async function loadClientInfo(
+  supabase: SupabaseClient,
+  client_id: string | null,
+): Promise<ClientInfo> {
+  if (!client_id) {
+    return { name: null, responsible_name: null, responsible_email: null, address: null };
+  }
+  const { data: client } = await supabase
+    .from('clients')
+    .select('name, primary_contact_name, primary_contact_email, address')
+    .eq('id', client_id)
+    .maybeSingle();
+  if (!client) {
+    return { name: null, responsible_name: null, responsible_email: null, address: null };
+  }
+  return {
+    name: (client.name as string | null) ?? null,
+    responsible_name: (client.primary_contact_name as string | null) ?? null,
+    responsible_email: (client.primary_contact_email as string | null) ?? null,
+    address: (client.address as string | null) ?? null,
+  };
+}
+
+// ============================================================
+// Helper: subir buffer al bucket + devolver signed URL
+// ============================================================
 
 async function uploadAndSign(
   supabase: SupabaseClient,

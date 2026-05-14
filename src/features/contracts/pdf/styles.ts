@@ -188,6 +188,164 @@ export const pdfStyles = StyleSheet.create({
     fontWeight: 'bold',
     marginTop: 2,
   },
+
+  // ============================================================
+  // CORPORATE TEMPLATE (estilo Grupo ITS / propuesta formal)
+  // ============================================================
+
+  /** Header de la portada: logo a la izquierda, nada más arriba. */
+  coverHeader: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    marginBottom: 36,
+  },
+  coverLogo: {
+    width: 110,
+    height: 'auto',
+  },
+  coverTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#0B001E',
+    marginBottom: 6,
+  },
+  coverSubtitle: {
+    fontSize: 11,
+    color: '#6B6B7B',
+    marginBottom: 24,
+  },
+
+  /** Tabla de datos de la portada (EMPRESA / RESPONSABLE / FECHA / NRO / Versión). */
+  metaTable: {
+    marginTop: 16,
+    borderWidth: 1,
+    borderColor: '#1A1A2E',
+  },
+  metaRow: {
+    flexDirection: 'row',
+    borderBottomWidth: 0.5,
+    borderBottomColor: '#1A1A2E',
+    minHeight: 28,
+  },
+  metaRowLast: {
+    flexDirection: 'row',
+    minHeight: 28,
+  },
+  metaLabel: {
+    width: '32%',
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: '#0B001E',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    borderRightWidth: 0.5,
+    borderRightColor: '#1A1A2E',
+    textAlign: 'center',
+  },
+  metaValue: {
+    flex: 1,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    fontSize: 10,
+    color: '#1A1A2E',
+  },
+  metaValueStrong: {
+    flex: 1,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: '#0B001E',
+  },
+  metaValueAccent: {
+    flex: 1,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: '#A961FF',
+  },
+
+  /** Header de páginas internas (2+): logo chico + número de doc. */
+  internalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 24,
+    paddingBottom: 8,
+    borderBottomWidth: 0.5,
+    borderBottomColor: '#E0E0E8',
+  },
+  internalHeaderLogo: {
+    width: 60,
+    height: 'auto',
+  },
+  internalHeaderTitle: {
+    fontSize: 10,
+    color: '#6B6B7B',
+  },
+
+  /** Encabezados de sección numerados (ej: "1. Índice", "2. Acuerdo de Confidencialidad"). */
+  numberedSectionTitle: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#A961FF',
+    marginBottom: 12,
+    marginTop: 8,
+  },
+  numberedSubSectionTitle: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: '#A961FF',
+    marginBottom: 8,
+    marginTop: 4,
+  },
+
+  /** Tabla estilo BOM (header azul intenso, # / SKU / Description / Qty). */
+  bomTableHeader: {
+    flexDirection: 'row',
+    backgroundColor: '#1E3A8A',
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+  },
+  bomTableHeaderTitle: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    textAlign: 'center',
+    flex: 1,
+  },
+  bomSubHeader: {
+    flexDirection: 'row',
+    backgroundColor: '#F4F4F8',
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#1A1A2E',
+  },
+  bomSubHeaderCell: {
+    fontSize: 9,
+    fontWeight: 'bold',
+    color: '#0B001E',
+    textTransform: 'uppercase',
+  },
+  bomCellNum: { width: 30, fontSize: 9, textAlign: 'center' },
+  bomCellSku: { flex: 2, fontSize: 9, paddingRight: 6 },
+  bomCellDesc: { flex: 4, fontSize: 9, paddingRight: 6 },
+  bomCellQty: { width: 40, fontSize: 9, textAlign: 'right' },
+  bomCellPrice: { flex: 1.5, fontSize: 9, textAlign: 'right' },
+  bomCellTotal: { flex: 1.5, fontSize: 9, textAlign: 'right', fontWeight: 'bold' },
+  bomRow: {
+    flexDirection: 'row',
+    paddingVertical: 5,
+    paddingHorizontal: 8,
+    borderBottomWidth: 0.5,
+    borderBottomColor: '#E0E0E8',
+  },
+
 });
 
 export const brand = {
