@@ -78,6 +78,27 @@ export async function deleteProjectFullyAction(
       (project.github_repo_url as string | null) ?? null,
     );
 
+    // Resolver instance_id si no vino del UI: buscar en project_local_paths
+    // qué máquina tiene el folder. Si solo una máquina lo tiene, targeted;
+    // si hay >1 o ninguna, NULL = FCFS (cualquier Agent del user lo toma).
+    let resolvedInstanceId = input.agent_instance_id ?? null;
+    if (!resolvedInstanceId) {
+      const { data: paths } = await supabase
+        .from('project_local_paths')
+        .select('machine_id')
+        .eq('project_id', input.project_id)
+        .order('last_seen_at', { ascending: false });
+      if (paths && paths.length === 1) {
+        const { data: instance } = await supabase
+          .from('agent_instances')
+          .select('id')
+          .eq('machine_id', paths[0].machine_id as string)
+          .eq('user_id', user.id)
+          .maybeSingle();
+        if (instance) resolvedInstanceId = instance.id as string;
+      }
+    }
+
     if (input.delete_local_folder && !local_path) {
       return {
         ok: false,
@@ -106,7 +127,7 @@ export async function deleteProjectFullyAction(
       .from('agent_commands')
       .insert({
         user_id: user.id,
-        instance_id: input.agent_instance_id ?? null,
+        instance_id: resolvedInstanceId,
         command: 'delete-project',
         payload: payload as unknown as Record<string, unknown>,
         status: 'pending',
