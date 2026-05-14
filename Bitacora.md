@@ -6,6 +6,55 @@
 
 ---
 
+## 📍 2026-05-14 (cierre del día) — Punto de retomada para próxima sesión
+**Maquina**: NNRM-iMac-275.local (rmarchetti). Founder cambia a MB-Air-NNRM-2025 para continuar.
+
+### Estado al cierre
+- **v1.2.8 deployada en prod** (`https://saasfactory.grupo-its.com.ar`): hoja membretada corporativa unificada para Quote/SOW/NDA inspirada en formato Grupo ITS + branding Fluya purple.
+- **Env vars en Vercel**: founder cargó 10 vars `COMPANY_*` (NAME, LEGAL_NAME, TAX_ID, VAT_STATUS, TAGLINE, LOGO_URL, ADDRESS, CEO, DIRECTOR_ING, DIRECTOR_DES). Falta opcional `COMPANY_COMMERCIAL` (ej: "Ariana Salum") si quiere mostrar Ejecutivo Comercial en portada.
+- **3 pruebas E2E delete-project pasaron**: TestOO1 (create FCFS + delete via project_local_paths OK), TESTOO3 (selector targeted al Air, template encontrado tras copy manual, delete con scope gh OK).
+- **BD limpia**: 5 proyectos legítimos (ConsultorFinanciero, SaasFactoryAgent, SaasFactoryManager, SuscriptionsMgmt, Yuseff-inmobiliaria). Todos los test borrados.
+- **SF Agent en versión 1.1.25** instalado en MBP-2016 + MB-Air. Ambos tienen el template `~/ProyectosIA/Arq Saas Factory /saas-factory-setup V4/saas-factory` y `gh auth` con scope `delete_repo`.
+
+### 🔜 NEXT (en orden de prioridad)
+
+1. **Probar PDF v1.2.8 con datos reales**. Founder genera quote real desde el Air (cualquier proyecto existente con quote, o crear uno nuevo) y revisa la portada nueva. Si algo no cuadra (espacios, colores, falta campo), iteramos en v1.2.9.
+
+2. **Editor de quote/SOW post-creación** (#1 de los 3 puntos del founder): hoy los line items se generan automático en wizard y no se editan después. Falta UI en tab Contratos para editar items / margen / notas sin crear ampliación. Esfuerzo M (4-6h). Útil porque founder dijo "los items que traen no son los adecuados".
+
+3. **Flow cliente con magic link** (#2 de los 3 puntos): el rol `client` existe en BD con RLS, pero no hay UI para que un cliente vea/firme un SOW desde su propio email. Hay que crear:
+   - Tabla `signature_invites` (token, document_type, document_id, expires_at, used_at).
+   - Server action `createSignatureInvite(sow_id, client_email)`.
+   - Route pública `/sign/[token]`.
+   - Email template + send.
+   Esfuerzo M (6-10h).
+
+4. **Logo del cliente en portada**: hoy queda placeholder si `clients.logo_url` está vacío. Agregar columna `logo_url` a `clients` + UI para subirlo. XS (1h).
+
+5. **Página 2 dedicada al Índice**: el componente `TableOfContents` existe pero no se está usando todavía. Si la propuesta crece >3 páginas, conviene activarlo. XS (30 min).
+
+### Bugs/Pendientes externos abiertos (no bloquean lo de arriba)
+
+- **Folder huérfano `GeneracionContenido`**: borrado de BD por idempotencia mentirosa del Agent v1.1.24 (antes del fix v1.1.25). Folder físico podría estar en iMac-275 o MB-Air. Founder limpia manual cuando lo identifique.
+- **Webhook GitHub→Vercel**: dejó de gatillar después de v1.2.6 — los pushes recientes requirieron deploy manual desde Vercel UI. Verificar Settings → Git si está conectado.
+- **SMTP Resend → Supabase Auth**: guía en `docs/smtp-resend-setup.md`. Sin esto, default 2 emails/h rate-limit en invites masivos.
+
+### Cómo el próximo Claude debe arrancar la sesión
+
+1. Leer este bloque de "Punto de retomada".
+2. `git status` para confirmar working tree clean + `git pull` por las dudas.
+3. Si founder dice "probemos PDF" → arrancar con el item 1 del NEXT. Si dice "editor" → item 2. Etc.
+4. Si quiere ver detalle de cualquier cambio anterior, leer las entradas debajo de este bloque (cronológicas más recientes primero).
+
+### Referencias clave (rutas en este repo)
+
+- **PRP-005** completo: `.claude/PRPs/PRP-005-quote-sow-nda-signature-versioning.md` (8 fases, 6 cerradas, 7+8 pendientes).
+- **Skill cross-repo-access**: `.claude/skills-catalog/cross-repo-access/SKILL.md` — el SF Agent lo distribuye a otros proyectos.
+- **Migration last applied**: `supabase/migrations/20260514000000_prp005_fix_signatures_clients_policy.sql`.
+- **Templates PDF nuevos**: `src/features/contracts/pdf/{corporate-document,provider-config,quote-template,sow-template,nda-template}.tsx`.
+
+---
+
 ## 2026-05-14 — v1.2.8: Hoja membretada corporativa unificada
 **Maquina**: NNRM-iMac-275.local (rmarchetti)
 
