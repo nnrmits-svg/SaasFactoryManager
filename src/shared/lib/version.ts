@@ -11,7 +11,7 @@
 // REGLA: bumpear APP_VERSION con CADA cambio que llegue a prod. Sin wip silenciosos.
 // Cada deploy queda reflejado en el changelog que ve el founder en /about.
 
-export const APP_VERSION = '1.2.3';
+export const APP_VERSION = '1.2.4';
 
 export interface ChangelogEntry {
   version: string;
@@ -21,6 +21,13 @@ export interface ChangelogEntry {
 
 // Cronológico inverso: lo último arriba.
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.2.4',
+    date: '2026-05-14',
+    highlights: [
+      'Fix bug crítico de firma: el INSERT en signatures con .select() reventaba con "permission denied for table users" porque la policy clients_read_signatures tenía un subquery inline a auth.users. Solución: nueva función SECURITY DEFINER current_user_email() + policy reescrita',
+    ],
+  },
   {
     version: '1.2.3',
     date: '2026-05-13',
