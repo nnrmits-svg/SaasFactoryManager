@@ -50,8 +50,12 @@ export interface CorporateMeta {
   client_address?: string | null;
   /** Responsables del proveedor. */
   account_executive?: string | null;
-  /** Si null, usa el director del provider config. */
+  /** Si null, usa el director_engineering del provider config. */
   engineering_director?: string | null;
+  /** Si null, usa el director_development del provider config (puede no existir). */
+  development_director?: string | null;
+  /** Si null, usa el ceo del provider config (puede no existir). */
+  ceo?: string | null;
   /** Override del provider config (rara vez). */
   provider_override?: Partial<ProviderConfig>;
 }
@@ -88,7 +92,9 @@ function CoverPage({
     year: 'numeric',
   });
   const version = meta.version ?? defaultVersion(meta.date_iso);
-  const director = meta.engineering_director ?? provider.director;
+  const ceo = meta.ceo ?? provider.ceo;
+  const directorEng = meta.engineering_director ?? provider.director_engineering;
+  const directorDev = meta.development_director ?? provider.director_development;
 
   return (
     <Page size="A4" style={pdfStyles.page}>
@@ -156,9 +162,21 @@ function CoverPage({
           </MetaRow>
         )}
 
+        {ceo && (
+          <MetaRow label="CEO">
+            <Text style={pdfStyles.metaValue}>{ceo}</Text>
+          </MetaRow>
+        )}
+
         <MetaRow label="Director de Ingeniería">
-          <Text style={pdfStyles.metaValue}>{director}</Text>
+          <Text style={pdfStyles.metaValue}>{directorEng}</Text>
         </MetaRow>
+
+        {directorDev && (
+          <MetaRow label="Director de Desarrollo">
+            <Text style={pdfStyles.metaValue}>{directorDev}</Text>
+          </MetaRow>
+        )}
 
         <MetaRow label="Datos Empresa">
           <View style={{ flex: 1, paddingVertical: 6, paddingHorizontal: 10 }}>
