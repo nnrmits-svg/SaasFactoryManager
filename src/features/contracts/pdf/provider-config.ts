@@ -2,7 +2,7 @@
 // Leído de env vars para permitir switch fácil entre Fluya Studio y Grupo ITS
 // sin tocar código.
 //
-// Ejemplos:
+// Ejemplos (todas opcionales — si falta, usa el default):
 //   COMPANY_NAME="Fluya Studio"
 //   COMPANY_LEGAL_NAME="Fluya S.A."
 //   COMPANY_TAX_ID="30-XXXXXXXX-X"
@@ -10,7 +10,10 @@
 //   COMPANY_TAGLINE="Business OS para tu fábrica de software"
 //   COMPANY_LOGO_URL="https://saasfactory.grupo-its.com.ar/Fluya-Logo-Ult.jpg"
 //   COMPANY_ADDRESS="Buenos Aires, Argentina"
-//   COMPANY_DIRECTOR="Ricardo Marchetti"
+//   COMPANY_CEO="Ricardo Marchetti"
+//   COMPANY_DIRECTOR_ING="Ricardo Marchetti"    # Director de Ingeniería
+//   COMPANY_DIRECTOR_DES="Leandro Santoro"       # Director de Desarrollo
+//   COMPANY_DIRECTOR="<fallback legacy>"         # Si no hay DIRECTOR_ING, usa éste
 
 export interface ProviderConfig {
   /** Nombre comercial (ej: "Fluya Studio"). */
@@ -27,8 +30,12 @@ export interface ProviderConfig {
   logo_url: string;
   /** Dirección física. */
   address: string;
-  /** Nombre del Director de Ingeniería / Responsable técnico. */
-  director: string;
+  /** Nombre del CEO. */
+  ceo: string | null;
+  /** Director de Ingeniería / Responsable técnico (aparece en portada). */
+  director_engineering: string;
+  /** Director de Desarrollo (aparece en portada si seteado). */
+  director_development: string | null;
 }
 
 export function getProviderConfig(): ProviderConfig {
@@ -43,6 +50,11 @@ export function getProviderConfig(): ProviderConfig {
       process.env.COMPANY_LOGO_URL ??
       'https://saasfactory.grupo-its.com.ar/Fluya-Logo-Ult.jpg',
     address: process.env.COMPANY_ADDRESS ?? 'Buenos Aires, Argentina',
-    director: process.env.COMPANY_DIRECTOR ?? 'Ricardo Marchetti',
+    ceo: process.env.COMPANY_CEO ?? null,
+    director_engineering:
+      process.env.COMPANY_DIRECTOR_ING ??
+      process.env.COMPANY_DIRECTOR ??
+      'Ricardo Marchetti',
+    director_development: process.env.COMPANY_DIRECTOR_DES ?? null,
   };
 }
