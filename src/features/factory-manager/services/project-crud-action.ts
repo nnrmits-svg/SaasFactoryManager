@@ -140,7 +140,7 @@ export async function getProjects() {
   const { data, error } = await supabase
     .from('projects')
     .select(`
-      id, name, path, sf_version, design_system, status, description, repo_url,
+      id, name, path, local_path, github_repo_url, sf_version, design_system, status, description, repo_url,
       created_at, updated_at,
       commits(id),
       work_sessions(duration_minutes)
@@ -156,6 +156,8 @@ export async function getProjects() {
     id: p.id,
     name: p.name,
     path: p.path,
+    localPath: (p.local_path as string | null) ?? null,
+    githubRepoUrl: (p.github_repo_url as string | null) ?? null,
     sfVersion: p.sf_version,
     designSystem: p.design_system,
     status: p.status as 'active' | 'archived' | 'paused',
