@@ -16,6 +16,7 @@ import {
   generateNdaPdfAction,
 } from '../services/pdf-actions';
 import { createSowAction, createNdaAction } from '../services/sow-nda-actions';
+import { createQuoteFromActualsAction } from '../services/quote-from-actuals-action';
 import { SignatureDialog } from './signature-dialog';
 import { AmendmentForm } from './amendment-form';
 import type { Quote, DocumentType } from '../types';
@@ -78,6 +79,23 @@ export function ContractsTab({ projectId }: ContractsTabProps) {
     }
     setMsg({ ok: true, text: `PDF ${label} generado` });
     window.open(res.data.signed_url, '_blank', 'noopener,noreferrer');
+  }
+
+  async function handleCreateFromActuals() {
+    setBusy('create-from-actuals');
+    setMsg(null);
+    const res = await createQuoteFromActualsAction({ project_id: projectId });
+    setBusy(null);
+    if (!res.ok || !res.data) {
+      setMsg({ ok: false, text: res.error ?? 'Error generando desde gastos reales' });
+      return;
+    }
+    const s = res.data.source_summary;
+    setMsg({
+      ok: true,
+      text: `Presupuesto ${res.data.number_label} creado en draft — ${s.models_count} modelo(s) IA · ${s.operators_count} operador(es) · USD $${res.data.totals.grand_total_usd.toFixed(2)}`,
+    });
+    void loadAll();
   }
 
   async function handleApproveQuote(quoteId: string, label: string) {
@@ -195,7 +213,19 @@ export function ContractsTab({ projectId }: ContractsTabProps) {
           )}
         </div>
         {!headerQuote && (
-          <p className="text-sm text-gray-500">Sin presupuesto. Creá uno desde el wizard.</p>
+          <div className="space-y-3">
+            <p className="text-sm text-gray-500">
+              Sin presupuesto. Creá uno desde el wizard, o generá uno automático desde los gastos
+              reales ya registrados (tokens IA + horas de operador).
+            </p>
+            <ActionBtn
+              onClick={handleCreateFromActuals}
+              disabled={busy === 'create-from-actuals'}
+              variant="primary"
+            >
+              {busy === 'create-from-actuals' ? '...' : '📊 Generar desde gastos reales'}
+            </ActionBtn>
+          </div>
         )}
         {headerQuote && (
           <div className="space-y-2">
