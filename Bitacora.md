@@ -6,6 +6,48 @@
 
 ---
 
+## 2026-05-15 — Cierre: Sprint AI Fluya chatbot + Brand + Cleanup + Capa 2.5
+**Maquinas**: NNRM-iMac-275.local + MacBookPro-2016.local
+
+### Hecho
+
+**Sprint AI Fluya (Capa A) — 2026-05-11**
+- **Sprint A.1** (commit `88b52b2`): seed de tablas `help_categories`, `help_articles`, `faqs`, `article_feedback` con RLS. Contenido inicial de ayuda.
+- **Sprint A — Chatbot** (commit `bdf99a0`): `/api/help/chat` con OpenRouter streaming (gemini-2.0-flash) + knowledge base WORKFLOW.md + datos dinamicos de BD. `ChatbotWidget` (FAB global, auth-gated) + `AIAssistant` (pagina completa en `/help`). Instalado `lucide-react`.
+- **Sprint A.2 — Tool use** (commit `13bc3ea`): 5 tools scopeadas por user_id: `list_my_projects`, `get_project_status`, `list_problematic_skills`, `get_cost_summary`, `search_articles`. El bot lee datos reales del usuario.
+- **Bug fixes AI** (commits `ece3a63`→`e9bac88`): tool flow con stopWhen=5, root cause Responses API vs Chat Completions, drop compatibility flag, fix column `sf_version`, fecha dinamica en system prompt, search_articles no inventa URLs. Endpoint debug `/api/help/chat-debug` agregado y removido.
+- **Fix deploy** (commit `2d4ad33`): push cuando local esta ahead sin cambios pending.
+
+**Marca Fluya — 2026-05-07**
+- **Brand skill** (commit `f9aaa47`): FluyaLogo component, navbar/footer con logo, Tailwind extendido con namespace `fluya.*`, manifest.json PWA + iconos, middleware whitelist para manifest.
+
+**Capa 2.5 — Sync state badges — 2026-05-06/07**
+- **Surface 4** (commit `9db67a2`): migration `20260506100000` agrega `local_hash` y `registry_hash` a `project_skills`. Badges de estado sync en `<SkillPanel>`.
+- **Pending state** (commit `8fe7cf0`): 5to SyncState `pending` para rows pre-Agent-push (evita falso "missing" rojo en rows legacy).
+
+**Reports y Capa 1 cierre — 2026-05-05**
+- **$/h estable + AI Activity tab** (commit `6823bbc`): fix formula $/h (dividir por total work_session del proyecto, no solo las linkeadas). Tab "AI Activity" en `/project/[name]`.
+- **Fix wizard** (commit `0254612`): arrancar en paso name (-1) en vez de saltar a "El Dolor".
+
+**Cleanup Sprint M — 2026-05-06**
+- **Chunk 1** (commit `8383cf9`): eliminados servicios FS muertos: `sync-action`, `browse-action`, `scan-action`, `resolve-path`, `design-system-service`, `<DirectoryPicker>`, `useAuth`, `installSkillToProject` + `copyDir`. `tsconfig.tsbuildinfo` a `.gitignore`. Pausados (consumers vivos): `auto-commit-service`, `/api/tracking`, `git-service`, `scanner-service`.
+
+### Decidido
+- **Modelo AI chatbot**: gemini-2.0-flash via OpenRouter (costo bajo, tool calling funcional). GPT-4o-mini probado y descartado por problemas de tool flow.
+- **Chat API usa Vercel AI SDK `streamText` + tools**, streaming text-plain compatible con componentes existentes.
+- **Fecha dinamica en system prompt** (`__TODAY__`, `__CURRENT_MONTH__`) para evitar alucinaciones temporales.
+- **`search_articles` NO inventa URLs** — solo `/help/<slug>` relativos desde BD.
+- **Formula $/h**: costo claude del proyecto / total minutos work_session del proyecto (no solo sesiones linkeadas).
+- **SyncState tiene 5 valores**: `synced`, `divergent`, `missing`, `external`, `pending`. Pending = rows legacy sin hashes hasta que el Agent pushee.
+
+### Pendiente
+- Aplicar migraciones pendientes en Supabase si no se aplicaron.
+- Capa 3 del roadmap — CRUD remoto desde Manager.
+- Migrar `auto-commit-service` y tracking al Agent (sprint dedicado).
+- Cleanup chunk 2: `git-service`, `scanner-service`, `git-sync-action`.
+
+---
+
 ## 2026-05-05 18:00 — Capa 2 completa + Capa 8 github_owner selector
 **Maquina**: NNRM-iMac-275.local
 
