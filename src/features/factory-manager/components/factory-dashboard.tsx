@@ -448,7 +448,11 @@ export function FactoryDashboard() {
             ? {
                 id: deleteDialogProject.id,
                 name: deleteDialogProject.name,
-                localPath: deleteDialogProject.localPath,
+                // Proyectos descubiertos por el Agent tienen local_path=NULL y solo
+                // setean `path`. Sin este fallback el checkbox "Borrar folder local"
+                // queda disabled, needsAgent=false, y el delete deja la carpeta viva
+                // en la Mac que la tiene — el siguiente scan la re-inserta.
+                localPath: deleteDialogProject.localPath ?? deleteDialogProject.path,
                 repoUrl: deleteDialogProject.githubRepoUrl ?? deleteDialogProject.repoUrl,
                 commitCount: deleteDialogProject.commitCount,
               }
