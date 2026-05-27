@@ -27,25 +27,88 @@ Este skill es distinto de:
 
 ## Proceso
 
-### Paso 1: Validar contexto
+### Paso 1: Validar contexto + chequeo de árbol
 
 1. Detectar el proyecto:
    - Si `$ARGUMENTS` viene → usar ese nombre
    - Si no → usar el directorio actual (`pwd`). Si no es un proyecto SaaS válido → pedir nombre.
 
-2. Validar archivos clave:
-   - `bitacora.md` existe?
-   - `project_plan.md` existe?
-   - `package.json` existe?
-   - `.claude/agents/` existe?
+2. **Chequeo de árbol del proyecto** — validar archivos clave:
 
-   Si falta algo crítico → alertar y sugerir `/primer` o `/update-sf` antes.
+   Archivos obligatorios (existen?):
+   - `package.json`
+   - `bitacora.md`
+   - `project_plan.md`
+   - `.claude/agents/` (carpeta)
+   - `.claude/skills/` (carpeta, puede estar vacía si solo usa skills globales)
 
-3. Recomendar correr `/primer` si no se corrió en esta sesión:
+   Skills críticos para Caso D que deberían estar disponibles:
+   - `.claude/skills/bucle-agentico/SKILL.md`
+   - `.claude/skills/primer/SKILL.md`
+   - `.claude/skills/bitacora/SKILL.md`
+   - `.claude/skills/project-plan/SKILL.md`
+   - `.claude/skills/fluya-brand/SKILL.md`
+
+   Agents críticos:
+   - `.claude/agents/consulting-engine.md`
+   - `.claude/agents/design-labs.md`
+   - `.claude/agents/sensei-reviewer.md`
+   - `.claude/agents/its-code-reviewer.md` (si existe en el repo central)
+
+3. **Si faltan archivos críticos**, mostrar al dev:
+
+   ```
+   ⚠️  Detecté que faltan archivos en el árbol del proyecto:
+
+   Archivos faltantes:
+   {lista concreta}
+
+   Esto puede pasar si:
+   - El proyecto es viejo y se creó antes de tener estos defaults
+   - Alguien borró archivos accidentalmente
+   - El proyecto no fue scaffoldeado con init.sh
+
+   ¿Querés que actualice el árbol con la última versión de la SaaS Factory?
+   (kit-comercial/dev/saas-factory/.claude/)
+
+     - sí → copio los archivos faltantes desde la SF base (no toca lo existente)
+     - no → seguimos como está, pero algunos comandos pueden fallar
+   ```
+
+4. **Si dev dice SÍ a actualizar**:
+
+   - Path fuente: `~/ProyectosIA/kit-comercial/dev/saas-factory/.claude/`
+     - (Si no existe, alertar: "kit-comercial no está clonado o está en otra ruta. Especificá la ruta.")
+   - Copiar SOLO los archivos faltantes (NO sobrescribir lo existente):
+     ```bash
+     # Conceptual — el skill lo hace via Read/Write con cuidado
+     cp -n {SF_SOURCE}/skills/{nombre}/SKILL.md {PROYECTO}/.claude/skills/{nombre}/SKILL.md
+     # cp -n: no overwrite
+     ```
+   - Loguear en `bitacora.md`:
+     ```
+     ## {fecha} — Árbol actualizado
+
+     Archivos copiados desde SaaS Factory base:
+     - {lista}
+
+     Razón: faltaban archivos críticos para el flow de modificación.
+     ```
+
+5. **Si dev dice NO**:
+
+   Continuar pero alertar:
+   ```
+   OK, seguimos sin actualizar. Tené en cuenta que si algún sub-skill falla
+   por archivo faltante, podés volver a correr /modificacion-existente y
+   elegir actualizar.
+   ```
+
+6. Recomendar correr `/primer` si no se corrió en esta sesión:
    ```
    💡 Te conviene correr /primer primero para cargar el contexto del proyecto
    (bitacora.md + project_plan.md + PRPs ejecutados).
-   
+
    ¿Lo corrés? (y/n)
    ```
 
