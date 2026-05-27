@@ -6,6 +6,29 @@
 
 ---
 
+## 2026-05-27 12:50 — Fix deteccion de proyectos (Jose Dib) + bugs del delete cross-machine
+**Maquina**: NNRM-iMac-275.local
+
+### Hecho
+- Diagnosticado por qué el Manager no mostraba "Jose Dib" (existe en disco del iMac con `.claude/` + `package.json`) y sí mostraba "Yuseff-inmobiliaria" (no está en este disco, vive en la Air).
+- **Bug #1 (FIXED)**: el CHECK constraint `projects_agent_status_check` permitía solo `pending/creating/created/failed`, pero el SF Agent inserta proyectos nuevos escaneados con `agent_status='discovered'`. Cada proyecto nuevo fallaba el INSERT con 23514 (check_violation) y el push lo descartaba en silencio → Jose Dib nunca llegaba a Supabase. Migración nueva [20260520140000_allow_agent_status_discovered.sql](supabase/migrations/20260520140000_allow_agent_status_discovered.sql) agrega `'discovered'` al enum. Aplicada a prod. Disparé `push-projects` al Agent del iMac → `pushed: 5`, Jose Dib ahora figura en `/factory`.
+- **Bug #2 (FIXED)**: el modal de borrado deshabilitaba el checkbox "Borrar folder local" para proyectos descubiertos por el Agent (tienen `local_path=NULL`, solo `path`). Al borrar, `needsAgent=false` → solo se borraba el row de Supabase y la carpeta seguía viva → el siguiente scan re-insertaba el proyecto (reaparecía). Fix en [factory-dashboard.tsx](src/features/factory-manager/components/factory-dashboard.tsx): pasar `localPath ?? path` al dialog (el server action ya tenía el fallback).
+- **Bug #3 (PENDIENTE, vive en repo SF Agent)**: el segundo intento de borrar Yuseff falló en `stage: validate` con `payload inválido` porque el `PayloadSchema` de `delete-project.ts` exige `github_owner` y `github_repo_name` como `string().min(1)` SIEMPRE, aunque `delete_github_repo=false`. Proyectos sin repo (como Yuseff) no se pueden borrar con el Agent.
+
+### Decidido
+- Ampliar el enum del constraint (agregar `'discovered'`) en vez de cambiar `push.ts` a `'pending'`: preserva la semántica que ya usa el Agent (distingue "descubierto en disco" de "pendiente de wizard").
+
+### Pendiente
+- **SF Agent**: hacer `github_owner`/`github_repo_name` opcionales (`.nullable().optional()`) en el `PayloadSchema` de [src/main/supabase/handlers/delete-project.ts](../SaasFactoryAgent/src/main/supabase/handlers/delete-project.ts), o condicionarlos a `delete_github_repo=true`. Sin esto Yuseff (y cualquier proyecto sin repo) no se puede borrar end-to-end.
+- Reintentar el borrado de Yuseff-inmobiliaria una vez parcheado el Agent.
+- Considerar GC automático: cuando una carpeta desaparece del disco, hoy nadie limpia el row de `projects` (solo el delete vía Manager lo hace).
+
+### Notas
+- El Manager lista proyectos por `user_id`, NO filtra por máquina. Por eso Yuseff (de la Air) aparece en el iMac. No es un fantasma: es un proyecto real de otra Mac. Para ocultarlo por máquina habría que filtrar por `project_local_paths.machine_id`, hoy no se hace.
+- El borrado coordinado (Manager → `agent_commands` → Agent borra folder+repo → `finalizeDeleteProjectAction` borra el row con CASCADE) funciona, pero solo si el checkbox de folder está activo y el payload pasa la validación del Agent.
+
+---
+
 ## 📍 2026-05-14 (cierre del día) — Punto de retomada para próxima sesión
 **Maquina**: NNRM-iMac-275.local (rmarchetti). Founder cambia a MB-Air-NNRM-2025 para continuar.
 
