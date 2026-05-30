@@ -175,6 +175,21 @@ async function safeFetchJson<T>(url: string, headers: HeadersInit): Promise<T | 
  * el rate limit de 60 req/h por IP (sube a 5000/h).
  */
 export async function getCheatSheetCatalog(): Promise<CheatSheetResult> {
+  // Top-level try/catch garantiza que NUNCA throws.
+  try {
+    return await fetchCheatSheetCatalogInternal();
+  } catch (err) {
+    const errMsg = err instanceof Error ? err.message : String(err);
+    console.error('[cheat-sheet] unexpected error:', errMsg, err);
+    return {
+      items: [],
+      source: 'fallback',
+      error: `Error inesperado: ${errMsg}. Revisá logs de Vercel para detalle.`,
+    };
+  }
+}
+
+async function fetchCheatSheetCatalogInternal(): Promise<CheatSheetResult> {
   const headers = getGitHubHeaders();
   const hasToken = !!process.env.GITHUB_TOKEN;
 

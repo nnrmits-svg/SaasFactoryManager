@@ -110,63 +110,77 @@ function compareVersions(
 export async function getVersionsDashboardData(): Promise<
   VersionsDashboardData & { error: string | null }
 > {
-  let error: string | null = null;
+  // Top-level try/catch garantiza que NUNCA throws (último resort).
+  try {
+    let error: string | null = null;
 
-  // Fetch upstream (GitHub) y projects (Supabase) en paralelo, ambos seguros
-  const [upstream, projectsResult] = await Promise.all([
-    fetchLatestRelease(),
-    safeGetProjects(),
-  ]);
+    // Fetch upstream (GitHub) y projects (Supabase) en paralelo, ambos seguros
+    const [upstream, projectsResult] = await Promise.all([
+      fetchLatestRelease(),
+      safeGetProjects(),
+    ]);
 
-  if (upstream.tag_name === 'unknown') {
-    error = process.env.GITHUB_TOKEN
-      ? 'No se pudo obtener la última versión del repo. Verificá conectividad a GitHub.'
-      : 'No se pudo obtener la última versión del repo. Probable rate limit de GitHub (60 req/h sin token). Configurar GITHUB_TOKEN ayuda.';
-  }
+    if (upstream.tag_name === 'unknown') {
+      error = process.env.GITHUB_TOKEN
+        ? 'No se pudo obtener la última versión del repo. Verificá conectividad a GitHub.'
+        : 'No se pudo obtener la última versión del repo. Probable rate limit de GitHub (60 req/h sin token). Configurar GITHUB_TOKEN ayuda.';
+    }
 
-  if (projectsResult.error) {
-    error = error
-      ? `${error} Además: ${projectsResult.error}`
-      : projectsResult.error;
-  }
+    if (projectsResult.error) {
+      error = error
+        ? `${error} Además: ${projectsResult.error}`
+        : projectsResult.error;
+    }
 
-  const projects = projectsResult.projects;
+    const projects = projectsResult.projects;
 
-  const rows: ProjectVersionRow[] = projects.map((p) => {
-    const installed = p.sfVersion;
-    const { drift, releasesBehind } = compareVersions(installed, upstream.tag_name);
+    const rows: ProjectVersionRow[] = projects.map((p) => {
+      const installed = p.sfVersion;
+      const { drift, releasesBehind } = compareVersions(installed, upstream.tag_name);
+
+      return {
+        projectId: p.id,
+        projectName: p.name,
+        localPath: p.localPath ?? p.path ?? null,
+        installedVersion: installed,
+        upstreamVersion: upstream.tag_name,
+        drift,
+        releasesBehind,
+        updatedAt: p.updatedAt ?? p.createdAt ?? '',
+      };
+    });
+
+    // Stats
+    const upToDate = rows.filter((r) => r.drift === 'up-to-date').length;
+    const behind = rows.filter(
+      (r) => r.drift === 'behind-patch' || r.drift === 'behind-minor' || r.drift === 'behind-major',
+    ).length;
+    const unknown = rows.filter((r) => r.drift === 'unknown').length;
 
     return {
-      projectId: p.id,
-      projectName: p.name,
-      localPath: p.localPath ?? p.path ?? null,
-      installedVersion: installed,
       upstreamVersion: upstream.tag_name,
-      drift,
-      releasesBehind,
-      updatedAt: p.updatedAt ?? p.createdAt ?? '',
+      upstreamPublishedAt: upstream.published_at,
+      projects: rows,
+      stats: {
+        total: rows.length,
+        upToDate,
+        behind,
+        unknown,
+      },
+      error,
     };
-  });
-
-  // Stats
-  const upToDate = rows.filter((r) => r.drift === 'up-to-date').length;
-  const behind = rows.filter(
-    (r) => r.drift === 'behind-patch' || r.drift === 'behind-minor' || r.drift === 'behind-major',
-  ).length;
-  const unknown = rows.filter((r) => r.drift === 'unknown').length;
-
-  return {
-    upstreamVersion: upstream.tag_name,
-    upstreamPublishedAt: upstream.published_at,
-    projects: rows,
-    stats: {
-      total: rows.length,
-      upToDate,
-      behind,
-      unknown,
-    },
-    error,
-  };
+  } catch (err) {
+    // Último resort: si algo inesperado throw, devolver respuesta vacía con error.
+    const errMsg = err instanceof Error ? err.message : String(err);
+    console.error('[versions] unexpected error in getVersionsDashboardData:', errMsg, err);
+    return {
+      upstreamVersion: 'unknown',
+      upstreamPublishedAt: '',
+      projects: [],
+      stats: { total: 0, upToDate: 0, behind: 0, unknown: 0 },
+      error: `Error inesperado: ${errMsg}. Revisá logs de Vercel para más detalle.`,
+    };
+  }
 }
 
 async function fetchLatestRelease(): Promise<GitHubReleaseResponse> {
