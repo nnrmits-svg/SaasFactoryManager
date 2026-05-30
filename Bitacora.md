@@ -6,6 +6,15 @@
 
 ---
 
+## 2026-05-30 — Limpieza: screenshots removidos del root
+**Maquina**: MacBookPro-2016.local
+
+### Hecho
+- Eliminados 32 archivos `.png` del root del repo (screenshots de validacion: capa2, capa25, capa8, dashboard, reports, wizard, brand, etc.). Eran capturas de verificacion durante sprints anteriores, no assets del producto.
+- Actualizacion de `project_plan.md` con estado de Capa 2, Capa 2.5, Capa 8, Cleanup M, Brand Fluya y Sprint AI completados.
+
+---
+
 ## 2026-05-15 — Cierre: Sprint AI Fluya chatbot + Brand + Cleanup + Capa 2.5
 **Maquinas**: NNRM-iMac-275.local + MacBookPro-2016.local
 
