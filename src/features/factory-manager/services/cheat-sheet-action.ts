@@ -104,23 +104,6 @@ function getGitHubHeaders(): HeadersInit {
 }
 
 /** Fetch protegido con try/catch que NUNCA throws — devuelve null si falla. */
-async function safeFetchText(url: string, headers: HeadersInit): Promise<string | null> {
-  try {
-    const res = await fetch(url, {
-      headers,
-      next: { revalidate: CACHE_REVALIDATE_SECONDS },
-    });
-    if (!res.ok) {
-      console.warn('[cheat-sheet] fetch failed:', res.status, url);
-      return null;
-    }
-    return await res.text();
-  } catch (err) {
-    console.error('[cheat-sheet] fetch error:', url, err);
-    return null;
-  }
-}
-
 async function safeFetchJson<T>(url: string, headers: HeadersInit): Promise<T | null> {
   try {
     const res = await fetch(url, {
@@ -134,6 +117,40 @@ async function safeFetchJson<T>(url: string, headers: HeadersInit): Promise<T | 
     return (await res.json()) as T;
   } catch (err) {
     console.error('[cheat-sheet] fetch JSON error:', url, err);
+    return null;
+  }
+}
+
+interface GitHubContentsResponse {
+  content: string;
+  encoding: 'base64';
+}
+
+/**
+ * Lee el contenido de un archivo del repo via GitHub Contents API.
+ * Usa el token (si está configurado) para evitar rate limit de
+ * raw.githubusercontent.com que tiene su propio limit y NO acepta tokens.
+ */
+async function safeFetchFileContent(path: string, headers: HeadersInit): Promise<string | null> {
+  const url = `https://api.github.com/repos/${REPO}/contents/${path}?ref=${BRANCH}`;
+  try {
+    const res = await fetch(url, {
+      headers,
+      next: { revalidate: CACHE_REVALIDATE_SECONDS },
+    });
+    if (!res.ok) {
+      console.warn('[cheat-sheet] fetch file failed:', res.status, path);
+      return null;
+    }
+    const data = (await res.json()) as GitHubContentsResponse;
+    if (data.encoding === 'base64') {
+      // Decode base64 → utf-8 string
+      // Buffer está disponible en Node.js runtime de Vercel
+      return Buffer.from(data.content, 'base64').toString('utf-8');
+    }
+    return null;
+  } catch (err) {
+    console.error('[cheat-sheet] fetch file error:', path, err);
     return null;
   }
 }
@@ -194,10 +211,10 @@ async function fetchCheatSheetCatalogInternal(): Promise<CheatSheetResult> {
       !item.path.endsWith('README.md'),
   );
 
-  // Step 3 — Fetch contenido en paralelo (raw URL no consume rate limit de Trees API)
+  // Step 3 — Fetch contenido via GitHub Contents API (usa token, evita rate limit
+  // de raw.githubusercontent.com que es un CDN separado sin auth API).
   const skillPromises = skillFiles.map(async (file): Promise<CheatSheetItem | null> => {
-    const rawUrl = `https://raw.githubusercontent.com/${REPO}/${BRANCH}/${file.path}`;
-    const content = await safeFetchText(rawUrl, {});
+    const content = await safeFetchFileContent(file.path, headers);
     if (!content) return null;
 
     const fm = parseFrontmatter(content);
@@ -210,13 +227,13 @@ async function fetchCheatSheetCatalogInternal(): Promise<CheatSheetResult> {
       category: categorizeSkill(fm.name),
       invocation: `/${fm.name}`,
       path: file.path,
-      rawUrl,
+      // Link a UI: viewer en GitHub (no raw, así no expone tokens en redirects)
+      rawUrl: `https://github.com/${REPO}/blob/${BRANCH}/${file.path}`,
     };
   });
 
   const agentPromises = agentFiles.map(async (file): Promise<CheatSheetItem | null> => {
-    const rawUrl = `https://raw.githubusercontent.com/${REPO}/${BRANCH}/${file.path}`;
-    const content = await safeFetchText(rawUrl, {});
+    const content = await safeFetchFileContent(file.path, headers);
     if (!content) return null;
 
     const fm = parseFrontmatter(content);
@@ -229,7 +246,7 @@ async function fetchCheatSheetCatalogInternal(): Promise<CheatSheetResult> {
       category: categorizeAgent(fm.name),
       invocation: `Invocar por nombre: "${fm.name}: <tu consigna>"`,
       path: file.path,
-      rawUrl,
+      rawUrl: `https://github.com/${REPO}/blob/${BRANCH}/${file.path}`,
     };
   });
 
