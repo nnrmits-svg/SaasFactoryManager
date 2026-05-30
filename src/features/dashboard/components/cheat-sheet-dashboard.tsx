@@ -1,15 +1,15 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { getCheatSheetCatalog } from '@/features/factory-manager/services/cheat-sheet-action';
 import {
-  getCheatSheetCatalog,
   CATEGORY_LABELS,
   CATEGORY_ORDER,
   type CheatSheetItem,
   type CheatSheetCategory,
   type CheatSheetItemType,
   type CheatSheetResult,
-} from '@/features/factory-manager/services/cheat-sheet-action';
+} from '@/features/factory-manager/services/cheat-sheet-types';
 
 type TypeFilter = 'all' | CheatSheetItemType;
 

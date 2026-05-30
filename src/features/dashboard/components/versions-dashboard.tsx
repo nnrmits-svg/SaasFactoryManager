@@ -1,12 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { getVersionsDashboardData } from '@/features/factory-manager/services/versions-dashboard-action';
 import {
-  getVersionsDashboardData,
   DRIFT_LABELS,
   DRIFT_COLORS,
   type VersionsDashboardData,
-} from '@/features/factory-manager/services/versions-dashboard-action';
+} from '@/features/factory-manager/services/versions-dashboard-types';
 
 type VersionsDataWithError = VersionsDashboardData & { error: string | null };
 
