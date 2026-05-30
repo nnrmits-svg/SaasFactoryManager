@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { getVersionsDashboardData } from '@/features/factory-manager/services/versions-dashboard-action';
 import {
   DRIFT_LABELS,
@@ -14,6 +14,7 @@ export function VersionsDashboard() {
   const [data, setData] = useState<VersionsDataWithError | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [renderError, setRenderError] = useState<string | null>(null);
+  const [ownerFilter, setOwnerFilter] = useState<string>('all');
 
   useEffect(() => {
     let cancelled = false;
@@ -127,6 +128,53 @@ export function VersionsDashboard() {
         </div>
       </div>
 
+      {/* Filtro por owner */}
+      {(() => {
+        const owners = Array.from(
+          new Set(
+            data.projects
+              .map((p) => p.ownerHint)
+              .filter((o): o is string => Boolean(o)),
+          ),
+        ).sort();
+
+        if (owners.length <= 1) return null;
+
+        return (
+          <div className="mb-4 flex items-center gap-2">
+            <span className="text-xs text-gray-400">Filtrar por usuario/máquina:</span>
+            <div className="flex gap-1 p-1 rounded-xl bg-white/5 border border-white/10">
+              <button
+                onClick={() => setOwnerFilter('all')}
+                className={`px-3 py-1 rounded-lg text-xs transition-colors ${
+                  ownerFilter === 'all'
+                    ? 'bg-fluya-purple text-white'
+                    : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                Todos ({data.projects.length})
+              </button>
+              {owners.map((owner) => {
+                const count = data.projects.filter((p) => p.ownerHint === owner).length;
+                return (
+                  <button
+                    key={owner}
+                    onClick={() => setOwnerFilter(owner)}
+                    className={`px-3 py-1 rounded-lg text-xs transition-colors ${
+                      ownerFilter === owner
+                        ? 'bg-fluya-purple text-white'
+                        : 'text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    {owner} ({count})
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Tabla */}
       {data.projects.length === 0 ? (
         <div className="p-6 rounded-xl border border-white/10 bg-white/5 text-center">
@@ -140,6 +188,7 @@ export function VersionsDashboard() {
             <thead className="bg-white/5 text-xs text-gray-400 uppercase tracking-wider">
               <tr>
                 <th className="px-4 py-3 text-left">Proyecto</th>
+                <th className="px-4 py-3 text-left">Usuario</th>
                 <th className="px-4 py-3 text-left">Instalado</th>
                 <th className="px-4 py-3 text-left">Estado</th>
                 <th className="px-4 py-3 text-left">Actualizado</th>
@@ -147,7 +196,9 @@ export function VersionsDashboard() {
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
-              {data.projects.map((row) => (
+              {data.projects
+                .filter((row) => ownerFilter === 'all' || row.ownerHint === ownerFilter)
+                .map((row) => (
                 <tr key={row.projectId} className="hover:bg-white/5">
                   <td className="px-4 py-3">
                     <div className="text-white font-medium">{row.projectName}</div>
@@ -155,6 +206,15 @@ export function VersionsDashboard() {
                       <code className="text-[10px] text-gray-500 font-mono break-all">
                         {row.localPath}
                       </code>
+                    )}
+                  </td>
+                  <td className="px-4 py-3">
+                    {row.ownerHint ? (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs bg-cyan-500/10 border border-cyan-500/20 text-cyan-300 font-mono">
+                        {row.ownerHint}
+                      </span>
+                    ) : (
+                      <span className="text-gray-500 italic text-xs">—</span>
                     )}
                   </td>
                   <td className="px-4 py-3">

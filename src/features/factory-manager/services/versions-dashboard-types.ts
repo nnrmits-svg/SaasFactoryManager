@@ -14,6 +14,11 @@ export interface ProjectVersionRow {
   projectId: string;
   projectName: string;
   localPath: string | null;
+  /** Usuario del sistema operativo extraído del path. Aproxima la "máquina"
+   *  porque cada user_id/cuenta usualmente vive en una mac distinta.
+   *  Cuando el SF Agent reporte machine_name explícito (Step 2 versionado),
+   *  reemplazar esta heurística. */
+  ownerHint: string | null;
   /** Versión del kit-comercial detectada en .claude/.sf-version.json (via SF Agent) */
   installedVersion: string | null;
   /** Última versión publicada del repo (GitHub API) */

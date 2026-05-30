@@ -109,11 +109,13 @@ export async function getVersionsDashboardData(): Promise<
     const rows: ProjectVersionRow[] = projects.map((p) => {
       const installed = p.sfVersion;
       const { drift, releasesBehind } = compareVersions(installed, upstream.tag_name);
+      const fullPath = p.localPath ?? p.path ?? null;
 
       return {
         projectId: p.id,
         projectName: p.name,
-        localPath: p.localPath ?? p.path ?? null,
+        localPath: fullPath,
+        ownerHint: extractOwnerFromPath(fullPath),
         installedVersion: installed,
         upstreamVersion: upstream.tag_name,
         drift,
@@ -179,6 +181,23 @@ async function fetchLatestRelease(): Promise<GitHubReleaseResponse> {
     console.error('[versions] fetchLatestRelease error:', err);
     return { tag_name: 'unknown', published_at: '' };
   }
+}
+
+/** Extrae el usuario del sistema operativo del path para aproximar "máquina/dueño".
+ *  Ejemplo: /Users/ricardomarchetti/ProyectosIA/X → "ricardomarchetti"
+ *           /Users/rmarchetti/X → "rmarchetti"
+ *           /home/user/X → "user"
+ *           null si no se puede inferir.
+ */
+function extractOwnerFromPath(path: string | null): string | null {
+  if (!path) return null;
+  // macOS: /Users/{owner}/...
+  const macMatch = path.match(/^\/Users\/([^/]+)/);
+  if (macMatch) return macMatch[1];
+  // Linux: /home/{owner}/...
+  const linuxMatch = path.match(/^\/home\/([^/]+)/);
+  if (linuxMatch) return linuxMatch[1];
+  return null;
 }
 
 /** Wrap getPortfolioProjects con try/catch para que NUNCA throw. */
