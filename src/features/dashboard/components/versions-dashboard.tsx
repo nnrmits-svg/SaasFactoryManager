@@ -8,10 +8,12 @@ import {
   type VersionsDashboardData,
 } from '@/features/factory-manager/services/versions-dashboard-action';
 
+type VersionsDataWithError = VersionsDashboardData & { error: string | null };
+
 export function VersionsDashboard() {
-  const [data, setData] = useState<VersionsDashboardData | null>(null);
+  const [data, setData] = useState<VersionsDataWithError | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [renderError, setRenderError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -23,7 +25,7 @@ export function VersionsDashboard() {
       })
       .catch((err) => {
         if (cancelled) return;
-        setError(String(err?.message ?? 'Error al cargar versiones'));
+        setRenderError(String(err?.message ?? 'Error inesperado al cargar versiones'));
         setIsLoading(false);
       });
     return () => {
@@ -39,12 +41,20 @@ export function VersionsDashboard() {
     );
   }
 
-  if (error || !data) {
+  if (renderError || !data) {
     return (
       <div className="max-w-6xl mx-auto px-6">
-        <div className="p-4 rounded-xl border border-red-500/30 bg-red-500/5 text-sm text-red-300">
-          <p className="font-semibold">Error</p>
-          <p className="mt-1">{error ?? 'No se pudieron cargar los datos'}</p>
+        <div className="p-4 rounded-xl border border-yellow-500/30 bg-yellow-500/5 text-sm text-yellow-300">
+          <p className="font-semibold">No se pudieron cargar los datos</p>
+          <p className="mt-1 opacity-80">{renderError ?? 'Error desconocido'}</p>
+          <details className="mt-3 text-xs opacity-70">
+            <summary className="cursor-pointer">Cómo arreglarlo</summary>
+            <p className="mt-2 leading-relaxed">
+              Probable rate limit de GitHub. Configurar{' '}
+              <code className="px-1 py-0.5 rounded bg-black/30 font-mono">GITHUB_TOKEN</code> en
+              variables de entorno de Vercel.
+            </p>
+          </details>
         </div>
       </div>
     );
@@ -52,6 +62,13 @@ export function VersionsDashboard() {
 
   return (
     <div className="max-w-6xl mx-auto px-6">
+      {/* Warning si hay error parcial */}
+      {data.error && (
+        <div className="mb-4 p-3 rounded-xl border border-yellow-500/30 bg-yellow-500/5 text-xs text-yellow-300">
+          ⚠ {data.error}
+        </div>
+      )}
+
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-white">Versiones de SaaS Factory</h1>

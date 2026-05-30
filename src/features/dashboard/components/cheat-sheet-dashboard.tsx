@@ -8,12 +8,14 @@ import {
   type CheatSheetItem,
   type CheatSheetCategory,
   type CheatSheetItemType,
+  type CheatSheetResult,
 } from '@/features/factory-manager/services/cheat-sheet-action';
 
 type TypeFilter = 'all' | CheatSheetItemType;
 
 export function CheatSheetDashboard() {
   const [items, setItems] = useState<CheatSheetItem[]>([]);
+  const [source, setSource] = useState<CheatSheetResult['source']>('github');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -25,14 +27,16 @@ export function CheatSheetDashboard() {
   useEffect(() => {
     let cancelled = false;
     getCheatSheetCatalog()
-      .then((data) => {
+      .then((result) => {
         if (cancelled) return;
-        setItems(data);
+        setItems(result.items);
+        setSource(result.source);
+        setError(result.error);
         setIsLoading(false);
       })
       .catch((err) => {
         if (cancelled) return;
-        setError(String(err?.message ?? 'Error al cargar el cheat sheet'));
+        setError(String(err?.message ?? 'Error inesperado al cargar el cheat sheet'));
         setIsLoading(false);
       });
     return () => {
@@ -87,17 +91,26 @@ export function CheatSheetDashboard() {
     );
   }
 
-  if (error) {
+  // Error completo (sin items)
+  if (error && items.length === 0) {
     return (
       <div className="max-w-6xl mx-auto px-6">
-        <div className="p-4 rounded-xl border border-red-500/30 bg-red-500/5 text-sm text-red-300">
-          <p className="font-semibold">Error al cargar el cheat sheet</p>
+        <div className="p-4 rounded-xl border border-yellow-500/30 bg-yellow-500/5 text-sm text-yellow-300">
+          <p className="font-semibold">No se pudo cargar el cheat sheet</p>
           <p className="mt-1 opacity-80">{error}</p>
-          <p className="mt-2 text-xs opacity-60">
-            Verificá conectividad a GitHub. Si el rate limit está alcanzado, configurar
-            <code className="ml-1 px-1 py-0.5 rounded bg-black/30 font-mono">GITHUB_TOKEN</code>{' '}
-            en variables de entorno.
-          </p>
+          <details className="mt-3 text-xs opacity-70">
+            <summary className="cursor-pointer">Cómo arreglarlo</summary>
+            <ol className="list-decimal list-inside mt-2 space-y-1 leading-relaxed">
+              <li>
+                Andá a Vercel → Settings → Environment Variables del proyecto saas-factory-manager
+              </li>
+              <li>
+                Agregá <code className="px-1 py-0.5 rounded bg-black/30 font-mono">GITHUB_TOKEN</code> con un Personal Access Token de GitHub (scope: <code className="font-mono">public_repo</code>)
+              </li>
+              <li>Generá el token en: https://github.com/settings/tokens?type=beta</li>
+              <li>Redeploy del proyecto (Vercel UI o nuevo push)</li>
+            </ol>
+          </details>
         </div>
       </div>
     );
@@ -105,6 +118,13 @@ export function CheatSheetDashboard() {
 
   return (
     <div className="max-w-6xl mx-auto px-6">
+      {/* Warning de carga parcial */}
+      {error && items.length > 0 && (
+        <div className="mb-4 p-3 rounded-xl border border-yellow-500/30 bg-yellow-500/5 text-xs text-yellow-300">
+          ⚠ {error}
+        </div>
+      )}
+
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-white">Cheat Sheet — Skills + Agents</h1>

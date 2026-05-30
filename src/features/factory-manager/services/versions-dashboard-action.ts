@@ -104,15 +104,33 @@ function compareVersions(
  * 2. Leer último Release del repo via GitHub API
  * 3. Comparar y armar status por proyecto
  *
- * Cache: 'use cache' con cacheLife('minutes') para que se refresque
- * cuando hay Release nuevo (eventualmente con webhook → updateTag).
+ * Robustez: NUNCA throws. Si GitHub falla o Supabase falla, devuelve data parcial
+ * con error message. El componente decide cómo mostrar.
  */
-export async function getVersionsDashboardData(): Promise<VersionsDashboardData> {
-  // Fetch upstream (GitHub) y projects (Supabase) en paralelo
-  const [upstream, projects] = await Promise.all([
+export async function getVersionsDashboardData(): Promise<
+  VersionsDashboardData & { error: string | null }
+> {
+  let error: string | null = null;
+
+  // Fetch upstream (GitHub) y projects (Supabase) en paralelo, ambos seguros
+  const [upstream, projectsResult] = await Promise.all([
     fetchLatestRelease(),
-    getPortfolioProjects(),
+    safeGetProjects(),
   ]);
+
+  if (upstream.tag_name === 'unknown') {
+    error = process.env.GITHUB_TOKEN
+      ? 'No se pudo obtener la última versión del repo. Verificá conectividad a GitHub.'
+      : 'No se pudo obtener la última versión del repo. Probable rate limit de GitHub (60 req/h sin token). Configurar GITHUB_TOKEN ayuda.';
+  }
+
+  if (projectsResult.error) {
+    error = error
+      ? `${error} Además: ${projectsResult.error}`
+      : projectsResult.error;
+  }
+
+  const projects = projectsResult.projects;
 
   const rows: ProjectVersionRow[] = projects.map((p) => {
     const installed = p.sfVersion;
@@ -147,6 +165,7 @@ export async function getVersionsDashboardData(): Promise<VersionsDashboardData>
       behind,
       unknown,
     },
+    error,
   };
 }
 
@@ -158,16 +177,36 @@ async function fetchLatestRelease(): Promise<GitHubReleaseResponse> {
   const token = process.env.GITHUB_TOKEN;
   if (token) headers.Authorization = `Bearer ${token}`;
 
-  const res = await fetch(`https://api.github.com/repos/${REPO}/releases/latest`, {
-    headers,
-    next: { revalidate: 600 }, // 10 min
-  });
+  try {
+    const res = await fetch(`https://api.github.com/repos/${REPO}/releases/latest`, {
+      headers,
+      next: { revalidate: 600 }, // 10 min
+    });
 
-  if (!res.ok) {
+    if (!res.ok) {
+      console.warn('[versions] fetchLatestRelease failed:', res.status);
+      return { tag_name: 'unknown', published_at: '' };
+    }
+
+    return (await res.json()) as GitHubReleaseResponse;
+  } catch (err) {
+    console.error('[versions] fetchLatestRelease error:', err);
     return { tag_name: 'unknown', published_at: '' };
   }
+}
 
-  return (await res.json()) as GitHubReleaseResponse;
+/** Wrap getPortfolioProjects con try/catch para que NUNCA throw. */
+async function safeGetProjects(): Promise<{ projects: Project[]; error: string | null }> {
+  try {
+    const projects = await getPortfolioProjects();
+    return { projects, error: null };
+  } catch (err) {
+    console.error('[versions] safeGetProjects error:', err);
+    return {
+      projects: [],
+      error: 'No se pudieron cargar los proyectos desde Supabase. Verificá la conexión o sesión.',
+    };
+  }
 }
 
 export const DRIFT_LABELS: Record<DriftStatus, string> = {

@@ -28,10 +28,21 @@ export interface CheatSheetItem {
   rawUrl: string;
 }
 
+export interface CheatSheetResult {
+  items: CheatSheetItem[];
+  /** Error amigable para mostrar al usuario (rate limit, network, etc.) */
+  error: string | null;
+  /** Indica si la data viene de GitHub vivo o fallback */
+  source: 'github' | 'fallback' | 'partial';
+}
+
 const REPO = 'nnrmits-svg/kit-comercial';
 const BRANCH = 'main';
 const SKILLS_PATH = 'dev/saas-factory/.claude/skills';
 const AGENTS_PATH = 'dev/saas-factory/.claude/agents';
+
+// Cache: 2 horas. Si querés invalidar manualmente, llamá a /api/cheat-sheet/revalidate.
+const CACHE_REVALIDATE_SECONDS = 7200;
 
 interface FrontmatterParsed {
   name?: string;
@@ -51,9 +62,7 @@ function parseFrontmatter(content: string): FrontmatterParsed | null {
   }
 }
 
-function categorizeSkill(name: string, description: string): CheatSheetCategory {
-  const lower = `${name} ${description}`.toLowerCase();
-
+function categorizeSkill(name: string): CheatSheetCategory {
   if (/procesar-lead|pipeline-comercial|onboarding-cliente|nuevo-desde-kit/.test(name)) {
     return 'discovery';
   }
@@ -78,7 +87,6 @@ function categorizeSkill(name: string, description: string): CheatSheetCategory 
   if (/ai|image-generation|website-3d|prp/.test(name)) {
     return 'utility';
   }
-
   return 'utility';
 }
 
@@ -112,43 +120,79 @@ interface GitHubTreeResponse {
   truncated: boolean;
 }
 
-/**
- * Lee el catálogo completo de skills + agents desde el repo kit-comercial via GitHub API.
- *
- * Estrategia:
- * 1. Trees API recursivo para listar todos los archivos
- * 2. Filtrar paths que matchean SKILL.md de skills o .md de agents
- * 3. Fetch raw content para cada uno
- * 4. Parsear YAML frontmatter
- *
- * Cache: revalidate cada 1 hora (Cache Components de Next 16).
- * Si querés invalidar manualmente: updateTag('cheat-sheet').
- */
-export async function getCheatSheetCatalog(): Promise<CheatSheetItem[]> {
-  'use cache';
-
-  // List all files via GitHub Trees API
-  const treesUrl = `https://api.github.com/repos/${REPO}/git/trees/${BRANCH}?recursive=1`;
+function getGitHubHeaders(): HeadersInit {
   const headers: HeadersInit = {
     Accept: 'application/vnd.github+json',
     'X-GitHub-Api-Version': '2022-11-28',
   };
-
-  // Opcional: si hay token GitHub configurado, usarlo para evitar rate limit
   const token = process.env.GITHUB_TOKEN;
   if (token) {
     headers.Authorization = `Bearer ${token}`;
   }
+  return headers;
+}
 
-  const treesRes = await fetch(treesUrl, { headers });
-  if (!treesRes.ok) {
-    console.error('[cheat-sheet] Failed to fetch trees:', treesRes.status, await treesRes.text());
-    return [];
+/** Fetch protegido con try/catch que NUNCA throws — devuelve null si falla. */
+async function safeFetchText(url: string, headers: HeadersInit): Promise<string | null> {
+  try {
+    const res = await fetch(url, {
+      headers,
+      next: { revalidate: CACHE_REVALIDATE_SECONDS },
+    });
+    if (!res.ok) {
+      console.warn('[cheat-sheet] fetch failed:', res.status, url);
+      return null;
+    }
+    return await res.text();
+  } catch (err) {
+    console.error('[cheat-sheet] fetch error:', url, err);
+    return null;
+  }
+}
+
+async function safeFetchJson<T>(url: string, headers: HeadersInit): Promise<T | null> {
+  try {
+    const res = await fetch(url, {
+      headers,
+      next: { revalidate: CACHE_REVALIDATE_SECONDS },
+    });
+    if (!res.ok) {
+      console.warn('[cheat-sheet] fetch JSON failed:', res.status, url);
+      return null;
+    }
+    return (await res.json()) as T;
+  } catch (err) {
+    console.error('[cheat-sheet] fetch JSON error:', url, err);
+    return null;
+  }
+}
+
+/**
+ * Lee el catálogo completo de skills + agents desde el repo kit-comercial via GitHub API.
+ * NUNCA throws — si algo falla, devuelve items: [] con error descriptivo.
+ *
+ * Cache: 2 horas via Next.js `revalidate`. Si configurás GITHUB_TOKEN evitás
+ * el rate limit de 60 req/h por IP (sube a 5000/h).
+ */
+export async function getCheatSheetCatalog(): Promise<CheatSheetResult> {
+  const headers = getGitHubHeaders();
+  const hasToken = !!process.env.GITHUB_TOKEN;
+
+  // Step 1 — Listar archivos via Trees API
+  const treesUrl = `https://api.github.com/repos/${REPO}/git/trees/${BRANCH}?recursive=1`;
+  const treesData = await safeFetchJson<GitHubTreeResponse>(treesUrl, headers);
+
+  if (!treesData) {
+    return {
+      items: [],
+      source: 'fallback',
+      error: hasToken
+        ? 'No se pudo conectar a GitHub. Verificá conectividad o estado de api.github.com.'
+        : 'No se pudo conectar a GitHub. Probable rate limit alcanzado (60 req/h sin token). Configurar GITHUB_TOKEN en variables de entorno.',
+    };
   }
 
-  const treesData = (await treesRes.json()) as GitHubTreeResponse;
-
-  // Skills: paths como dev/saas-factory/.claude/skills/{name}/SKILL.md
+  // Step 2 — Filtrar paths relevantes
   const skillFiles = treesData.tree.filter(
     (item) =>
       item.type === 'blob' &&
@@ -156,7 +200,6 @@ export async function getCheatSheetCatalog(): Promise<CheatSheetItem[]> {
       item.path.endsWith('/SKILL.md'),
   );
 
-  // Agents: paths como dev/saas-factory/.claude/agents/{name}.md
   const agentFiles = treesData.tree.filter(
     (item) =>
       item.type === 'blob' &&
@@ -165,67 +208,83 @@ export async function getCheatSheetCatalog(): Promise<CheatSheetItem[]> {
       !item.path.endsWith('README.md'),
   );
 
-  const items: CheatSheetItem[] = [];
-
-  // Fetch + parse skills en paralelo
+  // Step 3 — Fetch contenido en paralelo (raw URL no consume rate limit de Trees API)
   const skillPromises = skillFiles.map(async (file): Promise<CheatSheetItem | null> => {
     const rawUrl = `https://raw.githubusercontent.com/${REPO}/${BRANCH}/${file.path}`;
-    const res = await fetch(rawUrl);
-    if (!res.ok) return null;
-    const content = await res.text();
+    const content = await safeFetchText(rawUrl, {});
+    if (!content) return null;
+
     const fm = parseFrontmatter(content);
     if (!fm || !fm.name) return null;
 
-    const name = fm.name;
-    const description = fm.description ?? '';
-    const category = categorizeSkill(name, description);
-
     return {
-      name,
+      name: fm.name,
       type: 'skill',
-      description,
-      category,
-      invocation: `/${name}`,
+      description: fm.description ?? '',
+      category: categorizeSkill(fm.name),
+      invocation: `/${fm.name}`,
       path: file.path,
       rawUrl,
     };
   });
 
-  // Fetch + parse agents en paralelo
   const agentPromises = agentFiles.map(async (file): Promise<CheatSheetItem | null> => {
     const rawUrl = `https://raw.githubusercontent.com/${REPO}/${BRANCH}/${file.path}`;
-    const res = await fetch(rawUrl);
-    if (!res.ok) return null;
-    const content = await res.text();
+    const content = await safeFetchText(rawUrl, {});
+    if (!content) return null;
+
     const fm = parseFrontmatter(content);
     if (!fm || !fm.name) return null;
 
-    const name = fm.name;
-    const description = fm.description ?? '';
-    const category = categorizeAgent(name);
-
     return {
-      name,
+      name: fm.name,
       type: 'agent',
-      description,
-      category,
-      invocation: `Invocar por nombre: "${name}: <tu consigna>"`,
+      description: fm.description ?? '',
+      category: categorizeAgent(fm.name),
+      invocation: `Invocar por nombre: "${fm.name}: <tu consigna>"`,
       path: file.path,
       rawUrl,
     };
   });
 
   const allResults = await Promise.all([...skillPromises, ...agentPromises]);
+  const items: CheatSheetItem[] = [];
+  let failures = 0;
+
   for (const item of allResults) {
     if (item) items.push(item);
+    else failures++;
   }
 
-  // Sort: agents primero por categoría, después skills por categoría
-  return items.sort((a, b) => {
+  // Sort: agents primero, después skills, ordenados por categoría + nombre
+  items.sort((a, b) => {
     if (a.type !== b.type) return a.type === 'agent' ? -1 : 1;
     if (a.category !== b.category) return a.category.localeCompare(b.category);
     return a.name.localeCompare(b.name);
   });
+
+  // Si fallaron muchos archivos, indicar al usuario
+  const totalExpected = skillFiles.length + agentFiles.length;
+  if (failures > 0 && failures === totalExpected) {
+    return {
+      items: [],
+      source: 'fallback',
+      error: 'GitHub respondió la lista de archivos pero no pudo cargar el contenido. Probable rate limit en raw.githubusercontent.com. Configurar GITHUB_TOKEN ayuda.',
+    };
+  }
+  if (failures > 0) {
+    return {
+      items,
+      source: 'partial',
+      error: `Carga parcial: ${items.length} de ${totalExpected} items disponibles (${failures} fallaron, probable rate limit).`,
+    };
+  }
+
+  return {
+    items,
+    source: 'github',
+    error: null,
+  };
 }
 
 export const CATEGORY_LABELS: Record<CheatSheetCategory, string> = {
@@ -244,12 +303,10 @@ export const CATEGORY_LABELS: Record<CheatSheetCategory, string> = {
 };
 
 export const CATEGORY_ORDER: CheatSheetCategory[] = [
-  // Agents
   'consultor',
   'implementador',
   'engineer',
   'review',
-  // Skills
   'discovery',
   'scaffold',
   'modificacion',
