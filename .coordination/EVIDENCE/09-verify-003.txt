@@ -1,0 +1,25 @@
+# VERIFY Mig 003 — APLICADA OK (2026-06-01, MCP, Opción B sin UNIQUE machine_name)
+
+a) agent_instances — 5 rows, todas backfilleadas (hostname/os_version/first_seen_at/last_seen_at NO null):
+   MB-Air-NNRM-2025.local       (machine_id ...-arm64) → offline
+   NNRM-iMac-275.local          (...-x64)              → offline
+   192.168.1.6                  (...-arm64)            → offline
+   MB-Air-NNRM-2025.local       (machine_id ...-x64)   → offline   ← coexiste con la otra MB-Air (Opción B OK)
+   MacBookPro-2016.local        (...-x64)              → online    ← era 'active', migrado a 'online'
+   status set = {online, offline}. Los 2 rows de ricardo (mismo machine_name, distinto machine_id) coexisten.
+
+b) enum project_lifecycle_status = preproject, active, paused, completed, archived  ✓
+
+c) projects con owner_user_id NULL = 0  ✓ (backfill desde user_id)
+
+d) user_capabilities = 3 rows  ✓ (backfill explícito #3)
+   ricardo@grupoits.com.ar  (leader)   → create+preproject+transfer, max 999
+   nnrmits@gmail.com        (dev)      → create, no-transfer, max 5
+   rmarchetti@grupoits.com.ar (comercial) → preproject, no-create, no-transfer, max 20
+
+Tablas creadas: project_active_sessions, user_capabilities, project_transfers (+ RLS).
+trigger_init_capabilities activo para profiles futuros.
+
+# CONFLICTO #5 (extra, resuelto en aplicación): nombre de índice 'idx_sessions_project'
+# colisionaba con work_sessions → renombrados los 3 índices de project_active_sessions
+# a idx_active_sessions_*. Primer apply hizo rollback completo (transaccional); reaplicado OK.

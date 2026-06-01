@@ -100,9 +100,12 @@ CREATE TABLE project_active_sessions (
   last_synced_at TIMESTAMPTZ DEFAULT NOW(),
   UNIQUE(project_id, agent_instance_id)
 );
-CREATE INDEX idx_sessions_project ON project_active_sessions(project_id, status);
-CREATE INDEX idx_sessions_agent ON project_active_sessions(agent_instance_id);
-CREATE UNIQUE INDEX idx_one_editor_per_project
+-- ⚠️ CONFLICTO #5 (RESUELTO): el nombre 'idx_sessions_project' ya existe en
+--    work_sessions (los nombres de índice son únicos por schema). Renombrados
+--    los 3 índices de esta tabla con prefijo único idx_active_sessions_*.
+CREATE INDEX idx_active_sessions_project ON project_active_sessions(project_id, status);
+CREATE INDEX idx_active_sessions_agent ON project_active_sessions(agent_instance_id);
+CREATE UNIQUE INDEX idx_active_sessions_one_editor
   ON project_active_sessions(project_id) WHERE status = 'editing';
 ALTER TABLE project_active_sessions ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "users_see_sessions_of_assigned_projects" ON project_active_sessions
