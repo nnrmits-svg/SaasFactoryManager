@@ -40,6 +40,9 @@ export const ROLE_PAGE_ACCESS: Record<string, UserRole[]> = {
   // Cheat sheet: equipo interno, no cliente
   '/cheat-sheet': ['leader', 'dev', 'comercial'],
 
+  // Área del leader (ABM usuarios, etc.) — todo /leader/* es leader-only
+  '/leader': ['leader'],
+
   // Dashboards por rol (rutas FUTURAS — todavía no creadas, ver PASO posterior)
   '/comercial/dashboard': ['comercial', 'leader'],
   '/dev/dashboard': ['dev', 'leader'],
