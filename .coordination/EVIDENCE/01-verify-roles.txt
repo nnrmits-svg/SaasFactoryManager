@@ -1,0 +1,21 @@
+# VERIFY roles — Mig 001
+# RESULTADO: migración NO aplicada (denegada por classifier de permisos, ver STOP-01.md)
+# La DB quedó INTACTA. Estado actual (PRE-mig), confirmado 2026-05-31:
+
+profiles:
+  ricardo@grupoits.com.ar    | founder   | 2026-03-20
+  nnrmits@gmail.com          | operator  | 2026-03-20
+  rmarchetti@grupoits.com.ar | operator  | 2026-05-12
+
+enum user_role  = founder,operator,client   (sin cambios)
+helper fns      = is_founder,is_founder_or_operator   (sin renombrar)
+new tables      = (ninguna creada)
+
+# Esperado POST-mig (cuando se destrabe el backup):
+#   ricardo@grupoits.com.ar    | leader
+#   nnrmits@gmail.com          | dev
+#   rmarchetti@grupoits.com.ar | comercial
+
+# Dato técnico capturado (confirma el tema OID para cuando se aplique):
+# 21 policies tienen literales 'founder'/'operator'/'client' hoy; al renombrar
+# el enum se auto-actualizan por OID (no requieren recrearse). Verificar en HITO 2 real.
