@@ -1,1 +1,5 @@
-src/features/auth/services/permissions.ts:9:// (current_user_role, is_founder, is_founder_or_operator) hacen el enforcement
+# 03 — Funciones SECURITY DEFINER / RPC en código (PASO 3)
+# Resultado 2026-06-01: el código NO llama is_founder/is_leader vía .rpc().
+# El enforcement de rol es 100% por RLS en DB (migrada en 001b).
+# Único match histórico era un comentario en permissions.ts, ya actualizado a is_leader/is_leader_or_dev.
+# Migrations viejas NO se tocan (ya aplicadas). PASO 3 = sin cambios de código necesarios.
