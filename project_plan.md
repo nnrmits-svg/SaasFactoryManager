@@ -29,6 +29,7 @@ operando con multiples proyectos en multiples maquinas locales (una por develope
 
 ## Estado actual
 
+- **Sprint A (SF Manager v2) EN PROGRESO** — branch `feat/sprint-a-1-base` (sin mergear). Migs 001+002 aplicadas a prod (roles `leader/dev/comercial/cliente`, ABM users + invitations + audit view). Refactor TS de roles, middleware role-based, y UI ABM (`/leader/usuarios` + detalle) completos y con build verde. Pendiente antes de merge: E2E autenticado + alinear audit `resource`. Specs en `~/ProyectosIA/ArqSaasFactory/kit-comercial/dev/docs/`. Ver `Bitacora.md` (2026-06-01) y `.coordination/EVIDENCE/08-final-state.md`.
 - **Fase**: post-MVP, v1.1.0. Capa 2, Capa 8, Sprint D (labor costs en /reports) e invites administrativos completados. Listo para Capa 3 del roadmap (CRUD remoto) + enrollment 2FA.
 - **Stack**: Next.js 16 + React 19 + Supabase (proyecto ref `fxlvexilnrfkkcbzwskr`) + Vercel.
 - **Auth**: middleware Supabase activo (`src/middleware.ts`), redirect a `/login` para rutas protegidas.

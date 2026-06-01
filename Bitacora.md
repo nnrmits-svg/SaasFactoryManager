@@ -6,6 +6,30 @@
 
 ---
 
+## 2026-06-01 — Sprint A (SF Manager v2): roles + middleware + ABM usuarios
+**Maquina**: sesión Manager (modo autónomo overnight) · branch `feat/sprint-a-1-base`
+
+### Hecho
+- **Mig 001** (roles): renombrado enum `user_role` `{founder,operator,client}` → `{leader,dev,comercial,cliente}` + `comercial` nuevo. Backfill: ricardo=leader, nnrmits=dev (sin punto), rmarchetti=comercial. Helpers `is_founder()`→`is_leader()`, `is_founder_or_operator()`→`is_leader_or_dev()` vía `ALTER FUNCTION RENAME` (preserva OID → 18 policies intactas, NO se dropearon). Tablas nuevas `project_assignments`, `client_project_access` + RLS; `projects` + `sold_by_user_id/sold_at`. Aplicada por Riki vía dashboard (commit `1af906b`).
+- **Mig 002** (ABM): `user_status` + `deactivated`; `profiles` + `deactivated_at/by`, `last_login_at`; tabla `user_invitations` + RLS; **view** `user_audit_log` sobre `audit_logs` (reuso, no tabla nueva). Aplicada vía MCP.
+- **Refactor TS** (commit `0df32b0`): 14 archivos, todos los literales/tipos/helpers de rol migrados. Build verde.
+- **Middleware role-based** (`5d3ad88`): `src/shared/types/roles.ts` (tipos puros) + enforcement por rol sobre páginas existentes, fallback `/dashboard`, defensivo. Auth-gate + patrón cookies `@supabase/ssr` preservados.
+- **UI ABM** (`2258da2`, `d5ef6af`): `/leader/usuarios` (master list con filtros) + `/leader/usuarios/[id]` (detalle con tabs + acciones deshabilitadas).
+
+### Decisiones
+- **Roles: rename in-place** (no enum nuevo) — Opción A del nexo. Reversible salvo `comercial` (PG no permite DROP de enum value).
+- **Side-effects del spec resueltos**: `ADD VALUE` + uso en misma tx → split mig 001a/001b; `DROP FUNCTION` con dependencias → `ALTER RENAME`. Documentado en HITO 1 / `.coordination/`.
+- **Conflicto PASO 5** (redirect a rutas inexistentes): el middleware NO redirige a `/{rol}/dashboard` (no existen); usa `/dashboard`. `DEFAULT_LANDING_BY_ROLE` queda preparado.
+- **audit_logs reusado** como view `user_audit_log` (no tabla duplicada).
+
+### Pendiente (para Riki)
+- E2E autenticado (no se pudo en autónomo, sin credenciales): login con los 3 roles + verificar UI/middleware.
+- Alinear `resource='user'` vs `'profile'` en audit para que el tab Historial muestre datos.
+- Merge a main + deploy (tras E2E). STOP respetados: mig 003 (Agent), Resend/invites, acciones reales.
+- Detalle completo en `.coordination/EVIDENCE/08-final-state.md`.
+
+---
+
 ## 2026-05-27 12:50 — Fix deteccion de proyectos (Jose Dib) + bugs del delete cross-machine
 **Maquina**: NNRM-iMac-275.local
 
