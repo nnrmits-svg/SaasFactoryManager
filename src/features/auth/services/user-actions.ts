@@ -67,8 +67,8 @@ export async function inviteUserAction(formData: FormData): Promise<{
           if (updateErr) return { ok: false, error: updateErr.message };
 
           await logAudit({
-            action: 'role_change',
-            resource: 'profile',
+            action: 'role_changed',
+            resource: 'user',
             resourceId: existing.id,
             details: { email, new_role: role, method: 'existing_user_reassign' },
           });
@@ -90,8 +90,8 @@ export async function inviteUserAction(formData: FormData): Promise<{
       }, { onConflict: 'id' });
 
       await logAudit({
-        action: 'invite',
-        resource: 'profile',
+        action: 'created',
+        resource: 'user',
         resourceId: data.user.id,
         details: { email, role },
       });
@@ -129,8 +129,8 @@ export async function setUserStatusAction(formData: FormData): Promise<{
     if (error) return { ok: false, error: error.message };
 
     await logAudit({
-      action: status === 'suspended' ? 'suspend' : 'reactivate',
-      resource: 'profile',
+      action: status === 'suspended' ? 'suspended' : 'reactivated',
+      resource: 'user',
       resourceId: userId,
       details: { status },
     });
@@ -172,7 +172,7 @@ export async function resendInviteAction(formData: FormData): Promise<{
 
     await logAudit({
       action: 'resend_invite',
-      resource: 'profile',
+      resource: 'user',
       resourceId: userId,
       details: { email: profile.email },
     });
@@ -215,7 +215,7 @@ export async function sendPasswordResetAction(formData: FormData): Promise<{
 
     await logAudit({
       action: 'password_reset_sent',
-      resource: 'profile',
+      resource: 'user',
       resourceId: userId,
       details: { email: profile.email },
     });
@@ -254,7 +254,7 @@ export async function deleteUserAction(formData: FormData): Promise<{
 
     await logAudit({
       action: 'delete',
-      resource: 'profile',
+      resource: 'user',
       resourceId: userId,
       details: { email: profile?.email, role: profile?.role },
     });
@@ -295,7 +295,7 @@ export async function setHourlyRateAction(formData: FormData): Promise<{
 
     await logAudit({
       action: 'set_hourly_rate',
-      resource: 'profile',
+      resource: 'user',
       resourceId: userId,
       details: { hourly_rate_usd: rate },
     });
@@ -332,7 +332,7 @@ export async function editUserNameAction(formData: FormData): Promise<{
 
     await logAudit({
       action: 'edit_name',
-      resource: 'profile',
+      resource: 'user',
       resourceId: userId,
       details: { full_name: fullName },
     });
@@ -406,8 +406,8 @@ export async function changeRoleAction(formData: FormData): Promise<{
     if (error) return { ok: false, error: error.message };
 
     await logAudit({
-      action: 'role_change',
-      resource: 'profile',
+      action: 'role_changed',
+      resource: 'user',
       resourceId: userId,
       details: { new_role: newRole },
     });
