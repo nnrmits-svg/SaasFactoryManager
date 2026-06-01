@@ -1,0 +1,67 @@
+-- ============================================================================
+-- Sprint A · Mig 002 — ABM usuarios: invitations + audit view + deactivation
+-- ----------------------------------------------------------------------------
+-- AJUSTADO post-reconocimiento DB viva:
+--   · profiles.status YA es enum user_status {active,suspended,pending} →
+--     NO se crea, solo se suma 'deactivated'.
+--   · profiles.invited_by YA existe → NO se crea created_by (se reusa).
+--   · audit_logs YA existe genérico → NO se crea user_audit_log como tabla;
+--     se crea una VIEW de conveniencia sobre audit_logs (decisión Nexo).
+-- 'deactivated' NO se usa en esta migración → ADD VALUE seguro en una sola tx (PG15).
+-- ============================================================================
+
+-- 3.1 Sumar valor 'deactivated' al enum user_status existente
+ALTER TYPE user_status ADD VALUE IF NOT EXISTS 'deactivated';
+
+-- 3.2 Columnas nuevas en profiles (deactivation + last login)
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS deactivated_at TIMESTAMPTZ;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS deactivated_by UUID REFERENCES auth.users(id);
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS last_login_at TIMESTAMPTZ;
+
+-- 3.3 Tabla de invitaciones (alta vía email + magic link)
+CREATE TABLE user_invitations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email TEXT NOT NULL,
+  role user_role NOT NULL,
+  invited_by UUID NOT NULL REFERENCES auth.users(id),
+  invited_at TIMESTAMPTZ DEFAULT NOW(),
+  accepted_at TIMESTAMPTZ,
+  expires_at TIMESTAMPTZ NOT NULL DEFAULT (NOW() + INTERVAL '7 days'),
+  token TEXT NOT NULL UNIQUE,
+  metadata JSONB DEFAULT '{}'::jsonb,
+  UNIQUE(email, role)
+);
+
+CREATE INDEX idx_invitations_token ON user_invitations(token);
+CREATE INDEX idx_invitations_email ON user_invitations(email);
+
+ALTER TABLE user_invitations ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "leaders_see_all_invitations" ON user_invitations
+  FOR ALL USING (
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'leader')
+  );
+
+CREATE POLICY "comerciales_see_own_client_invitations" ON user_invitations
+  FOR SELECT USING (
+    invited_by = auth.uid() AND role = 'cliente'
+  );
+
+-- 3.4 VIEW de conveniencia sobre audit_logs (NO tabla nueva).
+-- Inserts van directo a audit_logs con resource='user'. Hereda RLS de audit_logs.
+CREATE OR REPLACE VIEW user_audit_log AS
+SELECT
+  al.id,
+  al.resource_id::uuid AS user_id,
+  al.action,
+  al.user_id AS actor_id,
+  al.details->'before' AS before_value,
+  al.details->'after' AS after_value,
+  al.created_at
+FROM audit_logs al
+WHERE al.resource = 'user'
+  AND al.action IN (
+    'created', 'role_changed', 'suspended', 'deactivated',
+    'reactivated', 'assigned_to_project', 'removed_from_project',
+    'client_access_granted', 'client_access_revoked'
+  );

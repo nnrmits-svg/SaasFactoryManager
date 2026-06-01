@@ -1,0 +1,13 @@
+# VERIFY Mig 002 — APLICADA OK (2026-06-01, vía MCP apply_migration)
+
+user_status enum   = active,suspended,pending,deactivated   ✓ (sumado 'deactivated')
+profiles columns   = + deactivated_at, deactivated_by, last_login_at   ✓
+user_invitations   = creada, RLS=on
+  policies: leaders_see_all_invitations, comerciales_see_own_client_invitations  ✓
+user_audit_log     = VIEW creada sobre audit_logs (no tabla)  ✓
+
+NOTA para PASO 7/8: el código actual loguea audit con resource='profile', pero la
+view user_audit_log filtra resource='user'. Para que el detalle de usuario muestre
+el audit, las server actions del ABM nuevo deben loguear con resource='user' (o
+ampliar el WHERE de la view a ('user','profile')). Decisión para cuando se implementen
+las acciones reales (hoy STOP por Resend/acciones).
