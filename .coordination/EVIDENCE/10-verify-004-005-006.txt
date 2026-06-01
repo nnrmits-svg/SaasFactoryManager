@@ -1,0 +1,24 @@
+# VERIFY Migs 004-006 — TODAS APLICADAS OK (2026-06-01, MCP, sin conflicts)
+
+Mig 004 (history):
+  tablas: project_activity_log (append-only: no_update/no_delete policies),
+          contributor_summaries, project_handoff_notes (con source/auto_text/dev_addition)
+  view project_contributors → queryable (0 rows, sin data aún)
+  fix: p.role AS "current_role" (keyword reservado entrecomillado)
+
+Mig 005 (project_types):
+  enum project_type = 11 valores · projects: 7 rows default 'saas_full'
+  + has_database/has_auth/is_multi_tenant/deploys_to[]/runtime_stack[]
+  project_templates = 8 seed · get_type_defaults('landing_static') = has_db:false/visible:true/vercel
+
+Mig 006 (deployments):
+  project_deployments (3 policies: team/client/leaders_manage) + project_deployment_previews (team_sees)
+
+# Censo final Sprint A — 13 tablas:
+#  agent_instances, client_project_access, contributor_summaries, project_active_sessions,
+#  project_activity_log, project_assignments, project_deployment_previews, project_deployments,
+#  project_handoff_notes, project_templates, project_transfers, user_capabilities, user_invitations
+# 4 enums: user_role, user_status, project_lifecycle_status, project_type
+# Migs 001-006 COMPLETAS.
+
+# Extra: mig 003 .sql sincronizada con prod (constraint agent_instances incluye 'active' — fix nexo ab45923)

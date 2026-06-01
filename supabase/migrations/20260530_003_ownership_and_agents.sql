@@ -52,8 +52,10 @@ ALTER TABLE agent_instances ALTER COLUMN last_seen_at SET NOT NULL;
 -- status: 'active' → 'online'
 UPDATE agent_instances SET status = 'online' WHERE status = 'active';
 ALTER TABLE agent_instances DROP CONSTRAINT IF EXISTS agent_instances_status_check;
+-- 'active' incluido para la transición v1/v2: el Agent v1.1.29 todavía escribe
+-- status='active'. Fix aplicado a prod por nexo (kit-comercial ab45923).
 ALTER TABLE agent_instances ADD CONSTRAINT agent_instances_status_check
-  CHECK (status IN ('online', 'offline', 'inactive'));
+  CHECK (status IN ('online', 'offline', 'inactive', 'active'));
 
 -- ⚠️⚠️ CONFLICTO #1 (REQUIERE DECISIÓN NEXO — CROSS-REPO) ⚠️⚠️
 -- El spec agrega UNIQUE(user_id, machine_name), PERO hay un DUPLICADO en prod:
