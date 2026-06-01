@@ -6,6 +6,25 @@
 
 ---
 
+## 2026-06-01 (cierre) — Sprint A COMPLETO (lado Manager): migs 001-006 + Factory UI
+**Maquina**: sesión Manager · branch `feat/sprint-a-1-base` (NO mergeado, PR review pendiente)
+
+### Hecho (sobre lo del overnight)
+- **Migs 003-006 aplicadas y verificadas** a prod: ownership + agent_instances v2 (ALTER aditivo, Opción B sin UNIQUE machine_name) + active_sessions + capabilities + transfers (003); history + view project_contributors (004); project_types + templates + get_type_defaults (005); deployments (006). **13 tablas + 4 enums.**
+- **Audit alineado** (`22fccfb`): resource='user' + actions con el vocabulario de la view user_audit_log.
+- **UI Factory "Trabajando ahora"** (`e5d92e2`): `/leader/proyectos` (tabla limpia con owner + sesiones del Agent + 👥 contributors) + `/leader/proyectos/[id]` (detalle con tabs Resumen/Contributors/Historia/Config). Lee `project_active_sessions` + view `project_contributors` + `project_activity_log`.
+
+### Conflictos resueltos (cross-repo con nexo)
+- Mig 003 #1: duplicado machine_name (ricardo/MB-Air ×2) → Opción B (mantener UNIQUE machine_id, Agent v2 upsert on machine_id). #2-#5: ADD VALUE redundante, backfill caps, policies redundantes, colisión nombre índice `idx_sessions_project` (work_sessions) → `idx_active_sessions_*`.
+
+### Estado
+- El Agent v1.1.29 sigue online tras el ALTER (schema v2 OK). `project_active_sessions`=0 hasta que el Agent **se autentique** (ver PDF "Sign in failed" — bloqueante del lado Agent, NO de mis migraciones).
+
+### Pendiente
+- Login del Agent + E2E autenticado del Manager + PR review/merge a main (coordinado con Riki). Detalle: `.coordination/EVIDENCE/12-sprint-a-complete.md`.
+
+---
+
 ## 2026-06-01 — Sprint A (SF Manager v2): roles + middleware + ABM usuarios
 **Maquina**: sesión Manager (modo autónomo overnight) · branch `feat/sprint-a-1-base`
 
