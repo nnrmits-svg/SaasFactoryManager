@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { SettingsPage } from '@/features/settings/components/settings-page';
 import { UsersRolesSection } from '@/features/auth/components/users-roles-section';
 import { AuditLogViewer } from '@/features/auth/components/audit-log-viewer';
-import { isFounder } from '@/features/auth/services/permissions';
+import { isLeader } from '@/features/auth/services/permissions';
 
 export default function Settings() {
   return (
@@ -17,7 +17,7 @@ export default function Settings() {
 }
 
 async function FounderGate() {
-  if (!(await isFounder())) {
+  if (!(await isLeader())) {
     redirect('/me');
   }
 

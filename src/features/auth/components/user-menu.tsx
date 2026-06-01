@@ -6,9 +6,10 @@ import { logout } from '../services/auth-service';
 import type { Profile } from '../types';
 
 const ROLE_LABEL: Record<Profile['role'], string> = {
-  founder: '👑 Founder',
-  operator: '🔧 Operador',
-  client: '👤 Cliente',
+  leader: '👑 Líder',
+  dev: '💻 Desarrollador',
+  comercial: '🤝 Comercial',
+  cliente: '👤 Cliente',
 };
 
 interface Props {
@@ -71,13 +72,13 @@ export function UserMenu({ profile }: Props) {
           >
             Mi cuenta
           </Link>
-          {profile.role === 'founder' && (
+          {profile.role === 'leader' && (
             <Link
               href="/settings"
               onClick={() => setOpen(false)}
               className="block px-4 py-2.5 text-sm text-white/60 hover:text-white hover:bg-white/5 transition"
             >
-              Settings (founder)
+              Settings (líder)
             </Link>
           )}
           <form action={logout}>

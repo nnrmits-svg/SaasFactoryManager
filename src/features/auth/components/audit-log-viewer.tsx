@@ -1,7 +1,7 @@
-// Server component: muestra los ultimos 30 audit_logs. Solo founder (RLS).
+// Server component: muestra los ultimos 30 audit_logs. Solo leader (RLS).
 
 import { createClient } from '@/lib/supabase/server';
-import { isFounder } from '@/features/auth/services/permissions';
+import { isLeader } from '@/features/auth/services/permissions';
 
 interface AuditRow {
   id: string;
@@ -31,7 +31,7 @@ const ACTION_LABELS: Record<string, string> = {
 };
 
 export async function AuditLogViewer() {
-  if (!(await isFounder())) return null;
+  if (!(await isLeader())) return null;
 
   const supabase = await createClient();
   const { data: rows, error } = await supabase
@@ -56,7 +56,7 @@ export async function AuditLogViewer() {
       <div>
         <h2 className="text-xl font-semibold text-white mb-1">Audit Logs</h2>
         <p className="text-sm text-gray-400">
-          Últimas 30 acciones críticas registradas. Solo founders ven este log.
+          Últimas 30 acciones críticas registradas. Solo líderes ven este log.
         </p>
       </div>
 

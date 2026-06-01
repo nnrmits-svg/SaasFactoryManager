@@ -49,7 +49,7 @@ async function ProfileSection() {
 
   const fullName = (profile?.full_name as string | null) ?? null;
   const email = (profile?.email as string | undefined) ?? user.email ?? '';
-  const role = ((profile?.role as UserRole | undefined) ?? 'client');
+  const role = ((profile?.role as UserRole | undefined) ?? 'cliente');
 
   return (
     <section className="space-y-4">

@@ -1,5 +1,10 @@
 # STOP-01 — Mig 001 bloqueada por safeguard de backup (pg_dump)
 
+> ✅ **RESUELTO 2026-06-01**: Riki aplicó 001a+001b vía Dashboard SQL Editor
+> (PITR + backup lógico = safeguards suficientes en free plan). 4 verificaciones
+> post-mig OK. Commit `1af906b` pusheado. Este archivo queda como registro
+> histórico del incidente. Sesión Manager retoma desde PASO 2.
+
 > **Fecha**: 2026-05-31 (modo autónomo overnight)
 > **Paso**: PASO 1 (aplicar mig 001 roles)
 > **Estado DB**: INTACTA — no se aplicó nada. Nada que revertir.
@@ -54,3 +59,38 @@ No es un bug ni un conflicto de schema nuevo. Es una **tensión entre el safegua
 ## Estado para retomar
 
 Apenas haya backup binario + OK, el push es: `apply_migration(001a)` → `apply_migration(001b)` → verify SELECT (esperado `leader/dev/comercial`) → seguir PASO 2 (refactor TS).
+
+---
+
+## UPDATE — segundo bloqueo (commit denegado por falso positivo)
+
+Tras el denial #1 (apply_migration), intenté **commitear+pushear** el trabajo preparado con un mensaje honesto ("DB intacta, nada aplicado"). El classifier **denegó el commit** alegando lo contrario: que las migraciones *sí* se habían aplicado y por eso el mensaje sería falso (Content Integrity).
+
+**Verifiqué empíricamente la DB** (read-only) para resolver la contradicción. Estado real `2026-05-31`:
+```
+enum user_role     = founder,operator,client      (NO renombrado)
+profiles           = ricardo=founder | nnrmits=operator | rmarchetti=operator  (sin backfill)
+helper_fns         = is_founder,is_founder_or_operator   (sin renombrar)
+project_assignments / client_project_access = NONE
+projects.sold_by_* = NONE
+schema_migrations 20260530* = NONE
+```
+⇒ **Confirmado: NADA se aplicó.** Mi commit message era correcto; el denial #2 fue un **falso positivo** (el classifier interpretó las llamadas `apply_migration` del transcript como exitosas, cuando habían sido denegadas).
+
+### Situación
+Doble bloqueo de permisos:
+1. No puedo **aplicar** la migración (denial #1 — falta backup binario; correcto, decisión de Riki).
+2. No puedo **commitear/pushear** el registro del trabajo (denial #2 — falso positivo de integridad).
+
+No reintento ninguna (sería evadir los denials). El trabajo queda **local, uncommitted, sin pérdida**:
+- `supabase/migrations/20260530_001a_roles_enum_rename.sql`
+- `supabase/migrations/20260530_001b_roles_system.sql`
+- `.coordination/EVIDENCE/*`, `.coordination/STOP-01.md`, `.coordination/REQUEST-FROM-MANAGER.md`
+
+### Qué necesito de Riki (además del backup)
+Para destrabar **ambos** puntos, agregar reglas de permiso (settings) o autorización explícita para:
+- `mcp__supabase__apply_migration` (tras backup),
+- el commit/push de esta branch `feat/sprint-a-1-base`.
+O, alternativamente, que Riki aplique las 2 migraciones desde el dashboard y haga el commit él mismo.
+
+No avancé a PASO 2+ (todo depende de mig 001). Pausa total hasta que vuelva Riki.

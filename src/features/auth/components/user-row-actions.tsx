@@ -23,9 +23,10 @@ interface Props {
 }
 
 const ROLE_OPTIONS: Array<{ value: UserRole; label: string }> = [
-  { value: 'founder', label: 'Founder' },
-  { value: 'operator', label: 'Operator' },
-  { value: 'client', label: 'Client' },
+  { value: 'leader', label: 'Líder' },
+  { value: 'dev', label: 'Desarrollador' },
+  { value: 'comercial', label: 'Comercial' },
+  { value: 'cliente', label: 'Cliente' },
 ];
 
 const STATUS_BADGES: Record<UserStatus, { label: string; cls: string }> = {
@@ -138,7 +139,7 @@ export function UserRowActions({ userId, email, fullName, currentRole, status, h
           </select>
         )}
 
-        {(currentRole === 'operator' || currentRole === 'founder') && !isSelf && (
+        {(currentRole === 'dev' || currentRole === 'leader') && !isSelf && (
           <div className="flex items-center gap-1 text-xs">
             <span className="text-gray-500">$/h</span>
             <input

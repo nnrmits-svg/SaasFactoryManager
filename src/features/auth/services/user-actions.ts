@@ -24,7 +24,7 @@ export async function inviteUserAction(formData: FormData): Promise<{
   error?: string;
   email?: string;
 }> {
-  await requireRole(['founder']);
+  await requireRole(['leader']);
 
   const okRate = await checkRateLimit({ action: 'invite_user', ...RATE_LIMITS.invite_user });
   if (!okRate) {
@@ -37,8 +37,8 @@ export async function inviteUserAction(formData: FormData): Promise<{
   if (!email || !email.includes('@')) {
     return { ok: false, error: 'Email invalido' };
   }
-  if (!role || !['operator', 'client'].includes(role)) {
-    return { ok: false, error: 'Rol invalido (solo operator o client desde aca)' };
+  if (!role || !['dev', 'cliente'].includes(role)) {
+    return { ok: false, error: 'Rol invalido (solo dev o cliente desde aca)' };
   }
 
   try {
@@ -112,7 +112,7 @@ export async function setUserStatusAction(formData: FormData): Promise<{
   ok: boolean;
   error?: string;
 }> {
-  await requireRole(['founder']);
+  await requireRole(['leader']);
 
   const userId = formData.get('user_id') as string | null;
   const status = formData.get('status') as 'active' | 'suspended' | null;
@@ -149,7 +149,7 @@ export async function resendInviteAction(formData: FormData): Promise<{
   ok: boolean;
   error?: string;
 }> {
-  await requireRole(['founder']);
+  await requireRole(['leader']);
 
   const userId = formData.get('user_id') as string | null;
   if (!userId) return { ok: false, error: 'Faltan datos' };
@@ -192,7 +192,7 @@ export async function sendPasswordResetAction(formData: FormData): Promise<{
   error?: string;
   email?: string;
 }> {
-  await requireRole(['founder']);
+  await requireRole(['leader']);
 
   const userId = formData.get('user_id') as string | null;
   if (!userId) return { ok: false, error: 'Faltan datos' };
@@ -234,7 +234,7 @@ export async function deleteUserAction(formData: FormData): Promise<{
   ok: boolean;
   error?: string;
 }> {
-  await requireRole(['founder']);
+  await requireRole(['leader']);
 
   const userId = formData.get('user_id') as string | null;
   if (!userId) return { ok: false, error: 'Faltan datos' };
@@ -273,7 +273,7 @@ export async function setHourlyRateAction(formData: FormData): Promise<{
   ok: boolean;
   error?: string;
 }> {
-  await requireRole(['founder']);
+  await requireRole(['leader']);
 
   const userId = formData.get('user_id') as string | null;
   const rateStr = formData.get('hourly_rate_usd') as string | null;
@@ -315,7 +315,7 @@ export async function editUserNameAction(formData: FormData): Promise<{
   ok: boolean;
   error?: string;
 }> {
-  await requireRole(['founder']);
+  await requireRole(['leader']);
 
   const userId = formData.get('user_id') as string | null;
   const fullName = (formData.get('full_name') as string | null)?.trim() || null;
@@ -379,7 +379,7 @@ export async function changeRoleAction(formData: FormData): Promise<{
   ok: boolean;
   error?: string;
 }> {
-  await requireRole(['founder']);
+  await requireRole(['leader']);
 
   const okRate = await checkRateLimit({ action: 'role_change', ...RATE_LIMITS.role_change });
   if (!okRate) {
@@ -392,7 +392,7 @@ export async function changeRoleAction(formData: FormData): Promise<{
   if (!userId || !newRole) {
     return { ok: false, error: 'Faltan datos' };
   }
-  if (!['founder', 'operator', 'client'].includes(newRole)) {
+  if (!['leader', 'dev', 'comercial', 'cliente'].includes(newRole)) {
     return { ok: false, error: 'Rol invalido' };
   }
 

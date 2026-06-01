@@ -21,7 +21,7 @@ export async function getOperatorsAction(): Promise<ActionResult<Operator[]>> {
   const { data, error } = await supabase
     .from('profiles')
     .select('id, full_name, email, hourly_rate_usd')
-    .in('role', ['founder', 'operator'])
+    .in('role', ['leader', 'dev'])
     .eq('status', 'active')
     .order('full_name', { ascending: true, nullsFirst: false });
 

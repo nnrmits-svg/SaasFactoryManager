@@ -1,0 +1,33 @@
+src/app/api/help/chat/route.ts:159:${userRole === 'founder' ? 'Acceso total. Puede borrar proyectos, cambiar pricing, invitar usuarios.' : ''}${userRole === 'operator' ? 'Mantenimiento. PUEDE: sincronizar skills, levantar tracking, ver todos los proyectos. NO PUEDE: borrar proyectos, cambiar pricing, invitar usuarios. Si pide algo no permitido, decile "esa accion la tiene que autorizar el founder".' : ''}${userRole === 'client' ? 'Cliente final. Ve SOLO sus proyectos. NO puede crear, sincronizar ni administrar. Si pregunta por otros proyectos, decile "solo veo tu proyecto, hablale al equipo si necesitas info de otro".' : ''}`
+src/features/auth/components/users-roles-section.tsx:28:  if (role !== 'founder') return null;
+src/features/auth/components/users-roles-section.tsx:47:  const founders = all.filter((p) => p.role === 'founder');
+src/features/auth/components/users-roles-section.tsx:48:  const operators = all.filter((p) => p.role === 'operator');
+src/features/auth/components/users-roles-section.tsx:49:  const clients = all.filter((p) => p.role === 'client');
+src/features/auth/components/invite-user-form.tsx:39:          defaultValue="operator"
+src/features/auth/components/invite-user-form.tsx:42:          <option value="operator">Operador</option>
+src/features/auth/components/invite-user-form.tsx:43:          <option value="client">Cliente</option>
+src/app/(main)/me/page.tsx:52:  const role = ((profile?.role as UserRole | undefined) ?? 'client');
+src/features/auth/services/permissions.ts:15:export type UserRole = 'founder' | 'operator' | 'client';
+src/features/auth/services/permissions.ts:38:  return (await getCurrentUserRole()) === 'founder';
+src/features/auth/services/permissions.ts:46:  return role === 'founder' || role === 'operator';
+src/features/auth/services/permissions.ts:51: * Usar en server actions criticas: await requireRole(['founder']).
+src/features/auth/components/user-menu.tsx:74:          {profile.role === 'founder' && (
+src/features/auth/components/user-row-actions.tsx:26:  { value: 'founder', label: 'Founder' },
+src/features/auth/components/user-row-actions.tsx:27:  { value: 'operator', label: 'Operator' },
+src/features/auth/components/user-row-actions.tsx:28:  { value: 'client', label: 'Client' },
+src/features/auth/components/user-row-actions.tsx:141:        {(currentRole === 'operator' || currentRole === 'founder') && !isSelf && (
+src/features/contracts/services/contracts-read-action.ts:86:  let client: ContractsBundle['client'] = null;
+src/features/auth/services/user-actions.ts:27:  await requireRole(['founder']);
+src/features/auth/services/user-actions.ts:40:  if (!role || !['operator', 'client'].includes(role)) {
+src/features/auth/services/user-actions.ts:115:  await requireRole(['founder']);
+src/features/auth/services/user-actions.ts:152:  await requireRole(['founder']);
+src/features/auth/services/user-actions.ts:195:  await requireRole(['founder']);
+src/features/auth/services/user-actions.ts:237:  await requireRole(['founder']);
+src/features/auth/services/user-actions.ts:276:  await requireRole(['founder']);
+src/features/auth/services/user-actions.ts:318:  await requireRole(['founder']);
+src/features/auth/services/user-actions.ts:382:  await requireRole(['founder']);
+src/features/auth/services/user-actions.ts:395:  if (!['founder', 'operator', 'client'].includes(newRole)) {
+src/features/contracts/services/get-operators-action.ts:24:    .in('role', ['founder', 'operator'])
+src/shared/components/navbar.tsx:67:      {profile.role === 'founder' && (
+src/shared/components/navbar.tsx:131:    role: 'client',
+src/features/auth/types/index.ts:1:export type UserRole = 'founder' | 'operator' | 'client';

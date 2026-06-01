@@ -1,4 +1,4 @@
-// Server component: lista usuarios + ABM completo. Founder-only.
+// Server component: lista usuarios + ABM completo. Leader-only.
 
 import { createClient } from '@/lib/supabase/server';
 import { getCurrentUserRole, ROLE_CAPABILITIES, type UserRole } from '@/features/auth/services/permissions';
@@ -25,7 +25,7 @@ function formatDate(iso: string): string {
 
 export async function UsersRolesSection() {
   const role = await getCurrentUserRole();
-  if (role !== 'founder') return null;
+  if (role !== 'leader') return null;
 
   const supabase = await createClient();
   const { data: { user: currentUser } } = await supabase.auth.getUser();
@@ -44,9 +44,10 @@ export async function UsersRolesSection() {
   }
 
   const all = (profiles ?? []) as ProfileRow[];
-  const founders = all.filter((p) => p.role === 'founder');
-  const operators = all.filter((p) => p.role === 'operator');
-  const clients = all.filter((p) => p.role === 'client');
+  const leaders = all.filter((p) => p.role === 'leader');
+  const devs = all.filter((p) => p.role === 'dev');
+  const comerciales = all.filter((p) => p.role === 'comercial');
+  const clientes = all.filter((p) => p.role === 'cliente');
   const currentUserId = currentUser?.id ?? '';
 
   return (
@@ -62,23 +63,30 @@ export async function UsersRolesSection() {
 
       <div className="space-y-4">
         <UserGroup
-          title="Founders"
-          description={ROLE_CAPABILITIES.founder.description}
-          users={founders}
+          title="Líderes"
+          description={ROLE_CAPABILITIES.leader.description}
+          users={leaders}
           icon="👑"
           currentUserId={currentUserId}
         />
         <UserGroup
-          title="Operadores"
-          description={ROLE_CAPABILITIES.operator.description}
-          users={operators}
-          icon="🔧"
+          title="Desarrolladores"
+          description={ROLE_CAPABILITIES.dev.description}
+          users={devs}
+          icon="💻"
+          currentUserId={currentUserId}
+        />
+        <UserGroup
+          title="Comerciales"
+          description={ROLE_CAPABILITIES.comercial.description}
+          users={comerciales}
+          icon="🤝"
           currentUserId={currentUserId}
         />
         <UserGroup
           title="Clientes"
-          description={ROLE_CAPABILITIES.client.description}
-          users={clients}
+          description={ROLE_CAPABILITIES.cliente.description}
+          users={clientes}
           icon="👤"
           currentUserId={currentUserId}
         />

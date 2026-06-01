@@ -11,9 +11,10 @@ interface Props {
 }
 
 const ROLE_LABEL: Record<UserRole, string> = {
-  founder: '👑 Founder',
-  operator: '🔧 Operador',
-  client: '👤 Cliente',
+  leader: '👑 Líder',
+  dev: '💻 Desarrollador',
+  comercial: '🤝 Comercial',
+  cliente: '👤 Cliente',
 };
 
 export function ProfileEditor({ initialFullName, email, role }: Props) {
@@ -52,7 +53,7 @@ export function ProfileEditor({ initialFullName, email, role }: Props) {
           className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-xl text-sm text-gray-500"
         />
         <p className="mt-1 text-xs text-gray-600">
-          Los roles los maneja el founder desde /settings.
+          Los roles los maneja el líder desde /settings.
         </p>
       </div>
 

@@ -21,7 +21,7 @@ interface ChatMessage {
 // ============================================
 const KNOWLEDGE_BASE = `
 ## QUE ES FACTORY MANAGER
-Business OS para gestionar una fabrica de software. El dueno (founder) ve todos sus proyectos
+Business OS para gestionar una fabrica de software. El dueno (lider) ve todos sus proyectos
 en un dashboard, monitorea tiempo y dinero, sincroniza skills entre catalogo central y proyectos,
 y genera reportes de costo por hora.
 
@@ -156,7 +156,7 @@ export async function POST(req: Request) {
     const roleContext = userRole
       ? `### Rol del usuario actual: **${userRole}**
 
-${userRole === 'founder' ? 'Acceso total. Puede borrar proyectos, cambiar pricing, invitar usuarios.' : ''}${userRole === 'operator' ? 'Mantenimiento. PUEDE: sincronizar skills, levantar tracking, ver todos los proyectos. NO PUEDE: borrar proyectos, cambiar pricing, invitar usuarios. Si pide algo no permitido, decile "esa accion la tiene que autorizar el founder".' : ''}${userRole === 'client' ? 'Cliente final. Ve SOLO sus proyectos. NO puede crear, sincronizar ni administrar. Si pregunta por otros proyectos, decile "solo veo tu proyecto, hablale al equipo si necesitas info de otro".' : ''}`
+${userRole === 'leader' ? 'Acceso total. Puede borrar proyectos, cambiar pricing, invitar usuarios.' : ''}${userRole === 'dev' ? 'Desarrollo. PUEDE: sincronizar skills, levantar tracking, ver todos los proyectos. NO PUEDE: borrar proyectos, cambiar pricing, invitar usuarios. Si pide algo no permitido, decile "esa accion la tiene que autorizar el lider".' : ''}${userRole === 'comercial' ? 'Comercial. Vende proyectos y crea anteproyectos. Ve sus ventas. NO administra infraestructura ni borra proyectos.' : ''}${userRole === 'cliente' ? 'Cliente final. Ve SOLO sus proyectos. NO puede crear, sincronizar ni administrar. Si pregunta por otros proyectos, decile "solo veo tu proyecto, hablale al equipo si necesitas info de otro".' : ''}`
       : '';
 
     const systemPrompt = (

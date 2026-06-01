@@ -64,7 +64,7 @@ function AuthedRight({ profile }: { profile: Profile }) {
       >
         Reports
       </Link>
-      {profile.role === 'founder' && (
+      {profile.role === 'leader' && (
         <Link
           href="/settings"
           className="px-3 py-1.5 text-sm text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-all duration-300"
@@ -128,7 +128,7 @@ export async function NavbarAuth() {
     email: user.email ?? '',
     full_name: null,
     avatar_url: null,
-    role: 'client',
+    role: 'cliente',
     status: 'active',
     hourly_rate_usd: null,
     invited_by: null,

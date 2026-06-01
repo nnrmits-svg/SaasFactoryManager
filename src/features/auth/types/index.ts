@@ -1,4 +1,4 @@
-export type UserRole = 'founder' | 'operator' | 'client';
+export type UserRole = 'leader' | 'dev' | 'comercial' | 'cliente';
 export type UserStatus = 'active' | 'suspended' | 'pending';
 
 export interface Profile {
