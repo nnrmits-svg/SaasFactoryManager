@@ -28,7 +28,7 @@ npm install @supabase/supabase-js @supabase/ssr
 # .env.local
 
 # OpenRouter (REQUERIDO)
-OPENROUTER_API_KEY=
+OPENROUTER_API_KEY=<OPENROUTER_API_KEY_PLACEHOLDER>
 
 # Supabase (para historial, vision, auth)
 NEXT_PUBLIC_SUPABASE_URL=https://tu-proyecto.supabase.co
