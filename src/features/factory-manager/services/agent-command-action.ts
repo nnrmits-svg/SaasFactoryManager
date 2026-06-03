@@ -13,26 +13,36 @@ export async function getAgentInstances(): Promise<AgentInstance[]> {
 
   const { data, error } = await supabase
     .from('agent_instances')
-    .select('id, user_id, machine_name, machine_id, os_type, agent_version, status, last_heartbeat')
+    .select('id, user_id, machine_name, machine_id, os_type, agent_version, status, last_heartbeat, last_seen_at')
     .eq('user_id', user.id)
-    .order('last_heartbeat', { ascending: false });
+    .order('last_seen_at', { ascending: false });
 
   if (error || !data) return [];
 
-  // Mark as offline if heartbeat > 2 minutes ago
+  // El Agent legacy (v1) actualiza last_heartbeat; el Agent nuevo (Mig 003)
+  // actualiza last_seen_at. Usamos el más reciente de ambos para no marcar
+  // Offline a un Agent que sí está latiendo por la columna nueva.
+  const ONLINE_THRESHOLD_MS = 60 * 1000;
   const now = Date.now();
-  return data.map((row) => ({
-    id: row.id as string,
-    userId: row.user_id as string,
-    machineName: row.machine_name as string,
-    machineId: row.machine_id as string,
-    osType: row.os_type as string,
-    agentVersion: row.agent_version as string,
-    status: (now - new Date(row.last_heartbeat as string).getTime() < 2 * 60 * 1000)
-      ? 'active'
-      : 'offline',
-    lastHeartbeat: row.last_heartbeat as string,
-  }));
+  const freshestTs = (row: { last_heartbeat: unknown; last_seen_at: unknown }): number => {
+    const hb = row.last_heartbeat ? new Date(row.last_heartbeat as string).getTime() : 0;
+    const seen = row.last_seen_at ? new Date(row.last_seen_at as string).getTime() : 0;
+    return Math.max(hb, seen);
+  };
+
+  return data.map((row) => {
+    const lastSeenMs = freshestTs(row);
+    return {
+      id: row.id as string,
+      userId: row.user_id as string,
+      machineName: row.machine_name as string,
+      machineId: row.machine_id as string,
+      osType: row.os_type as string,
+      agentVersion: row.agent_version as string,
+      status: now - lastSeenMs < ONLINE_THRESHOLD_MS ? 'active' : 'offline',
+      lastHeartbeat: new Date(lastSeenMs).toISOString(),
+    };
+  });
 }
 
 /**
