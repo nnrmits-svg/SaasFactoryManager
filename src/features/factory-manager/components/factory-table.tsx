@@ -10,6 +10,19 @@ const TYPE_BADGE: Record<string, string> = {
   landing_static: '🟡', marketing_site: '🟡', prototype: '🔴', other: '⚪',
 };
 
+function formatMinutes(minutes: number): string {
+  if (minutes <= 0) return '0h';
+  if (minutes < 60) return `${minutes}m`;
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+}
+
+function formatDate(iso: string | null): string {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleDateString();
+}
+
 function sessionDot(status: string): string {
   switch (status) {
     case 'editing': return '🟢';
@@ -47,17 +60,32 @@ function LifecycleSection({ title, projects }: { title: string; projects: Factor
               <th className="px-4 py-3 font-medium">Proyecto</th>
               <th className="px-4 py-3 font-medium">Type</th>
               <th className="px-4 py-3 font-medium">Owner</th>
+              <th className="px-4 py-3 font-medium">Versión</th>
               <th className="px-4 py-3 font-medium">Trabajando ahora</th>
+              <th className="px-4 py-3 font-medium text-right whitespace-nowrap">Actividad</th>
               <th className="px-4 py-3 font-medium text-right">👥</th>
             </tr>
           </thead>
           <tbody>
             {projects.map((p) => (
               <tr key={p.id} className="border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors">
-                <td className="px-4 py-3 text-white font-medium">{p.name}</td>
+                <td className="px-4 py-3">
+                  <div className="text-white font-medium">{p.name}</div>
+                  <div className="text-[11px] text-gray-500">creado {formatDate(p.created_at)}</div>
+                </td>
                 <td className="px-4 py-3 text-gray-300 text-xs">{TYPE_BADGE[p.project_type] ?? '⚪'} {p.project_type}</td>
                 <td className="px-4 py-3 text-gray-300">{p.owner_name ?? '—'}</td>
+                <td className="px-4 py-3">
+                  {p.sf_version
+                    ? <span className="px-2 py-0.5 text-xs bg-fluya-purple/10 text-fluya-purple border border-fluya-purple/20 rounded-lg whitespace-nowrap">{p.sf_version}</span>
+                    : <span className="text-gray-600 text-xs">—</span>}
+                </td>
                 <td className="px-4 py-3"><WorkingNow sessions={p.sessions} /></td>
+                <td className="px-4 py-3 text-right text-xs text-gray-300 whitespace-nowrap">
+                  <span title="Commits">⎇ {p.commit_count}</span>
+                  <span className="text-gray-600"> · </span>
+                  <span title="Horas trabajadas">⏱ {formatMinutes(p.total_work_minutes)}</span>
+                </td>
                 <td className="px-4 py-3 text-right">
                   <Link
                     href={`/leader/proyectos/${p.id}`}
