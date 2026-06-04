@@ -11,7 +11,7 @@
 // REGLA: bumpear APP_VERSION con CADA cambio que llegue a prod. Sin wip silenciosos.
 // Cada deploy queda reflejado en el changelog que ve el founder en /about.
 
-export const APP_VERSION = '1.2.8';
+export const APP_VERSION = '1.2.9';
 
 export interface ChangelogEntry {
   version: string;
@@ -21,6 +21,13 @@ export interface ChangelogEntry {
 
 // Cronológico inverso: lo último arriba.
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.2.9',
+    date: '2026-06-04',
+    highlights: [
+      'Polish post-Sprint A. (1) Settings "Agentes Conectados": el cálculo online ahora usa el más reciente de last_heartbeat/last_seen_at — antes leía solo last_heartbeat (columna legacy v1, congelada) y mostraba todos los Agents Offline aunque estuvieran corriendo vía el heartbeat nuevo (last_seen_at, cada 30s). Umbral online 60s. (2) Factory nuevo (/leader/proyectos) ahora muestra las métricas que solo tenía el viejo: commits, horas trabajadas, versión SF y fecha de creación (columnas compactas Versión + Actividad). (3) /factory redirige a /leader/proyectos. Housekeeping: js-yaml runtime declarado + package-lock.json versionado para builds reproducibles',
+    ],
+  },
   {
     version: '1.2.8',
     date: '2026-05-14',

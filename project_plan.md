@@ -3,9 +3,9 @@
 > Plan vivo del producto. Una sola fuente de verdad de "donde estamos y a donde vamos".
 > Mantenido por el skill `project-plan`. Cronologia detallada en `Bitacora.md`.
 >
-> Ultima actualizacion: 2026-05-14 (v1.2.8)
+> Ultima actualizacion: 2026-06-04 (v1.2.9)
 > URL prod: https://saasfactory.grupo-its.com.ar
-> Cross-ref: ver entrada del 2026-05-13 en `Bitacora.md`
+> Cross-ref: ver entrada del 2026-06-04 en `Bitacora.md`
 >
 > **Regla del proyecto**: actualizar este archivo en cada bump de version (ver `CLAUDE.md` → "Reglas de proyecto: docs vivos").
 > **Convención de versionado**: bumpear APP_VERSION en `src/shared/lib/version.ts` con cada deploy a prod (sea PATCH o MINOR).
@@ -29,7 +29,7 @@ operando con multiples proyectos en multiples maquinas locales (una por develope
 
 ## Estado actual
 
-- **Sprint A (SF Manager v2) — código COMPLETO, pendiente PR review/merge** — branch `feat/sprint-a-1-base` (sin mergear). **Migs 001-006 aplicadas a prod y verificadas** (13 tablas + 4 enums: roles `leader/dev/comercial/cliente`, ABM + invitations + audit view, ownership + agent_instances v2 + active_sessions + capabilities + transfers, history + view project_contributors, project_types + templates, deployments). Refactor TS de roles, middleware role-based, ABM UI (`/leader/usuarios` + detalle) y Factory "Trabajando ahora" (`/leader/proyectos` + detalle con tabs) — build verde. Pendiente antes de merge: **login del Agent** (para que escriba sesiones) + **E2E autenticado** + PR review con Riki. Specs en `~/ProyectosIA/ArqSaasFactory/kit-comercial/dev/docs/`. Ver `Bitacora.md` (2026-06-01 cierre) y `.coordination/EVIDENCE/12-sprint-a-complete.md`.
+- **Sprint A (SF Manager v2) — CERRADO y EN PRODUCCIÓN** — mergeado a `main` (HEAD post-polish). **Migs 001-006 aplicadas a prod y verificadas** (13 tablas + 4 enums: roles `leader/dev/comercial/cliente`, ABM + invitations + audit view, ownership + agent_instances v2 + active_sessions + capabilities + transfers, history + view project_contributors, project_types + templates, deployments). Refactor TS de roles, middleware role-based, ABM UI (`/leader/usuarios` + detalle) y Factory "Trabajando ahora" (`/leader/proyectos` + detalle con tabs) — build verde, en prod. **Polish post-Sprint A (v1.2.9, 2026-06-04)**: fix Settings Offline (online por `max(last_heartbeat, last_seen_at)`), métricas (commits/horas/versión/creado) migradas al Factory nuevo `/leader/proyectos`, redirect `/factory`→`/leader/proyectos`. Pendiente: **login del Agent** (para que escriba sesiones) + **E2E autenticado**. Specs en `~/ProyectosIA/ArqSaasFactory/kit-comercial/dev/docs/`. Ver `Bitacora.md` (2026-06-04) y `.coordination/EVIDENCE/12-sprint-a-complete.md`.
 - **Fase**: post-MVP, v1.1.0. Capa 2, Capa 8, Sprint D (labor costs en /reports) e invites administrativos completados. Listo para Capa 3 del roadmap (CRUD remoto) + enrollment 2FA.
 - **Stack**: Next.js 16 + React 19 + Supabase (proyecto ref `fxlvexilnrfkkcbzwskr`) + Vercel.
 - **Auth**: middleware Supabase activo (`src/middleware.ts`), redirect a `/login` para rutas protegidas.
@@ -66,6 +66,8 @@ operando con multiples proyectos en multiples maquinas locales (una por develope
    - Estado por skill: `synced` / `divergent` / `missing`.
    - Reemplazar `discoverAllSkills()` (FS) por catalogo estatico en repo o tabla en Supabase (decidir).
 2. **Tab "AI Activity" en `/project/[name]`** (sprint despues de Capa 2): filtrado de `claude_sessions` por proyecto.
+2b. **Portar CRUD al Factory nuevo** (`/leader/proyectos`): el redirect de `/factory` (v1.2.9) dejó el Factory nuevo como única entrada, pero es read-only. Migrar wizard de creación + editar + eliminar (hoy en `FactoryDashboard`, sin borrar) al nuevo. Recién entonces borrar `FactoryDashboard`. Esfuerzo M.
+2c. **`feat/quote-from-actuals` (137 commits)**: "presupuesto desde horas reales" — input del **Motor de Presupuesto del Sprint B**. Revisar y mergear, o dejar como Draft PR para no perder el trabajo. NO borrar la branch.
 3. **Capa 3 del roadmap — CRUD remoto** desde Manager: editar/borrar proyecto, re-aplicar skills.
 4. **Capa 8 — Selector de `github_owner` (orgs)**. (El otro Claude arrancando Capa A en paralelo del lado Agent — no requiere coordinacion.)
 5. **PRP propio para migrar `auto-commit-service` y `sync` al SF Agent** (post-Capa 2). Cuando este listo, los botones deshabilitados se vuelven funcionalidad real ruteada por `agent_commands`.
@@ -95,6 +97,7 @@ operando con multiples proyectos en multiples maquinas locales (una por develope
 
 ## Done
 
+- [x] 2026-06-04: **v1.2.9 — Polish post-Sprint A**: (1) Settings "Agentes Conectados" mostraba Offline siempre — fix: online por `max(last_heartbeat, last_seen_at)`, umbral 60s (el Agent nuevo escribe `last_seen_at`, no `last_heartbeat`). (2) Métricas commits/horas/`sf_version`/`created_at` migradas del Factory viejo al nuevo `/leader/proyectos`. (3) `/factory` redirige a `/leader/proyectos`. Housekeeping: `js-yaml` runtime + `package-lock.json` versionado.
 - [x] 2026-05-14: **v1.2.7 — Delete-project: resolveInstanceId en cascada** (project_local_paths → created_by_command_id → FCFS) + warnings en modal + detección de "Path no existe" del Agent 1.1.25. Pares con SF Agent 1.1.25.
 - [x] 2026-05-14: **v1.2.6 — Fix UI bug modal Eliminar**: el checkbox "Borrar folder local" quedaba deshabilitado aunque la BD tuviera el path. Causa: `getProjects()` no traía `local_path` ni `github_repo_url`. Now fixed — próximos delete muestran el checkbox correctamente.
 - [x] 2026-05-14: **v1.2.5 — Eliminar proyecto coordinado** (Manager + Agent). Modal con confirmación tipo GitHub + 3 checkboxes (folder local · repo GitHub · PDFs Storage). Requiere SF Agent v1.1.24+ para `agent_command:delete-project`.

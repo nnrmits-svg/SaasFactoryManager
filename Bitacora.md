@@ -6,6 +6,26 @@
 
 ---
 
+## 2026-06-04 — Polish post-Sprint A (3 tareas) + housekeeping → v1.2.9 en prod
+**Maquina**: sesión Manager · branch `main` (commit manual, auto-sync APAGADO)
+
+### Hecho
+- **PASO 0 housekeeping** (`198eef9`): `js-yaml` faltaba como runtime dep (solo estaba `@types/js-yaml`) → rompía build en install limpio. Declarado. `package-lock.json` **sacado del .gitignore y versionado** (Vercel hacía `npm install` sin lock → resolvía `^` a latest en cada deploy; ahora builds reproducibles). `yarn.lock`/`pnpm-lock.yaml` siguen ignorados (el proyecto usa npm). + fix reglas grep en `settings.json` (`/doctor`).
+- **TAREA 1 — Settings "Agentes Conectados" Offline** (`246c6b5`): `getAgentInstances` calculaba online solo por `last_heartbeat` (columna legacy v1, congelada hace 25h+). El Agent **nuevo** (Mig 003) actualiza `last_seen_at` cada 30s, NO `last_heartbeat`. Fix: frescura = `max(last_heartbeat, last_seen_at)`, umbral online 60s (contrato documentado en el repo del Agent `heartbeat.ts:62`). Cubre Agent legacy + nuevo.
+- **TAREA 2 — métricas en Factory nuevo** (`367c0f4`): `/leader/proyectos` ahora muestra commits + horas + `sf_version` + `created_at` (antes solo el viejo `/factory` las tenía). Service `factory-sessions-action.ts`: queries **separadas** a `commits`/`work_sessions` (no embebidas, para que un fallo no anule la lista de proyectos — degradan a 0), agregadas en JS. RLS verificada: `is_founder_or_operator()` fue renombrada a `is_leader_or_dev()` (mig 001b, OID preservado) → leader lee cross-user. Tabla mantenida limpia (columnas compactas Versión + Actividad).
+- **TAREA 3 — redirect** (`f0c52c2`): `/factory` → `redirect('/leader/proyectos')`. Componente `FactoryDashboard` NO borrado (conserva wizard de creación + editar + eliminar pendientes de portar).
+- **v1.2.9**: bump + changelog (los 4 deploys previos fueron a prod sin bump; corregido con un PATCH que cubre toda la sesión).
+
+### Decisiones (Riki)
+- **Redirect /factory aceptado asumiendo pérdida temporal** del wizard de creación/editar/eliminar (el Factory nuevo es read-only). Pendiente: portar ese CRUD al nuevo.
+- **Branches**: borrar solo `feat/sprint-a-1-base` (mergeada, 0 commits únicos) + las 2 `vercel/*` (auto-generadas). **NO** borrar `master` ni `backup-main-12may` (paracaídas del rescate, hasta cerrar sprint). El borrado quedó **bloqueado por el guardrail de git destructivo** — Riki los corre manual con `git push origin --delete`.
+
+### Pendiente / radar
+- ⚠️ `feat/quote-from-actuals` (137 commits sin mergear): "quote from actuals" = presupuesto desde horas reales → **se necesita para el Motor de Presupuesto del Sprint B**. NO borrar; revisar y mergear o dejar como Draft PR.
+- `brand/fluya` (68 commits): branding sin mergear, en radar.
+- Portar wizard de creación + editar + eliminar al Factory nuevo (`/leader/proyectos`) antes de poder borrar `FactoryDashboard`.
+- Confirmar borrado de las 3 branches una vez Riki las corra.
+
 ## 2026-06-01 (cierre) — Sprint A COMPLETO (lado Manager): migs 001-006 + Factory UI
 **Maquina**: sesión Manager · branch `feat/sprint-a-1-base` (NO mergeado, PR review pendiente)
 
