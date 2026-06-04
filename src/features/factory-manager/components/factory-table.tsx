@@ -23,27 +23,58 @@ function formatDate(iso: string | null): string {
   return new Date(iso).toLocaleDateString();
 }
 
-function sessionDot(status: string): string {
+// Color de la sesión VIVA según su estado. Las sesiones no-vivas se pintan
+// grises aparte (no entran acá).
+function liveDot(status: string): string {
   switch (status) {
-    case 'editing': return '🟢';
-    case 'synced': return '🟢';
     case 'stale': return '🟡';
     case 'conflict': return '🔴';
-    default: return '⚪';
+    default: return '🟢'; // editing / synced
   }
+}
+
+function timeAgo(iso: string | null): string {
+  if (!iso) return 'nunca';
+  const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+  if (diff < 60) return `${diff}s`;
+  if (diff < 3600) return `${Math.floor(diff / 60)}m`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h`;
+  return `${Math.floor(diff / 86400)}d`;
+}
+
+const IPV4_RE = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/;
+
+// Las filas viejas (v1.2.0) reportaban la IP como machine_name. Mostramos un
+// label legible y dejamos la IP en el tooltip. Además limpiamos el sufijo .local.
+function cleanMachineName(name: string): { label: string; title?: string } {
+  if (IPV4_RE.test(name)) return { label: 'máquina sin nombre', title: name };
+  return { label: name.replace(/\.local$/, '') };
 }
 
 function WorkingNow({ sessions }: { sessions: FactorySession[] }) {
   if (sessions.length === 0) {
     return <span className="text-gray-600">⚪ sin sesión</span>;
   }
-  // Mostrar la sesión más relevante (editing primero) + contador si hay más
-  const sorted = [...sessions].sort((a, b) => (a.status === 'editing' ? -1 : 0) - (b.status === 'editing' ? -1 : 0));
-  const top = sorted[0];
+  // El service ya ordena live primero, luego last_activity_at desc → top es la
+  // sesión viva si existe, sino la última que trabajó.
+  const top = sessions[0];
+  const machine = cleanMachineName(top.machine_name);
+  const liveCount = sessions.filter((s) => s.is_live).length;
+
+  if (top.is_live) {
+    return (
+      <span className="text-gray-200">
+        {liveDot(top.status)} {top.worker_name ?? '—'} @ <span title={machine.title}>{machine.label}</span>
+        {liveCount > 1 && <span className="text-gray-500 text-xs"> +{liveCount - 1}</span>}
+      </span>
+    );
+  }
+
+  // Ninguna sesión viva: mostramos apagada para conservar "quién trabajó por última vez".
   return (
-    <span className="text-gray-200">
-      {sessionDot(top.status)} {top.worker_name ?? '—'} @ {top.machine_name}
-      {sessions.length > 1 && <span className="text-gray-500 text-xs"> +{sessions.length - 1}</span>}
+    <span className="text-gray-500">
+      ⚪ {top.worker_name ?? '—'} @ <span title={machine.title}>{machine.label}</span>
+      <span className="text-gray-600 text-xs"> · visto hace {timeAgo(top.last_activity_at)}</span>
     </span>
   );
 }

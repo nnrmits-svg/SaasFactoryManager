@@ -6,6 +6,14 @@
 
 ---
 
+## 2026-06-04 — Fix Factory: sesiones viejas en verde → v1.2.10 en prod
+**Maquina**: sesión Manager · branch `main` (commit manual)
+
+- **Bug**: `/leader/proyectos` pintaba 🟢 sesiones de hace 1-2 días. El color salía del enum `status` (synced/editing) en `factory-table.tsx`, que **nunca** miraba `last_activity_at`. El `status` no se cierra al apagar el Agent (lifecycle → Sprint D), así que una sesión vieja se veía viva. Settings sí mostraba Offline (correcto).
+- **Fix display-only** (no toca el Agent): `factory-sessions-action.ts` agrega `is_live` server-side (`now - last_activity_at < 180s`) y ordena sesiones live-primero/actividad-desc (top = la viva si existe). `factory-table.tsx` usa `is_live` para el color: live → punto de color por status; no-live → ⚪ gris + "visto hace {timeAgo}" (fila apagada, conserva quién trabajó último). Cosmético: `machine_name` IPv4 (legacy v1.2.0) → "máquina sin nombre" + IP en tooltip; strip `.local`.
+- **Aceptación**: 0 agentes → ningún 🟢 (todo gris). Agent latiendo <3min → esa fila 🟢. Métricas v1.2.9 (commits/horas/versión) intactas.
+- **Causa de fondo** (sesiones que no cierran al apagar el Agent): lifecycle del Agent → **Sprint D**, no entra acá.
+
 ## 2026-06-04 — Polish post-Sprint A (3 tareas) + housekeeping → v1.2.9 en prod
 **Maquina**: sesión Manager · branch `main` (commit manual, auto-sync APAGADO)
 

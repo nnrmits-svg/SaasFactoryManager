@@ -11,7 +11,7 @@
 // REGLA: bumpear APP_VERSION con CADA cambio que llegue a prod. Sin wip silenciosos.
 // Cada deploy queda reflejado en el changelog que ve el founder en /about.
 
-export const APP_VERSION = '1.2.9';
+export const APP_VERSION = '1.2.10';
 
 export interface ChangelogEntry {
   version: string;
@@ -21,6 +21,13 @@ export interface ChangelogEntry {
 
 // Cronológico inverso: lo último arriba.
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.2.10',
+    date: '2026-06-04',
+    highlights: [
+      'Fix Factory: el indicador "Trabajando ahora" pintaba sesiones viejas en verde. El punto salía del enum status (synced/editing), que no se cierra al apagar el Agent, así que una sesión de hace 2 días se veía viva. Ahora el color se decide por is_live (calculado server-side: última actividad < 180s). Sin agentes corriendo: todo gris + "visto hace Xd" (conserva quién trabajó por última vez); con un Agent latiendo: esa fila se pone 🟢. Cosmético: machine_name que es una IP (filas legacy v1.2.0) se muestra como "máquina sin nombre" con la IP en tooltip, y se limpia el sufijo .local. La causa de fondo (sesiones que no cierran al apagar el Agent) es lifecycle del Agent → Sprint D',
+    ],
+  },
   {
     version: '1.2.9',
     date: '2026-06-04',

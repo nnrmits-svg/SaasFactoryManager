@@ -3,7 +3,7 @@
 > Plan vivo del producto. Una sola fuente de verdad de "donde estamos y a donde vamos".
 > Mantenido por el skill `project-plan`. Cronologia detallada en `Bitacora.md`.
 >
-> Ultima actualizacion: 2026-06-04 (v1.2.9)
+> Ultima actualizacion: 2026-06-04 (v1.2.10)
 > URL prod: https://saasfactory.grupo-its.com.ar
 > Cross-ref: ver entrada del 2026-06-04 en `Bitacora.md`
 >
@@ -97,6 +97,7 @@ operando con multiples proyectos en multiples maquinas locales (una por develope
 
 ## Done
 
+- [x] 2026-06-04: **v1.2.10 — Fix Factory sesiones viejas en verde**: el indicador "Trabajando ahora" pintaba 🟢 por el enum `status` (que no se cierra al apagar el Agent). Ahora el color sale de `is_live` (server-side, última actividad < 180s); no-live → gris + "visto hace Xd". Display-only; la causa de fondo (lifecycle del Agent) es Sprint D.
 - [x] 2026-06-04: **v1.2.9 — Polish post-Sprint A**: (1) Settings "Agentes Conectados" mostraba Offline siempre — fix: online por `max(last_heartbeat, last_seen_at)`, umbral 60s (el Agent nuevo escribe `last_seen_at`, no `last_heartbeat`). (2) Métricas commits/horas/`sf_version`/`created_at` migradas del Factory viejo al nuevo `/leader/proyectos`. (3) `/factory` redirige a `/leader/proyectos`. Housekeeping: `js-yaml` runtime + `package-lock.json` versionado.
 - [x] 2026-05-14: **v1.2.7 — Delete-project: resolveInstanceId en cascada** (project_local_paths → created_by_command_id → FCFS) + warnings en modal + detección de "Path no existe" del Agent 1.1.25. Pares con SF Agent 1.1.25.
 - [x] 2026-05-14: **v1.2.6 — Fix UI bug modal Eliminar**: el checkbox "Borrar folder local" quedaba deshabilitado aunque la BD tuviera el path. Causa: `getProjects()` no traía `local_path` ni `github_repo_url`. Now fixed — próximos delete muestran el checkbox correctamente.

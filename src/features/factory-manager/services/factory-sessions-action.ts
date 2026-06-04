@@ -11,7 +11,14 @@ export interface FactorySession {
   status: string; // editing | synced | stale | conflict
   worker_name: string | null;
   last_activity_at: string | null;
+  /** true si la sesión latió hace < SESSION_LIVE_THRESHOLD_MS. El enum `status`
+   *  no se cierra al apagar el Agent (lifecycle → Sprint D), así que una sesión
+   *  vieja con status='synced' NO debe pintarse viva: el color se decide por esto. */
+  is_live: boolean;
 }
+
+// Umbral de "sesión viva". 180s tolera el intervalo del session-reporter del Agent.
+const SESSION_LIVE_THRESHOLD_MS = 180 * 1000;
 
 export interface FactoryProject {
   id: string;
@@ -66,18 +73,35 @@ export async function listFactoryProjects(): Promise<FactoryProject[]> {
     workMinutes.set(pid, (workMinutes.get(pid) ?? 0) + ((w.duration_minutes as number | null) ?? 0));
   }
 
+  const now = Date.now();
   const sessionsByProject = new Map<string, FactorySession[]>();
   for (const s of sessionsRes.data ?? []) {
     const pid = s.project_id as string;
     const worker = profileMap.get(s.user_id as string);
+    const lastActivity = (s.last_activity_at as string | null) ?? null;
+    const isLive = lastActivity
+      ? now - new Date(lastActivity).getTime() < SESSION_LIVE_THRESHOLD_MS
+      : false;
     const arr = sessionsByProject.get(pid) ?? [];
     arr.push({
       machine_name: agentMap.get(s.agent_instance_id as string) ?? '(agente)',
       status: s.status as string,
       worker_name: worker?.full_name ?? worker?.email ?? null,
-      last_activity_at: (s.last_activity_at as string | null) ?? null,
+      last_activity_at: lastActivity,
+      is_live: isLive,
     });
     sessionsByProject.set(pid, arr);
+  }
+
+  // Ordenar live primero, luego por actividad más reciente, para que `top` (la
+  // que muestra la tabla) sea la sesión viva si existe.
+  for (const arr of sessionsByProject.values()) {
+    arr.sort((a, b) => {
+      if (a.is_live !== b.is_live) return a.is_live ? -1 : 1;
+      const ta = a.last_activity_at ? new Date(a.last_activity_at).getTime() : 0;
+      const tb = b.last_activity_at ? new Date(b.last_activity_at).getTime() : 0;
+      return tb - ta;
+    });
   }
 
   return (projectsRes.data ?? []).map((p) => {
