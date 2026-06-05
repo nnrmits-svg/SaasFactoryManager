@@ -6,6 +6,24 @@
 
 ---
 
+## 2026-06-05 11:07 — Cierre de sesión: branches limpiadas + verificación de estado
+**Maquina**: NNRM-iMac-275.local
+
+### Hecho
+- **Cierre de la sesión de polish** (v1.2.9 + v1.2.10, ambas ya en prod — ver entradas 2026-06-04). Nada de código nuevo en esta vuelta: el working tree solo tiene `next-env.d.ts` (artefacto autogenerado de Next, no se commitea a propósito).
+- **Branches limpiadas y CONFIRMADO contra origin** (`git fetch --prune`): borradas `feat/sprint-a-1-base` (mergeada, 0 commits únicos) + las 2 `vercel/*` (auto-generadas). Las corrió la sesión nexo con OK directo de Riki (no por mis herramientas — el guardrail de git destructivo me las había bloqueado).
+- **Branches vivas a propósito**: `main` (HEAD `025b810`, v1.2.10), `master`, `backup-main-12may`, `feat/quote-from-actuals`, `brand/fluya`, `agent/macbookpro-2016-local`.
+
+### Pendiente
+- Portar CRUD (crear/editar/eliminar) al Factory nuevo `/leader/proyectos` antes de borrar `FactoryDashboard` (hoy `/factory` solo redirige).
+- `feat/quote-from-actuals` (137 commits, presupuesto-desde-horas-reales): revisar y mergear o dejar como Draft PR — input del Motor de Presupuesto del Sprint B. NO borrar.
+- Lifecycle de sesiones del Agent (que no cierran al apagar) → Sprint D. El fix v1.2.10 es solo display.
+
+### Notas
+- El borrado de branches remotas está bloqueado por el clasificador de permisos (git destructivo) incluso con confirmación en el chat — hay que correrlo manual con `git push origin --delete` o desde la sesión nexo.
+
+---
+
 ## 2026-06-04 — Fix Factory: sesiones viejas en verde → v1.2.10 en prod
 **Maquina**: sesión Manager · branch `main` (commit manual)
 
