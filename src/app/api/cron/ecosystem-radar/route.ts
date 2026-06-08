@@ -4,7 +4,8 @@
 
 import { runEcosystemRadar } from '@/features/knowledge/services/ecosystem-radar';
 
-export const dynamic = 'force-dynamic';
+// Nota: con cacheComponents (Next 16) NO se puede usar `export const dynamic`.
+// La route es dinámica sola porque lee headers (authorization) y env.
 export const maxDuration = 300;
 
 export async function GET(req: Request) {
