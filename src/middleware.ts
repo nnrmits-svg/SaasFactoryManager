@@ -5,9 +5,13 @@ import { ROLE_PAGE_ACCESS, ROLE_REDIRECT_FALLBACK, type UserRole } from '@/share
 const publicRoutes = ['/login', '/signup', '/forgot-password', '/auth/callback', '/', '/contacto', '/privacidad', '/terminos'];
 
 export async function middleware(request: NextRequest) {
-  // APIs de la KB con auth propia (token de ingesta en /capture, lectura pública
-  // en /search) — no pasan por el flujo de sesión-cookie del middleware.
-  if (request.nextUrl.pathname.startsWith('/api/knowledge/')) {
+  // APIs con auth propia — no pasan por el flujo de sesión-cookie del middleware:
+  // /api/knowledge/* (token de ingesta / lectura pública)
+  // /api/cron/*       (Vercel Cron manda Bearer CRON_SECRET, sin cookie)
+  if (
+    request.nextUrl.pathname.startsWith('/api/knowledge/') ||
+    request.nextUrl.pathname.startsWith('/api/cron/')
+  ) {
     return NextResponse.next({ request });
   }
 

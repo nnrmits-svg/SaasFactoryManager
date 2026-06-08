@@ -1,5 +1,5 @@
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
-const MODEL = 'google/gemini-2.0-flash-001';
+const MODEL = 'google/gemini-2.5-flash';
 
 const SYSTEM_PROMPT = `Eres un consultor de negocio senior que ayuda a definir ideas de SaaS.
 Tu rol es ayudar al usuario a responder las preguntas del wizard de negocio.
