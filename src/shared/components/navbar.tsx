@@ -59,6 +59,12 @@ function AuthedRight({ profile }: { profile: Profile }) {
         Versiones
       </Link>
       <Link
+        href="/knowledge"
+        className="px-3 py-1.5 text-sm text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-all duration-300"
+      >
+        Conocimiento
+      </Link>
+      <Link
         href="/reports"
         className="px-3 py-1.5 text-sm text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-all duration-300"
       >
