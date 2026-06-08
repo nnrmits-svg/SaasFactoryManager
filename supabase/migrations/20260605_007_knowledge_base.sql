@@ -61,16 +61,9 @@ CREATE TABLE IF NOT EXISTS knowledge_items (
   ai_confidence NUMERIC(3,2),
   ai_cost_usd NUMERIC(10,4),
 
-  -- Full-text (español): título + cuerpo + contexto + tags
-  search_tsv tsvector GENERATED ALWAYS AS (
-    to_tsvector('spanish',
-      coalesce(title, '') || ' ' ||
-      coalesce(body, '') || ' ' ||
-      coalesce(context, '') || ' ' ||
-      array_to_string(tags, ' ') || ' ' ||
-      array_to_string(tech_stack, ' ')
-    )
-  ) STORED,
+  -- Full-text (español) — se llena por trigger (un generated column con
+  -- to_tsvector NO es immutable por el cast text->regconfig de 'spanish').
+  search_tsv tsvector,
 
   created_at TIMESTAMPTZ DEFAULT NOW(),
   created_by UUID REFERENCES auth.users(id) ON DELETE SET NULL
@@ -82,6 +75,25 @@ CREATE INDEX IF NOT EXISTS idx_knowledge_search ON knowledge_items USING GIN(sea
 -- Índice vectorial (semántica) → Capa 2:
 --   CREATE INDEX idx_knowledge_embedding ON knowledge_items
 --     USING hnsw (embedding vector_cosine_ops);
+
+-- Trigger que llena search_tsv en cada INSERT/UPDATE (reemplaza al generated column).
+CREATE OR REPLACE FUNCTION knowledge_items_tsv_update()
+RETURNS trigger LANGUAGE plpgsql SET search_path = public AS $$
+BEGIN
+  NEW.search_tsv := to_tsvector('spanish',
+    coalesce(NEW.title, '') || ' ' ||
+    coalesce(NEW.body, '') || ' ' ||
+    coalesce(NEW.context, '') || ' ' ||
+    array_to_string(NEW.tags, ' ') || ' ' ||
+    array_to_string(NEW.tech_stack, ' '));
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_knowledge_tsv ON knowledge_items;
+CREATE TRIGGER trg_knowledge_tsv
+  BEFORE INSERT OR UPDATE ON knowledge_items
+  FOR EACH ROW EXECUTE FUNCTION knowledge_items_tsv_update();
 
 -- ── 2. platform_versions (D2 — changelog inteligente con razones) ────────────
 CREATE TABLE IF NOT EXISTS platform_versions (
