@@ -6,6 +6,24 @@
 
 ---
 
+## 2026-06-10 18:07 — Diagnóstico bug signup ("Database error saving new user") + mig 008
+**Maquina**: NNRM-iMac-275.local
+
+### Hecho
+- **Bug reportado**: el alta pública de usuarios (`/signup`) falla con "Database error saving new user".
+- **Diagnóstico por análisis estático de migraciones** (sin acceso directo a DB; el classifier bloqueó reproducir el signup contra prod): el trigger `handle_new_user()` aborta al crear el `profile`. Causa raíz = regresión de la **Mig 003**: agregó la tabla `user_capabilities` (RLS on, sin policy de INSERT para usuarios normales ni GRANT para `supabase_auth_admin`) + el trigger `trigger_init_capabilities` → `init_user_capabilities()` AFTER INSERT ON profiles, que quedó como **SECURITY INVOKER**. Al registrarse, el trigger corre como `supabase_auth_admin` (sin bypass-RLS ni privilegio sobre la tabla nueva) → el INSERT a `user_capabilities` se rechaza → aborta todo el signup. Por eso los usuarios viejos (pre-mig 003) y los de ABM (otro path) funcionan, pero el alta pública nueva rompe.
+- **Fix preparado**: `supabase/migrations/20260610_008_fix_signup_capabilities_trigger.sql` — pasa `init_user_capabilities()` a **SECURITY DEFINER** + `search_path=public` + `ELSE` en el CASE. Idempotente (CREATE OR REPLACE). NO commiteado ni aplicado todavía (pendiente confirmar diagnóstico).
+
+### Pendiente
+- **Confirmar root cause** antes de aplicar: vía Supabase Auth logs (error exacto: `permission denied`/`violates RLS` sobre `user_capabilities`) o query read-only (`prosecdef` de la función + grants). La Supabase MCP se reconectó al final de la sesión → se puede verificar y aplicar directo con `get_logs`/`execute_sql`/`apply_migration`.
+- Aplicar mig 008 a prod + probar el alta + commitear la migración al repo.
+
+### Notas
+- "Database error saving new user" siempre = el trigger `handle_new_user` (o un trigger en cascada sobre `profiles`) está fallando; el mensaje de Auth es genérico, el error real está en los Auth logs de Supabase.
+- Patrón a vigilar a futuro: **toda tabla nueva con trigger AFTER INSERT ON profiles** debe usar `SECURITY DEFINER` (igual que `handle_new_user`), sino rompe el signup.
+
+---
+
 ## 2026-06-05 11:07 — Cierre de sesión: branches limpiadas + verificación de estado
 **Maquina**: NNRM-iMac-275.local
 
