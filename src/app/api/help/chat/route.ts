@@ -4,7 +4,30 @@ import { streamText, stepCountIs } from 'ai';
 import { getHelpArticles, getFAQs } from '@/features/help/actions';
 import { helpTools } from '@/features/help/tools';
 import { getRecentChatContext, saveChatMessage } from '@/features/help/memory';
-import { getCurrentUserRole } from '@/features/auth/services/permissions';
+import { getCurrentUserRole, ROLE_CAPABILITIES, type UserRole } from '@/features/auth/services/permissions';
+
+// Genera la sección de ROLES desde ROLE_CAPABILITIES (fuente de verdad en
+// código) en vez de hardcodearla. Así la AI nunca queda desactualizada cuando
+// cambian los roles — se auto-actualiza con el código.
+function buildRolesSection(): string {
+  const order: UserRole[] = ['leader', 'dev', 'comercial', 'cliente'];
+  const caps = (r: UserRole): string => {
+    const c = ROLE_CAPABILITIES[r];
+    const can: string[] = [];
+    const cant: string[] = [];
+    (c.canCreateProjects ? can : cant).push('crear proyectos');
+    (c.canDeleteProjects ? can : cant).push('borrar proyectos');
+    (c.canChangePricing ? can : cant).push('cambiar pricing');
+    (c.canInviteUsers ? can : cant).push('invitar usuarios');
+    (c.canSyncProjects ? can : cant).push('sincronizar skills');
+    (c.canViewAllProjects ? can : cant).push('ver todos los proyectos');
+    return `- **${r}** (${c.label}): ${c.description} PUEDE: ${can.join(', ') || '—'}. NO PUEDE: ${cant.join(', ') || '—'}.`;
+  };
+  return `## ROLES (implementados y en producción — Sprint A)
+${order.map(caps).join('\n')}
+- Solo \`leader\` accede al Factory (/leader/proyectos), ABM (/leader/usuarios), Settings, Reports.
+- Para asignar \`leader\`/\`comercial\` se usa SQL; \`dev\`/\`cliente\` se invitan desde el ABM.`;
+}
 
 // gpt-4o-mini: tool calling confiable, costo ~$0.15/1M input. Probado vs
 // gemini-2.0-flash que via OpenRouter no ejecutaba las tools (solo generaba
@@ -21,14 +44,18 @@ interface ChatMessage {
 // ============================================
 const KNOWLEDGE_BASE = `
 ## QUE ES FACTORY MANAGER
-Business OS para gestionar una fabrica de software. El dueno (lider) ve todos sus proyectos
+Business OS para gestionar una fabrica de software. El lider ve todos los proyectos del equipo
 en un dashboard, monitorea tiempo y dinero, sincroniza skills entre catalogo central y proyectos,
-y genera reportes de costo por hora.
+gestiona usuarios (ABM) y genera reportes de costo por hora. La mitad web (Vercel) coordina con el
+SF Agent (Electron, en cada maquina de developer) via Supabase.
 
-## PERSONAJES
-- **Founder**: vision total. Pantalla: /dashboard
-- **Operador tecnico** (roadmap): mantener proyectos sincronizados
-- **Cliente final** (roadmap): ver SOLO su proyecto
+## PANTALLAS PRINCIPALES
+- **/dashboard**: vista general.
+- **/leader/proyectos**: el Factory — tabla de proyectos del equipo, "Trabajando ahora" (sesiones del Agent),
+  metricas (commits, horas, version, owner, contributors). Solo leader. (/factory redirige aca.)
+- **/leader/usuarios**: ABM de usuarios (invitar, cambiar rol, suspender). Solo leader.
+- **/settings**, **/reports**, **/versions**: solo leader.
+- **/cheat-sheet**: equipo interno (leader/dev/comercial).
 
 ## ESTADOS DE SKILLS
 - **synced** (verde): local = catalogo
@@ -42,7 +69,8 @@ Como arreglar: para "divergent" → Re-sync o pushear cambios al catalogo. Para 
 ## OTROS ESTADOS
 - **agent_status** (en projects): pending / creating / created / failed
 - **tracking** (en proyecto): stopped / active
-- **Agent connection**: active si heartbeat <60s, sino offline
+- **Agent connection**: online si la ultima actividad (last_seen_at o last_heartbeat, lo mas reciente) es <60s, sino offline
+- **Sesion de proyecto** (en /leader/proyectos): se pinta viva (verde) solo si la ultima actividad es <3min; sino gris ("visto hace X")
 
 ## GLOSARIO TECNICO → HUMANO
 - **skill**: capacidad reutilizable (login, emails, etc.)
@@ -50,8 +78,8 @@ Como arreglar: para "divergent" → Re-sync o pushear cambios al catalogo. Para 
 - **Agent**: programa local que mantiene proyectos en sincronia
 - **wip**: commit automatico del Agent ("work in progress")
 - **hash**: huella digital del skill (compara local vs catalogo)
-- **portfolio**: la pantalla con todos los proyectos
-- **factory**: wizard para crear proyecto nuevo
+- **portfolio / factory**: la pantalla con todos los proyectos del equipo (/leader/proyectos)
+- **ABM**: alta/baja/modificacion de usuarios (/leader/usuarios)
 
 ## RESPUESTAS TIPICAS DE ERROR
 - "Por que no se sincronizo?" → revisar estado del Agent. Si offline: "El Agent esta dormido, despertalo".
@@ -111,12 +139,14 @@ REGLAS:
 - No inventes funcionalidades. Si algo es "roadmap" o "proximamente", decilo asi.
 - Para acciones destructivas (borrar), pedir confirmacion explicita.
 - Si una herramienta devuelve error o no encuentra datos, decilo: "No encontre proyectos con ese nombre".
-- Si el usuario menciona algo del cliente final/operador con roles, aclara que el sistema de roles esta en roadmap (sprint B, requiere /add-security).
+- El sistema de roles (leader/dev/comercial/cliente) esta IMPLEMENTADO y en produccion (Sprint A). No digas que es "roadmap". Ver la seccion ROLES para que puede hacer cada uno.
 
 ---
 
 CONOCIMIENTO COMPLETO DE LA PLATAFORMA:
 ${KNOWLEDGE_BASE}
+
+${buildRolesSection()}
 
 ---
 
