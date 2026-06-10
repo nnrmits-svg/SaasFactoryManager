@@ -114,6 +114,16 @@ export async function setKnowledgeStatus(
   return error ? { ok: false, error: error.message } : { ok: true };
 }
 
+/** Cuenta lo que necesita atención: items pending + novedades del radar sin revisar. */
+export async function getKnowledgeBadgeCount(): Promise<number> {
+  const supabase = await createClient();
+  const [pendRes, ecoRes] = await Promise.all([
+    supabase.from('knowledge_items').select('id', { count: 'exact', head: true }).eq('status', 'pending_review'),
+    supabase.from('ecosystem_updates').select('id', { count: 'exact', head: true }).eq('status', 'new'),
+  ]);
+  return (pendRes.count ?? 0) + (ecoRes.count ?? 0);
+}
+
 /** Aprueba TODOS los items pendientes (curación en lote). Leader/dev only. */
 export async function approveAllPending(): Promise<{ ok: boolean; count: number; error?: string }> {
   await requireRole(['leader', 'dev']);

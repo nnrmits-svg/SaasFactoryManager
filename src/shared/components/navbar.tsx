@@ -5,6 +5,7 @@ import type { Profile } from '@/features/auth/types';
 import { UserMenu } from '@/features/auth/components/user-menu';
 import { FluyaLogo } from '@/shared/components/fluya-logo';
 import { trackSession } from '@/features/auth/services/sessions';
+import { getKnowledgeBadgeCount } from '@/features/knowledge/services/knowledge-actions';
 
 interface NavbarShellProps {
   /** Right-side content. Auth-aware in NavbarAuth, neutral in NavbarSkeleton. */
@@ -25,7 +26,7 @@ function NavbarShell({ rightSlot }: NavbarShellProps) {
   );
 }
 
-function AuthedRight({ profile }: { profile: Profile }) {
+function AuthedRight({ profile, kbCount }: { profile: Profile; kbCount: number }) {
   return (
     <>
       <Link
@@ -63,6 +64,11 @@ function AuthedRight({ profile }: { profile: Profile }) {
         className="px-3 py-1.5 text-sm text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-all duration-300"
       >
         Conocimiento
+        {kbCount > 0 && (
+          <span className="ml-1.5 text-[10px] px-1.5 py-0.5 bg-fluya-green/15 text-fluya-green rounded-full">
+            {kbCount}
+          </span>
+        )}
       </Link>
       <Link
         href="/reports"
@@ -142,5 +148,8 @@ export async function NavbarAuth() {
     updated_at: user.created_at,
   };
 
-  return <NavbarShell rightSlot={<AuthedRight profile={profile} />} />;
+  // Badge de "necesita atención": pending + novedades del radar. No rompe el navbar si falla.
+  const kbCount = await getKnowledgeBadgeCount().catch(() => 0);
+
+  return <NavbarShell rightSlot={<AuthedRight profile={profile} kbCount={kbCount} />} />;
 }
