@@ -6,6 +6,24 @@
 
 ---
 
+## 2026-06-10 (tarde) — AI Fluya actualizada + auto-update (N2+N3) → v1.2.11
+**Maquina**: sesión Manager (Mac de Riki) · branch `main`
+
+### Contexto
+- **Signup CONFIRMADO funcionando**: la mig 008 (SECURITY DEFINER en `init_user_capabilities`) se aplicó y el alta pública anda (ver entrada de NNRM-iMac-275 abajo — mismo diagnóstico, en paralelo). El archivo de mig quedó committeado dentro de un wip auto-commit de la otra Mac. ⚠️ El auto-sync parece prendido de nuevo en NNRM-iMac-275 (Riki lo quería apagado) — revisar.
+
+### Hecho (AI Fluya, v1.2.11)
+- **Bug que notó Riki**: el `KNOWLEDGE_BASE` hardcodeado del chat (`src/app/api/help/chat/route.ts`) tenía el modelo de roles VIEJO (Founder/Operador/"roadmap") + una regla que afirmaba que los roles eran roadmap (falso — Sprint A en prod). La AI le decía a la gente que los roles no existían.
+- **Fix + anti-drift**: la sección ROLES ahora se **genera desde `ROLE_CAPABILITIES`** (código = fuente de verdad) → nunca más se desactualiza. KB al día (pantallas /leader/*, agent connection por last_seen_at, sesión viva <3min, glosario).
+- **Auto-update Nivel 2**: nueva tool `buscar_conocimiento` (`src/features/help/tools.ts`) → RPC `search_knowledge` sobre `knowledge_items` (KB viva del Motor Proactivo). La AI responde desde la KB aprobada (RLS: cliente solo approved; leader/dev todo). Se actualiza sola sin redeploy.
+- **Auto-update Nivel 3**: `syncChangelogToKnowledge()` (`src/features/help/services/changelog-knowledge-sync.ts`) + cron `/api/cron/changelog-knowledge` (lunes 11:00, Bearer CRON_SECRET, en `vercel.json`). Sincroniza CHANGELOG (version.ts) → `knowledge_items` (`dimension='platform'`, `item_type='version_bump'`, `source_type='platform_change'`, `status='approved'`, idempotente por `source_ref='changelog:v<ver>'`). Cada release nuevo entra a la KB. Sin migración (usa tabla existente).
+
+### Pendiente / radar
+- **Seed inicial de la KB de releases** (el cron es semanal): correr una vez `curl -H "Authorization: Bearer $CRON_SECRET" https://saasfactory.grupo-its.com.ar/api/cron/changelog-knowledge`.
+- **Email (Resend SMTP)**: Riki lo está revisando ("estaba funcionando, no sé qué pasó" — capaz se desconectó el SMTP en Supabase o cambió la API key). Templates branded en `docs/email-templates-fluya.md`; guía en `docs/smtp-resend-setup.md`. Sin esto las invitaciones no llegan.
+- **dev no puede configurar el Factory** (es leader-only); `/dev/dashboard` no existe aún. Para administrar la fábrica el usuario debe ser `leader` (SQL). El Agent SÍ lo puede usar un `dev` (rol dev necesario para pushear commits/horas por RLS).
+- **Auto-sync del Agent prendido en otra Mac** → revisar (Riki lo quería apagado).
+
 ## 2026-06-10 18:07 — Diagnóstico bug signup ("Database error saving new user") + mig 008
 **Maquina**: NNRM-iMac-275.local
 

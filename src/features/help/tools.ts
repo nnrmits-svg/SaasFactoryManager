@@ -261,6 +261,41 @@ const searchArticles = tool({
 });
 
 // ============================================================
+// Tool 6: buscar_conocimiento — KB viva del Motor Proactivo
+// ============================================================
+const buscarConocimiento = tool({
+  description:
+    'Busca en la base de conocimiento del equipo (knowledge_items): aprendizajes tecnicos, ' +
+    'soluciones, patrones cross-proyecto y CAMBIOS DE PLATAFORMA / releases. Usar para preguntas ' +
+    'conceptuales ("como se hace X", "que cambio en la version Y"), troubleshooting tecnico, o ' +
+    'cualquier tema que no sea de los proyectos/costos del usuario. Esta base se actualiza sola ' +
+    '(el Motor Proactivo la alimenta), asi que es la fuente mas fresca. La RLS ya filtra por rol: ' +
+    'el cliente ve solo lo aprobado; leader/dev ven tambien lo pendiente.',
+  inputSchema: z.object({
+    query: z.string().describe('Texto a buscar (ej: "session lifecycle", "RLS commits", "v1.2.10", "invitar usuario")'),
+  }),
+  execute: async ({ query }) => {
+    const supabase = await createClient();
+    const { data, error } = await supabase.rpc('search_knowledge', { q: query, max_results: 6 });
+    if (error) return { error: error.message };
+    type KItem = {
+      title: string; body: string; context: string | null;
+      tags: string[] | null; source_type: string; status: string;
+    };
+    const results = ((data ?? []) as KItem[]).map((k) => ({
+      title: k.title,
+      // Recortamos el body para no inflar el contexto del modelo.
+      body: k.body.length > 800 ? `${k.body.slice(0, 800)}…` : k.body,
+      context: k.context,
+      tags: k.tags ?? [],
+      source_type: k.source_type,
+      status: k.status,
+    }));
+    return { total: results.length, results };
+  },
+});
+
+// ============================================================
 // Export bundle
 // ============================================================
 export const helpTools = {
@@ -269,4 +304,5 @@ export const helpTools = {
   list_problematic_skills: listProblematicSkills,
   get_cost_summary: getCostSummary,
   search_articles: searchArticles,
+  buscar_conocimiento: buscarConocimiento,
 };

@@ -11,7 +11,7 @@
 // REGLA: bumpear APP_VERSION con CADA cambio que llegue a prod. Sin wip silenciosos.
 // Cada deploy queda reflejado en el changelog que ve el founder en /about.
 
-export const APP_VERSION = '1.2.10';
+export const APP_VERSION = '1.2.11';
 
 export interface ChangelogEntry {
   version: string;
@@ -21,6 +21,13 @@ export interface ChangelogEntry {
 
 // Cronológico inverso: lo último arriba.
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.2.11',
+    date: '2026-06-10',
+    highlights: [
+      'AI Fluya actualizada + auto-update. (1) La info de roles ahora se genera desde el código (ROLE_CAPABILITIES) en vez de estar hardcodeada, así nunca se desactualiza; se corrigió que el asistente decía que los roles eran "roadmap" cuando ya están en producción (leader/dev/comercial/cliente). KB al día: pantallas reales (/leader/proyectos, ABM), Agent online por last_seen_at, sesión viva <3min. (2) Nueva herramienta buscar_conocimiento: AI Fluya responde desde la base de conocimiento viva (knowledge_items) que alimenta el Motor Proactivo, así se actualiza sola sin redeploy. (3) Los releases del changelog se sincronizan automáticamente a la KB (cron semanal /api/cron/changelog-knowledge) como cambios de plataforma, así el asistente conoce cada versión nueva.',
+    ],
+  },
   {
     version: '1.2.10',
     date: '2026-06-04',
