@@ -5,6 +5,7 @@ import {
   listKnowledge,
   searchKnowledge,
   setKnowledgeStatus,
+  approveAllPending,
   type KnowledgeData,
   type KnowledgeItem,
 } from '@/features/knowledge/services/knowledge-actions';
@@ -133,6 +134,14 @@ export function KnowledgeDashboard() {
     }
   }
 
+  async function handleApproveAll() {
+    if (!data || data.pendingCount === 0) return;
+    if (!confirm(`¿Aprobar los ${data.pendingCount} items pendientes? (después podés archivar los que no sirvan)`)) return;
+    const res = await approveAllPending();
+    if (res.ok) await load();
+    else alert(`Error: ${res.error}`);
+  }
+
   const counts = data
     ? {
         development: data.development.length,
@@ -148,9 +157,18 @@ export function KnowledgeDashboard() {
       <div className="flex items-center justify-between mb-1">
         <h1 className="text-2xl font-bold text-white">📚 Base de Conocimiento</h1>
         {data && data.pendingCount > 0 && (
-          <span className="text-xs px-2 py-1 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded-lg">
-            {data.pendingCount} pendiente(s) de revisar
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="text-xs px-2 py-1 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded-lg">
+              {data.pendingCount} pendiente(s)
+            </span>
+            <button
+              type="button"
+              onClick={handleApproveAll}
+              className="text-xs px-3 py-1 bg-fluya-green/10 text-fluya-green border border-fluya-green/20 rounded-lg hover:bg-fluya-green/20 transition-all"
+            >
+              ✅ Aprobar todos
+            </button>
+          </div>
         )}
       </div>
       <p className="text-gray-400 mb-6 text-sm">

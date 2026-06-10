@@ -113,3 +113,20 @@ export async function setKnowledgeStatus(
 
   return error ? { ok: false, error: error.message } : { ok: true };
 }
+
+/** Aprueba TODOS los items pendientes (curación en lote). Leader/dev only. */
+export async function approveAllPending(): Promise<{ ok: boolean; count: number; error?: string }> {
+  await requireRole(['leader', 'dev']);
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const { data, error } = await supabase
+    .from('knowledge_items')
+    .update({ status: 'approved', reviewed_at: new Date().toISOString(), reviewed_by: user?.id ?? null })
+    .eq('status', 'pending_review')
+    .select('id');
+
+  return error ? { ok: false, count: 0, error: error.message } : { ok: true, count: data?.length ?? 0 };
+}
