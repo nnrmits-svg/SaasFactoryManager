@@ -6,6 +6,30 @@
 
 ---
 
+## 2026-06-11 — Fix flujo de invitación de usuarios → v1.2.12
+**Maquina**: sesión Manager (Mac de Riki) · branch `main`
+
+### Síntomas (Riki)
+- El primer mail de invite llegó (SMTP Resend OK), pero al clickear "no pasaba nada" y el invitado no sabía con qué contraseña entrar. El usuario quedaba en **Pendiente**.
+- "Reenviar invite" no mandaba ningún correo.
+
+### Causa raíz
+- **Sin paso de definir contraseña**: `inviteUserByEmail` crea el usuario sin password y nunca había una pantalla para elegirla.
+- **Callback PKCE roto para invites**: el link caía en `/auth/callback` (`exchangeCodeForSession`), pero con `@supabase/ssr` (PKCE) el invite se genera server-side → sin code-verifier en el browser → el intercambio falla → `/login?error` (por eso "no pasaba nada" y seguía Pendiente).
+- **Reenviar roto**: `resendInviteAction` reusaba `inviteUserByEmail` sobre un usuario YA existente → error "already registered" → no enviaba nada.
+
+### Fix (v1.2.12)
+- **Nueva ruta `/auth/confirm`** (`src/app/auth/confirm/route.ts`): `verifyOtp({ token_hash, type })` — el patrón correcto de Supabase SSR para invite/recovery/signup. Activa el profile (pending→active) y redirige a `next`. `/auth/callback` queda SOLO para OAuth (Google), donde el code-verifier sí existe.
+- **Pantalla `/set-password`** (`src/app/(auth)/set-password/page.tsx` + `set-password-form.tsx`): el invitado (con sesión ya creada por confirm) define su clave vía `updateUser({ password })` → /dashboard.
+- **`resendInviteAction`** ahora usa `resetPasswordForEmail` (funciona con usuarios existentes, manda link de recovery → /set-password). `redirectTo` del invite y resend → `/set-password`.
+- **Templates de email** (`docs/email-templates-fluya.md`) reescritos: los links usan `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=…&next=…`.
+
+### ⚠️ Pendiente de Riki (en Supabase Dashboard) para que ande end-to-end
+1. Pegar los 3 templates actualizados (Invite/Reset/Confirm) de `docs/email-templates-fluya.md`.
+2. **URL Configuration → Site URL** = `https://saasfactory.grupo-its.com.ar`.
+3. **Redirect URLs** allowlist: agregar `/auth/confirm`, `/set-password`, `/dashboard`.
+4. Probar: invitar → mail → "Activar mi cuenta" → /set-password → clave → /dashboard.
+
 ## 2026-06-10 (tarde) — AI Fluya actualizada + auto-update (N2+N3) → v1.2.11
 **Maquina**: sesión Manager (Mac de Riki) · branch `main`
 

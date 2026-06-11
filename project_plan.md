@@ -3,7 +3,7 @@
 > Plan vivo del producto. Una sola fuente de verdad de "donde estamos y a donde vamos".
 > Mantenido por el skill `project-plan`. Cronologia detallada en `Bitacora.md`.
 >
-> Ultima actualizacion: 2026-06-10 (v1.2.11)
+> Ultima actualizacion: 2026-06-11 (v1.2.12)
 > URL prod: https://saasfactory.grupo-its.com.ar
 > Cross-ref: ver entrada del 2026-06-04 en `Bitacora.md`
 >
@@ -97,6 +97,7 @@ operando con multiples proyectos en multiples maquinas locales (una por develope
 
 ## Done
 
+- [x] 2026-06-11: **v1.2.12 — Fix flujo de invitación**: el invitado no podía entrar (faltaba definir contraseña + el callback PKCE fallaba con links de email) y "Reenviar invite" no enviaba nada. Ahora ruta `/auth/confirm` (verifyOtp por token_hash) + pantalla `/set-password`; resend usa recovery. Requiere actualizar templates + Site URL/Redirect URLs en Supabase (ver `docs/email-templates-fluya.md`).
 - [x] 2026-06-10: **v1.2.11 — AI Fluya actualizada + auto-update**: (1) la info de roles se genera desde `ROLE_CAPABILITIES` (no se desactualiza más); se corrigió que el asistente afirmaba que los roles eran "roadmap" cuando ya están en prod. (2) Tool `buscar_conocimiento` → KB viva (`knowledge_items` vía `search_knowledge`), se actualiza sola. (3) Cron `/api/cron/changelog-knowledge` sincroniza el CHANGELOG → KB como `platform_change`. Sin migración.
 - [x] 2026-06-10: **Mig 008 — fix signup "Database error saving new user"**: `init_user_capabilities` (trigger AFTER INSERT ON profiles de Mig 003) pasa a SECURITY DEFINER — antes era SECURITY INVOKER y el INSERT a `user_capabilities` (RLS sin grant para `supabase_auth_admin`) abortaba el alta. Confirmado funcionando.
 - [x] 2026-06-04: **v1.2.10 — Fix Factory sesiones viejas en verde**: el indicador "Trabajando ahora" pintaba 🟢 por el enum `status` (que no se cierra al apagar el Agent). Ahora el color sale de `is_live` (server-side, última actividad < 180s); no-live → gris + "visto hace Xd". Display-only; la causa de fondo (lifecycle del Agent) es Sprint D.

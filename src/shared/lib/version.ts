@@ -11,7 +11,7 @@
 // REGLA: bumpear APP_VERSION con CADA cambio que llegue a prod. Sin wip silenciosos.
 // Cada deploy queda reflejado en el changelog que ve el founder en /about.
 
-export const APP_VERSION = '1.2.11';
+export const APP_VERSION = '1.2.12';
 
 export interface ChangelogEntry {
   version: string;
@@ -21,6 +21,13 @@ export interface ChangelogEntry {
 
 // Cronológico inverso: lo último arriba.
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.2.12',
+    date: '2026-06-11',
+    highlights: [
+      'Fix del flujo de invitación de usuarios. El invitado clickeaba el link y "no pasaba nada" (no se le pedía contraseña) y "Reenviar invite" no mandaba ningún correo. Causas: (1) los links de email se procesaban con exchangeCodeForSession (/auth/callback), que falla con invites en flujo PKCE/SSR porque no hay code-verifier; (2) nunca había un paso para definir la contraseña; (3) "Reenviar invite" reusaba inviteUserByEmail sobre un usuario ya existente → erroraba sin enviar. Ahora: nueva ruta /auth/confirm (verifyOtp por token_hash, el patrón correcto para SSR) + pantalla /set-password donde el invitado elige su clave; "Reenviar invite" manda un link de recovery (funciona con usuarios existentes). Requiere actualizar los templates de email en Supabase (apuntan a /auth/confirm con token_hash) — ver docs/email-templates-fluya.md.',
+    ],
+  },
   {
     version: '1.2.11',
     date: '2026-06-10',

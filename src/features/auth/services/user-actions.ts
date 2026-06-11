@@ -44,9 +44,11 @@ export async function inviteUserAction(formData: FormData): Promise<{
   try {
     const admin = getAdminClient();
 
-    // Invita por email usando Supabase auth.admin
+    // Invita por email usando Supabase auth.admin. El link del template apunta a
+    // /auth/confirm (verifyOtp por token_hash) y de ahi a /set-password. El
+    // redirectTo es el fallback ({{ .RedirectTo }}) si el template lo usa.
     const { data, error } = await admin.auth.admin.inviteUserByEmail(email, {
-      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'}/auth/callback`,
+      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'}/set-password`,
     });
 
     if (error) {
@@ -164,8 +166,11 @@ export async function resendInviteAction(formData: FormData): Promise<{
 
     if (!profile?.email) return { ok: false, error: 'Email no encontrado' };
 
-    const { error } = await admin.auth.admin.inviteUserByEmail(profile.email, {
-      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'}/auth/callback`,
+    // El usuario YA existe (lo invitamos antes), asi que inviteUserByEmail
+    // fallaria con "already registered". Para reenviar usamos un link de
+    // recovery, que sirve para usuarios existentes y los lleva a /set-password.
+    const { error } = await admin.auth.resetPasswordForEmail(profile.email, {
+      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'}/set-password`,
     });
 
     if (error) return { ok: false, error: error.message };
