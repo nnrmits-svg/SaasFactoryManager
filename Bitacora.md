@@ -24,11 +24,12 @@
 - **`resendInviteAction`** ahora usa `resetPasswordForEmail` (funciona con usuarios existentes, manda link de recovery → /set-password). `redirectTo` del invite y resend → `/set-password`.
 - **Templates de email** (`docs/email-templates-fluya.md`) reescritos: los links usan `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=…&next=…`.
 
-### ⚠️ Pendiente de Riki (en Supabase Dashboard) para que ande end-to-end
-1. Pegar los 3 templates actualizados (Invite/Reset/Confirm) de `docs/email-templates-fluya.md`.
-2. **URL Configuration → Site URL** = `https://saasfactory.grupo-its.com.ar`.
-3. **Redirect URLs** allowlist: agregar `/auth/confirm`, `/set-password`, `/dashboard`.
-4. Probar: invitar → mail → "Activar mi cuenta" → /set-password → clave → /dashboard.
+### ✅ RESUELTO (2026-06-11) — confirmado end-to-end
+- Templates actualizados en Supabase (link → `/auth/confirm?token_hash=…&type=invite&next=/set-password`). Verificado vía API de Resend: los invites nuevos llevan el link correcto.
+- **Redirect URLs**: alcanzó con el wildcard `https://saasfactory.grupo-its.com.ar/**` (cubre /auth/confirm, /set-password, /dashboard). Site URL = la URL pelada.
+- **Entrega**: Resend OK (dominio verificado = `fluya.com.ar`, NO grupo-its.com.ar; remitente `noreply@fluya.com.ar`). Los mails llegaban pero caían en **Spam de Gmail** — para mejorar, agregar DMARC en fluya.com.ar (deliverability, no urgente).
+- Invitaciones reales saliendo OK (mmogica@grupoits.com.ar, lsantoro@fluya.com.ar — delivered).
+- ⚠️ La API key de Resend se compartió en chat para diagnóstico → **rotar**.
 
 ## 2026-06-10 (tarde) — AI Fluya actualizada + auto-update (N2+N3) → v1.2.11
 **Maquina**: sesión Manager (Mac de Riki) · branch `main`
