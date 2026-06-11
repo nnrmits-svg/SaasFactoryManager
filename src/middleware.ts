@@ -10,7 +10,8 @@ export async function middleware(request: NextRequest) {
   // /api/cron/*       (Vercel Cron manda Bearer CRON_SECRET, sin cookie)
   if (
     request.nextUrl.pathname.startsWith('/api/knowledge/') ||
-    request.nextUrl.pathname.startsWith('/api/cron/')
+    request.nextUrl.pathname.startsWith('/api/cron/') ||
+    request.nextUrl.pathname.startsWith('/api/pmo')
   ) {
     return NextResponse.next({ request });
   }
