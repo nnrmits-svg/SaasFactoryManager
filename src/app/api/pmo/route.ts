@@ -16,15 +16,50 @@ function svc() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
 }
 
+const AGENT_FRESH_MS = 48 * 3600 * 1000; // sesiones del Agent de las últimas 48h
+
 export async function GET(req: Request) {
   if (!auth(req)) return Response.json({ error: 'unauthorized' }, { status: 401 });
-  const { data, error } = await svc()
+  const supabase = svc();
+
+  // 1) Reportes explícitos (/tablero, sf-report)
+  const { data: reports, error } = await supabase
     .from('pmo_sessions')
-    .select('machine, project, role, status, current_task, next_task, office, updated_at')
-    .order('machine', { ascending: true })
-    .order('project', { ascending: true });
+    .select('machine, project, role, status, current_task, next_task, office, updated_at');
   if (error) return Response.json({ error: error.message }, { status: 500 });
-  return Response.json({ board: data ?? [] });
+
+  // 2) AUTO-INGEST: actividad que el Agent ya reporta (project_active_sessions)
+  const [pasRes, agentsRes, projsRes] = await Promise.all([
+    supabase.from('project_active_sessions').select('project_id, agent_instance_id, last_activity_at'),
+    supabase.from('agent_instances').select('id, machine_name'),
+    supabase.from('projects').select('id, name'),
+  ]);
+  const machineById = new Map((agentsRes.data ?? []).map((a) => [a.id as string, a.machine_name as string]));
+  const nameById = new Map((projsRes.data ?? []).map((p) => [p.id as string, p.name as string]));
+
+  type Row = Record<string, unknown> & { machine: string; project: string };
+  const seen = new Set((reports ?? []).map((r) => `${r.machine}::${r.project}`));
+  const now = Date.now();
+  const agentRows: Row[] = [];
+  for (const s of pasRes.data ?? []) {
+    const machine = machineById.get(s.agent_instance_id as string);
+    const project = nameById.get(s.project_id as string);
+    if (!machine || !project) continue;
+    if (s.last_activity_at && now - new Date(s.last_activity_at as string).getTime() > AGENT_FRESH_MS) continue;
+    const key = `${machine}::${project}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    agentRows.push({
+      machine, project, role: 'executor', status: 'working',
+      current_task: '(actividad detectada por el Agent)', next_task: null,
+      office: 'principal', source: 'agent', updated_at: s.last_activity_at ?? null,
+    });
+  }
+
+  const board = [...(reports ?? []).map((r) => ({ ...r, source: 'report' })), ...agentRows].sort(
+    (a, b) => (a.machine + a.project).localeCompare(b.machine + b.project),
+  );
+  return Response.json({ board });
 }
 
 export async function POST(req: Request) {
