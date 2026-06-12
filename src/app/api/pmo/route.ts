@@ -16,7 +16,7 @@ function svc() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
 }
 
-const AGENT_FRESH_MS = 48 * 3600 * 1000; // sesiones del Agent de las últimas 48h
+const AGENT_FRESH_MS = 3 * 3600 * 1000; // solo sesiones del Agent realmente activas (3h)
 
 export async function GET(req: Request) {
   if (!auth(req)) return Response.json({ error: 'unauthorized' }, { status: 401 });
