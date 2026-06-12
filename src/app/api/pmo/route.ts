@@ -28,32 +28,35 @@ export async function GET(req: Request) {
     .select('machine, project, role, status, current_task, next_task, office, updated_at');
   if (error) return Response.json({ error: error.message }, { status: 500 });
 
-  // 2) AUTO-INGEST: actividad que el Agent ya reporta (project_active_sessions)
-  const [pasRes, agentsRes, projsRes] = await Promise.all([
-    supabase.from('project_active_sessions').select('project_id, agent_instance_id, last_activity_at'),
-    supabase.from('agent_instances').select('id, machine_name'),
-    supabase.from('projects').select('id, name'),
-  ]);
-  const machineById = new Map((agentsRes.data ?? []).map((a) => [a.id as string, a.machine_name as string]));
-  const nameById = new Map((projsRes.data ?? []).map((p) => [p.id as string, p.name as string]));
-
+  // 2) AUTO-INGEST (opcional, ?agent=1). project_active_sessions = repos que el Agent
+  // VIGILA, no "trabajo activo" real → por default NO se incluye (ensucia el board).
+  // Reactivar cuando el Agent reporte actividad real (#55 activity-reporter, Sprint D).
   type Row = Record<string, unknown> & { machine: string; project: string };
-  const seen = new Set((reports ?? []).map((r) => `${r.machine}::${r.project}`));
-  const now = Date.now();
   const agentRows: Row[] = [];
-  for (const s of pasRes.data ?? []) {
-    const machine = machineById.get(s.agent_instance_id as string);
-    const project = nameById.get(s.project_id as string);
-    if (!machine || !project) continue;
-    if (s.last_activity_at && now - new Date(s.last_activity_at as string).getTime() > AGENT_FRESH_MS) continue;
-    const key = `${machine}::${project}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
-    agentRows.push({
-      machine, project, role: 'executor', status: 'working',
-      current_task: '(actividad detectada por el Agent)', next_task: null,
-      office: 'principal', source: 'agent', updated_at: s.last_activity_at ?? null,
-    });
+  if (new URL(req.url).searchParams.get('agent') === '1') {
+    const [pasRes, agentsRes, projsRes] = await Promise.all([
+      supabase.from('project_active_sessions').select('project_id, agent_instance_id, last_activity_at'),
+      supabase.from('agent_instances').select('id, machine_name'),
+      supabase.from('projects').select('id, name'),
+    ]);
+    const machineById = new Map((agentsRes.data ?? []).map((a) => [a.id as string, a.machine_name as string]));
+    const nameById = new Map((projsRes.data ?? []).map((p) => [p.id as string, p.name as string]));
+    const seen = new Set((reports ?? []).map((r) => `${r.machine}::${r.project}`));
+    const now = Date.now();
+    for (const s of pasRes.data ?? []) {
+      const machine = machineById.get(s.agent_instance_id as string);
+      const project = nameById.get(s.project_id as string);
+      if (!machine || !project) continue;
+      if (s.last_activity_at && now - new Date(s.last_activity_at as string).getTime() > AGENT_FRESH_MS) continue;
+      const key = `${machine}::${project}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      agentRows.push({
+        machine, project, role: 'executor', status: 'working',
+        current_task: '(actividad detectada por el Agent)', next_task: null,
+        office: 'principal', source: 'agent', updated_at: s.last_activity_at ?? null,
+      });
+    }
   }
 
   const board = [...(reports ?? []).map((r) => ({ ...r, source: 'report' })), ...agentRows].sort(
