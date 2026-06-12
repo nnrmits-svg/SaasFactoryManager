@@ -4,30 +4,30 @@ import { useCallback, useEffect, useState } from 'react';
 import {
   getMissionControlBoard,
   type BoardRow,
+  type ActiveSession,
 } from '@/features/mission-control/services/mission-control-actions';
 
-const STATUS_ICON: Record<string, string> = {
-  working: '🟢', blocked: '🔴', review: '🟡', idle: '⚪', done: '✅',
-};
+const STATUS = {
+  working: { label: 'Working',  card: 'bg-fluya-green/[0.07] border-fluya-green/25',  badge: 'bg-fluya-green/15 text-fluya-green', bar: 'bg-fluya-green' },
+  blocked: { label: 'Pendiente', card: 'bg-red-500/[0.07] border-red-500/30',          badge: 'bg-red-500/15 text-red-400',         bar: 'bg-red-400' },
+  review:  { label: 'Review',   card: 'bg-amber-500/[0.07] border-amber-500/30',       badge: 'bg-amber-500/15 text-amber-400',     bar: 'bg-amber-400' },
+  idle:    { label: 'Idle',     card: 'bg-white/[0.03] border-white/10',               badge: 'bg-white/10 text-gray-400',          bar: 'bg-gray-500' },
+  done:    { label: 'Done',     card: 'bg-indigo-500/[0.07] border-indigo-500/30',     badge: 'bg-indigo-500/15 text-indigo-300',   bar: 'bg-indigo-400' },
+} as const;
 const ROLE_ICON: Record<string, string> = { hub: '🧠', agent: '🤖', executor: '🛠️' };
-const STATUS_STYLE: Record<string, string> = {
-  working: 'bg-fluya-green/10 text-fluya-green border-fluya-green/20',
-  blocked: 'bg-red-500/10 text-red-400 border-red-500/20',
-  review: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-  idle: 'bg-white/5 text-gray-400 border-white/10',
-  done: 'bg-indigo-500/10 text-indigo-300 border-indigo-500/20',
-};
-const STATUS_BAR: Record<string, string> = {
-  working: 'bg-fluya-green', blocked: 'bg-red-400', review: 'bg-amber-400',
-  idle: 'bg-gray-500', done: 'bg-indigo-400',
-};
-const STALE_H = 24;
-const ROLE_LABEL: Record<string, string> = { hub: 'Arquitecto / Hub', agent: 'Agent', executor: 'Executor' };
+const STATUS_FILTERS = [
+  { v: 'todos', l: 'Todos' },
+  { v: 'working', l: 'Working' },
+  { v: 'blocked', l: 'Pendientes' },
+  { v: 'review', l: 'Review' },
+  { v: 'idle', l: 'Idle' },
+];
 
-function hoursAgo(iso: string | null): number {
-  if (!iso) return Infinity;
-  return (Date.now() - new Date(iso).getTime()) / 3.6e6;
-}
+const st = (s: string) => STATUS[s as keyof typeof STATUS] ?? STATUS.idle;
+const chip = (active: boolean) =>
+  `px-2.5 py-1 rounded-lg border text-xs transition-colors ${
+    active ? 'bg-fluya-green/15 text-fluya-green border-fluya-green/30' : 'text-gray-400 border-white/10 hover:bg-white/5'
+  }`;
 function ago(iso: string | null): string {
   if (!iso) return '';
   const s = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
@@ -39,16 +39,20 @@ function ago(iso: string | null): string {
 
 export function MissionControlBoard() {
   const [board, setBoard] = useState<BoardRow[]>([]);
+  const [sessions, setSessions] = useState<ActiveSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastSync, setLastSync] = useState<Date | null>(null);
+  const [machineF, setMachineF] = useState('todas');
+  const [statusF, setStatusF] = useState('todos');
 
   const refresh = useCallback(async () => {
     try {
-      const rows = await getMissionControlBoard();
-      setBoard(rows);
+      const r = await getMissionControlBoard();
+      setBoard(r.board);
+      setSessions(r.sessions);
       setLastSync(new Date());
     } catch {
-      /* mantené el board previo si falla un tick */
+      /* mantené lo previo si falla un tick */
     } finally {
       setLoading(false);
     }
@@ -60,25 +64,30 @@ export function MissionControlBoard() {
     return () => clearInterval(id);
   }, [refresh]);
 
-  const machines = [...new Set(board.map((b) => b.machine))];
-  const atencion = board.filter((b) => b.status === 'blocked' || hoursAgo(b.updated_at) > STALE_H);
-  const byMachine = machines.map((m) => ({ machine: m, rows: board.filter((b) => b.machine === m) }));
+  const hubs = board.filter((b) => b.role === 'hub');
+  const rest = board.filter((b) => b.role !== 'hub');
+  const machines = [...new Set(rest.map((b) => b.machine))];
+
+  const match = (machine: string, status: string) =>
+    (machineF === 'todas' || machine === machineF) && (statusF === 'todos' || status === statusF);
+
+  const sessFiltered = sessions.filter((s) => match(s.machine, s.status));
+  const byMachine = machines
+    .map((m) => ({ machine: m, rows: rest.filter((b) => b.machine === m && match(b.machine, b.status)) }))
+    .filter((g) => g.rows.length);
 
   return (
     <div className="max-w-6xl mx-auto px-6">
       {/* Header */}
-      <div className="flex items-end justify-between flex-wrap gap-3 mb-6">
+      <div className="flex items-end justify-between flex-wrap gap-3 mb-5">
         <div>
-          <h1 className="text-2xl font-semibold text-white flex items-center gap-2">
-            📋 Mission Control
-          </h1>
+          <h1 className="text-2xl font-semibold text-white flex items-center gap-2">📋 Mission Control</h1>
           <p className="text-sm text-gray-400 mt-1">
-            {machines.length} máquinas · {board.length} workstreams
+            {machines.length} máquinas · {rest.length} workstreams · {sessions.length} sesiones activas
             {lastSync && (
               <>
-                {' · '}
-                <span className="text-fluya-green">🔄 live</span>
-                {' · '}actualizado {lastSync.toLocaleTimeString('es-AR')}
+                {' · '}<span className="text-fluya-green">🔄 live</span>{' · '}
+                {lastSync.toLocaleTimeString('es-AR')}
               </>
             )}
           </p>
@@ -93,72 +102,99 @@ export function MissionControlBoard() {
 
       {loading && board.length === 0 ? (
         <p className="text-gray-500 text-sm">Cargando tablero…</p>
-      ) : board.length === 0 ? (
-        <p className="text-gray-500 text-sm">
-          Tablero vacío. Las sesiones reportan con <code className="text-fluya-green">/tablero</code>.
-        </p>
       ) : (
         <>
-          {/* Atención */}
-          {atencion.length > 0 ? (
-            <div className="mb-6 p-4 bg-red-500/5 border border-red-500/30 rounded-2xl">
-              <p className="text-sm font-medium text-red-300 mb-2">⚠️ Atención ({atencion.length})</p>
-              <div className="space-y-1">
-                {atencion.map((b) => (
-                  <p key={`${b.machine}-${b.project}`} className="text-sm text-gray-300">
-                    {STATUS_ICON[b.status]}{' '}
-                    <span className="font-medium text-white">{b.project}</span>
-                    {' — '}
-                    {b.status === 'blocked'
-                      ? `bloqueado: ${b.current_task ?? '?'}`
-                      : `sin novedad hace ${ago(b.updated_at)}`}
-                  </p>
-                ))}
+          {/* Centro de mando (Arquitecto / hub) — pineado arriba */}
+          {hubs.map((h) => (
+            <div
+              key={h.machine + h.project}
+              className="mb-5 rounded-2xl border border-purple-500/30 bg-purple-500/[0.06] p-4 flex items-center gap-3"
+            >
+              <span className="text-2xl">🧠</span>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-white">
+                  {h.project} <span className="text-purple-300 font-normal">· centro de mando</span>
+                </p>
+                {h.current_task && <p className="text-xs text-gray-300 mt-0.5">{h.current_task}</p>}
+                {h.next_task && <p className="text-xs text-fluya-green mt-0.5">→ {h.next_task}</p>}
               </div>
             </div>
-          ) : (
-            <div className="mb-6 p-3 bg-fluya-green/5 border border-fluya-green/20 rounded-2xl">
-              <p className="text-sm text-fluya-green">✅ Nada urgente.</p>
+          ))}
+
+          {/* Filtros */}
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mb-5">
+            <div className="flex flex-wrap items-center gap-1">
+              <span className="text-xs text-gray-500 mr-1">Máquina</span>
+              {['todas', ...machines].map((m) => (
+                <button key={m} onClick={() => setMachineF(m)} className={chip(machineF === m)}>
+                  {m === 'todas' ? 'Todas' : m}
+                </button>
+              ))}
             </div>
+            <div className="flex flex-wrap items-center gap-1">
+              <span className="text-xs text-gray-500 mr-1">Estado</span>
+              {STATUS_FILTERS.map((f) => (
+                <button key={f.v} onClick={() => setStatusF(f.v)} className={chip(statusF === f.v)}>
+                  {f.l}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Sesiones activas */}
+          {sessFiltered.length > 0 && (
+            <section className="mb-7">
+              <h2 className="text-sm font-semibold text-fluya-green mb-3">💻 Sesiones activas ahora ({sessFiltered.length})</h2>
+              <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
+                {sessFiltered.map((s) => (
+                  <div key={s.session_id} className="relative rounded-2xl border border-white/10 bg-white/[0.04] p-4 overflow-hidden">
+                    <span className="absolute left-0 top-0 bottom-0 w-1 bg-fluya-green" />
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="text-sm font-semibold text-white flex items-center gap-1.5 min-w-0">
+                        <span>💻</span><span className="truncate">{s.project}</span>
+                      </p>
+                      <span className="shrink-0 text-[10px] px-2 py-0.5 rounded-lg bg-purple-500/15 text-purple-300">
+                        {s.client ?? '?'}
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-gray-500 mt-2">{s.machine} · hace {ago(s.last_seen_at)}</p>
+                  </div>
+                ))}
+              </div>
+            </section>
           )}
 
-          {/* Por máquina */}
-          <div className="space-y-7">
-            {byMachine.map(({ machine, rows }) => (
-              <section key={machine}>
-                <h2 className="text-sm font-semibold text-purple-300 mb-3 flex items-center gap-2">
-                  🖥️ {machine}
-                </h2>
-                <div
-                  className="grid gap-3"
-                  style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))' }}
-                >
-                  {rows.map((b) => (
-                    <div
-                      key={`${b.machine}-${b.project}`}
-                      className="relative p-4 bg-white/5 border border-white/10 rounded-2xl overflow-hidden"
-                    >
-                      <span className={`absolute left-0 top-0 bottom-0 w-1 ${STATUS_BAR[b.status] ?? 'bg-gray-500'}`} />
-                      <div className="flex items-start justify-between gap-2">
-                        <p className="text-sm font-medium text-white flex items-center gap-1.5 min-w-0">
-                          <span title={ROLE_LABEL[b.role] ?? b.role}>{ROLE_ICON[b.role] ?? '🛠️'}</span>
-                          <span className="truncate">{b.project}</span>
-                        </p>
-                        <span
-                          className={`shrink-0 text-[10px] px-2 py-0.5 rounded-lg border uppercase ${STATUS_STYLE[b.status] ?? STATUS_STYLE.idle}`}
-                        >
-                          {b.status}
-                        </span>
+          {/* Workstreams por máquina */}
+          {byMachine.length === 0 ? (
+            <p className="text-gray-500 text-sm">Nada coincide con el filtro.</p>
+          ) : (
+            <div className="space-y-7">
+              {byMachine.map(({ machine, rows }) => (
+                <section key={machine}>
+                  <h2 className="text-sm font-semibold text-purple-300 mb-3">🖥️ {machine}</h2>
+                  <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))' }}>
+                    {rows.map((b) => (
+                      <div key={b.machine + b.project} className={`relative rounded-2xl border p-4 overflow-hidden ${st(b.status).card}`}>
+                        <span className={`absolute left-0 top-0 bottom-0 w-1 ${st(b.status).bar}`} />
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="text-sm font-semibold text-white flex items-center gap-1.5 min-w-0">
+                            <span>{ROLE_ICON[b.role] ?? '🛠️'}</span><span className="truncate">{b.project}</span>
+                          </p>
+                          <span className={`shrink-0 text-[10px] px-2 py-0.5 rounded-lg uppercase font-medium ${st(b.status).badge}`}>
+                            {st(b.status).label}
+                          </span>
+                        </div>
+                        {b.current_task && <p className="text-xs text-gray-300 mt-2">{b.current_task}</p>}
+                        {b.next_task && <p className="text-xs text-fluya-green mt-1">→ {b.next_task}</p>}
+                        {b.pending_task && <p className="text-xs text-amber-400 mt-1">⏳ pendiente: {b.pending_task}</p>}
+                        {b.updated_at && <p className="text-[10px] text-gray-500 mt-2">hace {ago(b.updated_at)}</p>}
                       </div>
-                      {b.current_task && <p className="text-xs text-gray-300 mt-2">{b.current_task}</p>}
-                      {b.next_task && <p className="text-xs text-fluya-green mt-1">→ {b.next_task}</p>}
-                      {b.updated_at && <p className="text-[10px] text-gray-500 mt-2">hace {ago(b.updated_at)}</p>}
-                    </div>
-                  ))}
-                </div>
-              </section>
-            ))}
-          </div>
+                    ))}
+                  </div>
+                </section>
+              ))}
+            </div>
+          )}
         </>
       )}
     </div>
