@@ -25,7 +25,7 @@ export async function GET(req: Request) {
   // 1) Reportes explícitos (/tablero, sf-report)
   const { data: reports, error } = await supabase
     .from('pmo_sessions')
-    .select('machine, project, role, status, current_task, next_task, office, updated_at');
+    .select('machine, project, role, status, current_task, next_task, pending_task, office, updated_at');
   if (error) return Response.json({ error: error.message }, { status: 500 });
 
   // 2) AUTO-INGEST (opcional, ?agent=1). project_active_sessions = repos que el Agent
@@ -62,7 +62,17 @@ export async function GET(req: Request) {
   const board = [...(reports ?? []).map((r) => ({ ...r, source: 'report' })), ...agentRows].sort(
     (a, b) => (a.machine + a.project).localeCompare(b.machine + b.project),
   );
-  return Response.json({ board });
+
+  // 3) Sesiones activas de Claude Code (Fase 2) — frescas (24h) para evitar zombies de crash.
+  const ACTIVE_FRESH_MS = 24 * 3600 * 1000;
+  const since = new Date(Date.now() - ACTIVE_FRESH_MS).toISOString();
+  const { data: sessions } = await supabase
+    .from('pmo_active_sessions')
+    .select('session_id, machine, project, client, status, current_task, cwd, started_at, last_seen_at')
+    .gte('last_seen_at', since)
+    .order('last_seen_at', { ascending: false });
+
+  return Response.json({ board, sessions: sessions ?? [] });
 }
 
 export async function POST(req: Request) {
@@ -81,6 +91,7 @@ export async function POST(req: Request) {
   if (ROLES.includes(str(body.role))) row.role = str(body.role);
   if (body.current_task !== undefined) row.current_task = str(body.current_task) || null;
   if (body.next_task !== undefined) row.next_task = str(body.next_task) || null;
+  if (body.pending_task !== undefined) row.pending_task = str(body.pending_task) || null;
   if (body.office !== undefined) row.office = str(body.office) || 'principal';
 
   const { error } = await svc().from('pmo_sessions').upsert(row, { onConflict: 'machine,project' });
