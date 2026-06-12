@@ -87,3 +87,19 @@ export async function POST(req: Request) {
   if (error) return Response.json({ error: error.message }, { status: 500 });
   return Response.json({ ok: true, machine, project }, { status: 201 });
 }
+
+// DELETE → saca una sesión del tablero (limpiar ruido/duplicados o proyecto terminado).
+// Por query: ?project=X  (opcional &machine=Y). Sin machine → borra ese project en todas.
+export async function DELETE(req: Request) {
+  if (!auth(req)) return Response.json({ error: 'unauthorized' }, { status: 401 });
+  const { searchParams } = new URL(req.url);
+  const project = (searchParams.get('project') ?? '').trim();
+  const machine = (searchParams.get('machine') ?? '').trim();
+  if (!project) return Response.json({ error: 'project requerido' }, { status: 400 });
+
+  let q = svc().from('pmo_sessions').delete().eq('project', project);
+  if (machine) q = q.eq('machine', machine);
+  const { error, count } = await q.select('project', { count: 'exact' });
+  if (error) return Response.json({ error: error.message }, { status: 500 });
+  return Response.json({ ok: true, deleted: project, count: count ?? 0 });
+}
