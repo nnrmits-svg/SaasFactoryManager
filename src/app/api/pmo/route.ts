@@ -99,7 +99,7 @@ export async function DELETE(req: Request) {
 
   let q = svc().from('pmo_sessions').delete().eq('project', project);
   if (machine) q = q.eq('machine', machine);
-  const { error, count } = await q.select('project', { count: 'exact' });
+  const { data, error } = await q.select('project');
   if (error) return Response.json({ error: error.message }, { status: 500 });
-  return Response.json({ ok: true, deleted: project, count: count ?? 0 });
+  return Response.json({ ok: true, deleted: project, count: data?.length ?? 0 });
 }
