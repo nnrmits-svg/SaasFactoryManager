@@ -30,17 +30,25 @@ export interface ActiveSession {
   last_seen_at: string | null;
 }
 
+export interface ActivityEntry {
+  project: string;
+  machine: string | null;
+  action: string;
+  created_at: string | null;
+}
+
 export interface MissionControlData {
   board: BoardRow[];
   sessions: ActiveSession[];
+  activity: ActivityEntry[];
 }
 
 export async function getMissionControlBoard(): Promise<MissionControlData> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { board: [], sessions: [] };
+  if (!user) return { board: [], sessions: [], activity: [] };
 
-  const [bRes, sRes] = await Promise.all([
+  const [bRes, sRes, aRes] = await Promise.all([
     supabase
       .from('pmo_sessions')
       .select('machine, project, role, status, current_task, next_task, pending_task, office, updated_at')
@@ -50,10 +58,16 @@ export async function getMissionControlBoard(): Promise<MissionControlData> {
       .from('pmo_active_sessions')
       .select('session_id, machine, project, client, status, current_task, cwd, started_at, last_seen_at')
       .order('last_seen_at', { ascending: false }),
+    supabase
+      .from('pmo_activity')
+      .select('project, machine, action, created_at')
+      .order('created_at', { ascending: false })
+      .limit(80),
   ]);
 
   return {
     board: (bRes.data ?? []) as BoardRow[],
     sessions: (sRes.data ?? []) as ActiveSession[],
+    activity: (aRes.data ?? []) as ActivityEntry[],
   };
 }
