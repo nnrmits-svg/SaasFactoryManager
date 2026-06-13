@@ -3,9 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
   getMissionControlBoard,
-  type BoardRow,
   type ActiveSession,
-  type ActivityEntry,
   type MissionControlData,
 } from '@/features/mission-control/services/mission-control-actions';
 
@@ -19,8 +17,9 @@ const STATUS = {
 const ROLE_ICON: Record<string, string> = { hub: '🧠', agent: '🤖', executor: '🛠️' };
 const STATUS_FILTERS = [
   { v: 'todos', l: 'Todos' }, { v: 'working', l: 'Working' }, { v: 'blocked', l: 'Pendientes' },
-  { v: 'review', l: 'Review' }, { v: 'idle', l: 'Idle' },
+  { v: 'review', l: 'Review' }, { v: 'done', l: 'Done' }, { v: 'idle', l: 'Idle' },
 ];
+const DONE_TTL_MS = 48 * 3600 * 1000; // los "done" desaparecen a las 48h
 
 const st = (s: string) => STATUS[s as keyof typeof STATUS] ?? STATUS.idle;
 const chip = (active: boolean) =>
@@ -34,6 +33,19 @@ function ago(iso: string | null | undefined): string {
   if (s < 3600) return `${Math.floor(s / 60)}min`;
   if (s < 86400) return `${Math.floor(s / 3600)}h`;
   return `${Math.floor(s / 86400)}d`;
+}
+
+function SessionCard({ s }: { s: ActiveSession }) {
+  return (
+    <div className="relative rounded-2xl border border-white/10 bg-white/[0.04] p-3 overflow-hidden">
+      <span className="absolute left-0 top-0 bottom-0 w-1 bg-fluya-green" />
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-sm font-medium text-white flex items-center gap-1.5 min-w-0"><span>💻</span><span className="truncate">{s.project}</span></p>
+        <span className="shrink-0 text-[10px] px-2 py-0.5 rounded-lg bg-purple-500/15 text-purple-300">{s.client ?? '?'}</span>
+      </div>
+      <p className="text-[10px] text-gray-500 mt-1.5">sesión activa · hace {ago(s.last_seen_at)}</p>
+    </div>
+  );
 }
 
 export function MissionControlBoard() {
@@ -55,17 +67,36 @@ export function MissionControlBoard() {
   }, [refresh]);
 
   const { board, sessions, activity } = data;
+
   const hubs = board.filter((b) => b.role === 'hub');
-  const rest = board.filter((b) => b.role !== 'hub');
-  const machines = [...new Set(rest.map((b) => b.machine))];
+  const rest = board.filter((b) => {
+    if (b.role === 'hub') return false;
+    // "done" desaparece a las 48h (Date.now() acá, no en el body: no rompe el prerender de Next 16)
+    if (b.status === 'done' && b.updated_at && Date.now() - new Date(b.updated_at).getTime() > DONE_TTL_MS) return false;
+    return true;
+  });
 
   const match = (machine: string, status: string) =>
     (machineF === 'todas' || machine === machineF) && (statusF === 'todos' || status === statusF);
 
-  const sessFiltered = sessions.filter((s) => match(s.machine, s.status));
-  const byMachine = machines
-    .map((m) => ({ machine: m, rows: rest.filter((b) => b.machine === m && match(b.machine, b.status)) }))
-    .filter((g) => g.rows.length);
+  const machines = [...new Set([...rest.map((b) => b.machine), ...sessions.map((s) => s.machine)])];
+  const machineCols = machines
+    .map((m) => ({
+      machine: m,
+      ws: rest.filter((b) => b.machine === m && match(b.machine, b.status)),
+      sess: sessions.filter((s) => s.machine === m && match(s.machine, s.status)),
+    }))
+    .filter((c) => c.ws.length || c.sess.length);
+
+  // Zona Arquitecto: actividad agrupada por CONTEXTO (a qué proyecto se refiere)
+  const ctxMap: Record<string, typeof activity> = {};
+  activity.forEach((a) => { (ctxMap[a.project] ??= []).push(a); });
+  const contexts = Object.keys(ctxMap)
+    .map((ctx) => {
+      const acts = ctxMap[ctx];
+      return { ctx, machine: acts.find((a) => a.machine)?.machine ?? '', acts, last: acts[0]?.created_at ?? null };
+    })
+    .sort((a, b) => (b.last ?? '').localeCompare(a.last ?? ''));
 
   return (
     <div className="max-w-6xl mx-auto px-6">
@@ -86,29 +117,34 @@ export function MissionControlBoard() {
         <p className="text-gray-500 text-sm">Cargando tablero…</p>
       ) : (
         <>
-          {/* Arquitecto — centro de mando, con su feed de actividad */}
-          {hubs.map((h) => {
-            const acts = activity.filter((a) => a.project === h.project).slice(0, 5);
-            return (
-              <div key={h.machine + h.project} className="mb-6 rounded-2xl border border-purple-500/30 bg-purple-500/[0.06] p-4">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-xl">🧠</span>
-                  <span className="text-base font-semibold text-white">{h.project}</span>
-                  <span className="text-xs text-gray-400">centro de mando</span>
-                  {h.current_task && <span className="ml-auto text-sm text-gray-300">ahora: {h.current_task}</span>}
-                </div>
-                {h.next_task && <p className="text-xs text-fluya-green mt-1">→ {h.next_task}</p>}
-                {acts.length > 0 && (
-                  <div className="mt-3 pt-3 border-t border-white/10 space-y-1">
-                    <p className="text-[11px] text-gray-500 mb-1">📜 últimas acciones</p>
-                    {acts.map((a, i) => (
-                      <p key={i} className="text-xs text-gray-400">· {a.action} <span className="text-gray-600">· hace {ago(a.created_at)}</span></p>
-                    ))}
+          {/* Zona Arquitecto — columnas por contexto */}
+          <div className="mb-6 rounded-2xl border border-purple-500/30 bg-purple-500/[0.06] p-4">
+            <div className="flex items-center gap-2 mb-3 flex-wrap">
+              <span className="text-xl">🧠</span>
+              <span className="text-base font-semibold text-white">Arquitecto</span>
+              <span className="text-xs text-gray-400">centro de mando · qué trabajé y a qué se refiere</span>
+              {hubs[0]?.next_task && <span className="ml-auto text-xs text-fluya-green">→ {hubs[0].next_task}</span>}
+            </div>
+            {contexts.length === 0 ? (
+              <p className="text-xs text-gray-500">Sin actividad registrada todavía.</p>
+            ) : (
+              <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))' }}>
+                {contexts.map((c) => (
+                  <div key={c.ctx} className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-sm font-semibold text-purple-200 truncate">{c.ctx}</span>
+                      {c.machine && <span className="text-[10px] text-gray-500 shrink-0">🖥️ {c.machine}</span>}
+                    </div>
+                    <div className="mt-2 space-y-1">
+                      {c.acts.slice(0, 6).map((a, i) => (
+                        <p key={i} className="text-[11px] text-gray-400 leading-snug">· {a.action} <span className="text-gray-600">· {ago(a.created_at)}</span></p>
+                      ))}
+                    </div>
                   </div>
-                )}
+                ))}
               </div>
-            );
-          })}
+            )}
+          </div>
 
           {/* Filtros */}
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mb-5">
@@ -126,36 +162,17 @@ export function MissionControlBoard() {
             </div>
           </div>
 
-          {/* Sesiones activas (como antes) */}
-          {sessFiltered.length > 0 && (
-            <section className="mb-7">
-              <h2 className="text-sm font-semibold text-fluya-green mb-3">💻 Sesiones activas ahora ({sessFiltered.length})</h2>
-              <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
-                {sessFiltered.map((s) => (
-                  <div key={s.session_id} className="relative rounded-2xl border border-white/10 bg-white/[0.04] p-4 overflow-hidden">
-                    <span className="absolute left-0 top-0 bottom-0 w-1 bg-fluya-green" />
-                    <div className="flex items-start justify-between gap-2">
-                      <p className="text-sm font-semibold text-white flex items-center gap-1.5 min-w-0"><span>💻</span><span className="truncate">{s.project}</span></p>
-                      <span className="shrink-0 text-[10px] px-2 py-0.5 rounded-lg bg-purple-500/15 text-purple-300">{s.client ?? '?'}</span>
-                    </div>
-                    <p className="text-[10px] text-gray-500 mt-2">{s.machine} · hace {ago(s.last_seen_at)}</p>
-                  </div>
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* Columnas por MÁQUINA (kanban): cada máquina una columna, sus proyectos apilados */}
-          {byMachine.length === 0 ? (
+          {/* Columnas por MÁQUINA: proyectos + sesiones activas adentro */}
+          {machineCols.length === 0 ? (
             <p className="text-gray-500 text-sm">Nada coincide con el filtro.</p>
           ) : (
             <div className="grid gap-4 items-start" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(290px, 1fr))' }}>
-              {byMachine.map(({ machine, rows }) => (
+              {machineCols.map(({ machine, ws, sess }) => (
                 <section key={machine} className="space-y-3">
                   <h2 className="text-sm font-semibold text-purple-300 flex items-center gap-2 pb-2 border-b border-white/10">
-                    🖥️ {machine} <span className="text-xs text-gray-500 font-normal">({rows.length})</span>
+                    🖥️ {machine} <span className="text-xs text-gray-500 font-normal">({ws.length + sess.length})</span>
                   </h2>
-                  {rows.map((b) => (
+                  {ws.map((b) => (
                     <div key={b.machine + b.project} className={`relative rounded-2xl border p-4 overflow-hidden ${st(b.status).card}`}>
                       <span className={`absolute left-0 top-0 bottom-0 w-1 ${st(b.status).bar}`} />
                       <div className="flex items-start justify-between gap-2">
@@ -168,6 +185,7 @@ export function MissionControlBoard() {
                       {b.updated_at && <p className="text-[10px] text-gray-500 mt-2">hace {ago(b.updated_at)}</p>}
                     </div>
                   ))}
+                  {sess.map((s) => <SessionCard key={s.session_id} s={s} />)}
                 </section>
               ))}
             </div>

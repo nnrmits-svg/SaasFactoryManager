@@ -101,22 +101,8 @@ export async function POST(req: Request) {
   if (body.pending_task !== undefined) row.pending_task = str(body.pending_task) || null;
   if (body.office !== undefined) row.office = str(body.office) || 'principal';
 
-  const sb = svc();
-  const { error } = await sb.from('pmo_sessions').upsert(row, { onConflict: 'machine,project' });
+  const { error } = await svc().from('pmo_sessions').upsert(row, { onConflict: 'machine,project' });
   if (error) return Response.json({ error: error.message }, { status: 500 });
-
-  // Feed de actividad: cada reporte con tarea deja una entrada (skip si es igual a la última).
-  const action = str(body.current_task);
-  if (action) {
-    try {
-      const { data: last } = await sb.from('pmo_activity')
-        .select('action').eq('project', project).order('created_at', { ascending: false }).limit(1);
-      if (!last?.length || last[0].action !== action) {
-        await sb.from('pmo_activity').insert({ project, machine, action });
-      }
-    } catch { /* tabla pmo_activity no creada aún, ignorar */ }
-  }
-
   return Response.json({ ok: true, machine, project }, { status: 201 });
 }
 
