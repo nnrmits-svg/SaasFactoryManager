@@ -58,7 +58,7 @@ export async function POST(req: Request) {
     .upsert({
       component,
       version,
-      released_at: str(body.released_at) || null,
+      released_at: str(body.released_at) || new Date().toISOString(), // default a ahora: evita NULLs que el dashboard ordena al fondo
       skills_added: skills,
       skills_removed: arr(body.skills_removed),
       agents_added: agents,
