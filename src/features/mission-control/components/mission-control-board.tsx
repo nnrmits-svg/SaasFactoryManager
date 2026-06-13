@@ -145,29 +145,29 @@ export function MissionControlBoard() {
             </section>
           )}
 
-          {/* Workstreams por máquina (como antes) */}
+          {/* Columnas por MÁQUINA (kanban): cada máquina una columna, sus proyectos apilados */}
           {byMachine.length === 0 ? (
             <p className="text-gray-500 text-sm">Nada coincide con el filtro.</p>
           ) : (
-            <div className="space-y-7">
+            <div className="grid gap-4 items-start" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(290px, 1fr))' }}>
               {byMachine.map(({ machine, rows }) => (
-                <section key={machine}>
-                  <h2 className="text-sm font-semibold text-purple-300 mb-3">🖥️ {machine}</h2>
-                  <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))' }}>
-                    {rows.map((b) => (
-                      <div key={b.machine + b.project} className={`relative rounded-2xl border p-4 overflow-hidden ${st(b.status).card}`}>
-                        <span className={`absolute left-0 top-0 bottom-0 w-1 ${st(b.status).bar}`} />
-                        <div className="flex items-start justify-between gap-2">
-                          <p className="text-sm font-semibold text-white flex items-center gap-1.5 min-w-0"><span>{ROLE_ICON[b.role] ?? '🛠️'}</span><span className="truncate">{b.project}</span></p>
-                          <span className={`shrink-0 text-[10px] px-2 py-0.5 rounded-lg uppercase font-medium ${st(b.status).badge}`}>{st(b.status).label}</span>
-                        </div>
-                        {b.current_task && <p className="text-xs text-gray-300 mt-2">{b.current_task}</p>}
-                        {b.next_task && <p className="text-xs text-fluya-green mt-1">→ {b.next_task}</p>}
-                        {b.pending_task && <p className="text-xs text-amber-400 mt-1">⏳ {b.pending_task}</p>}
-                        {b.updated_at && <p className="text-[10px] text-gray-500 mt-2">hace {ago(b.updated_at)}</p>}
+                <section key={machine} className="space-y-3">
+                  <h2 className="text-sm font-semibold text-purple-300 flex items-center gap-2 pb-2 border-b border-white/10">
+                    🖥️ {machine} <span className="text-xs text-gray-500 font-normal">({rows.length})</span>
+                  </h2>
+                  {rows.map((b) => (
+                    <div key={b.machine + b.project} className={`relative rounded-2xl border p-4 overflow-hidden ${st(b.status).card}`}>
+                      <span className={`absolute left-0 top-0 bottom-0 w-1 ${st(b.status).bar}`} />
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="text-sm font-semibold text-white flex items-center gap-1.5 min-w-0"><span>{ROLE_ICON[b.role] ?? '🛠️'}</span><span className="truncate">{b.project}</span></p>
+                        <span className={`shrink-0 text-[10px] px-2 py-0.5 rounded-lg uppercase font-medium ${st(b.status).badge}`}>{st(b.status).label}</span>
                       </div>
-                    ))}
-                  </div>
+                      {b.current_task && <p className="text-xs text-gray-300 mt-2">{b.current_task}</p>}
+                      {b.next_task && <p className="text-xs text-fluya-green mt-1">→ {b.next_task}</p>}
+                      {b.pending_task && <p className="text-xs text-amber-400 mt-1">⏳ {b.pending_task}</p>}
+                      {b.updated_at && <p className="text-[10px] text-gray-500 mt-2">hace {ago(b.updated_at)}</p>}
+                    </div>
+                  ))}
                 </section>
               ))}
             </div>
