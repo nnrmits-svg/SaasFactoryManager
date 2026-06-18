@@ -1,7 +1,7 @@
 {
-  "kit_version": "v1.38.0",
-  "kit_commit_sha": "b785cb84d6c2a5e8f3921a9b93a0192e192ca524",
-  "installed_at": "2026-06-12T17:58:31Z",
+  "kit_version": "v1.48.0",
+  "kit_commit_sha": "4c8f60a9aaf55aae61b1110373365346047d6145",
+  "installed_at": "2026-06-16T18:30:36Z",
   "installed_by": "ricardomarchetti",
   "machine_name": "NNRM-iMac-275",
   "kit_repo": "nnrmits-svg/kit-comercial",

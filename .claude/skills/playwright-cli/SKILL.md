@@ -24,6 +24,24 @@ Playwright CLI en cambio:
 
 ---
 
+## Limites y Seguridad (DURO)
+
+El bucle visual es para TU app, NO para administrar plataformas:
+
+- **Allowlist de URLs**: solo `http://localhost:*` y la preview `https://*.vercel.app` de ESTE
+  proyecto. NUNCA navegues a paneles de plataforma ni paginas de auth/credenciales:
+  `vercel.com/account|settings|sso|login`, dashboards de proveedores, pantallas de 2FA.
+- **Nunca automatices auth**: login, 2FA, codigos de respaldo, creacion de cuentas o tokens =
+  trabajo del humano, una vez, a mano. Vos operas sobre sesiones/tokens ya hechos.
+- **Circuit-breaker**: si la misma pantalla/URL se repite 3 veces, o no avanzas en 5 iteraciones,
+  o aparece una URL fuera del allowlist → PARA, no navegues mas y avisa al humano con un screenshot.
+  (Navegar a ciegas dispara una cascada de navegaciones que cuelga el browser — el incidente de Vercel/2FA.)
+- **Dialogos nativos inesperados** (alert/confirm del browser): descartalos y corta el loop; no los
+  aceptes en automatico, sobre todo en flujos de seguridad.
+- **Ops de plataforma** (deploy, env vars, dominios) = `git push` / Vercel CLI / token. NUNCA por browser.
+
+---
+
 ## Prerequisitos
 
 Instalar Chromium si no esta instalado:
@@ -197,6 +215,10 @@ Todos los artefactos de QA se guardan en:
 
 ## Reglas
 
+- DURO: solo navegar el allowlist (localhost/preview de ESTE proyecto). NUNCA paneles de plataforma
+  ni auth/2FA (ver "Limites y Seguridad"). Nunca automatizar login/2FA/credenciales.
+- DURO: circuit-breaker — pantalla repetida (3x), sin avanzar (5 iteraciones) o URL fuera del
+  allowlist → PARA y avisa. No sigas navegando a ciegas.
 - SIEMPRE crear el directorio de artefactos antes de empezar
 - SIEMPRE tomar screenshots en cada paso critico
 - NUNCA volcar snapshots YAML completos al contexto (leerlos on-demand)

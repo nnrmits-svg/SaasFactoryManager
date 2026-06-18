@@ -6,6 +6,14 @@
 
 ---
 
+## 2026-06-18 — FYI cross-repo (lado Agent): port Windows + machine_id estable
+**Maquina**: nota informativa de Riki (trabajo del lado SF Agent, sin impacto Manager)
+
+- **Agent porteado a Windows + pipeline de releases.** El **loop Manager↔Agent NO cambió** → nada que adaptar en el Manager.
+- **`machine_id` = hardware UUID estable desde Agent v1.3.1.** Refuerza la decisión de Mig 003 de keyear `agent_instances` por `machine_id` (no `machine_name`): sin churn de filas ni heartbeats duplicados. El Manager rutea comandos por `machine_id` y sigue válido sin cambios.
+- **Fix del kit**: `hostname -s` no era portable en Windows → resuelto del lado kit. Impacta a cualquier proyecto que corra `init.sh`/scripts del kit en Windows (incluido el Manager si alguna vez se scaffoldea/corre ahí). Ya aplicado.
+- **KB**: hay `knowledge_items` de plataforma nuevos (de estas sesiones + sync CHANGELOG→KB) **pendientes de curar** (approve/reject) desde `/knowledge`. Decisión de leader.
+
 ## 2026-06-11 — Fix flujo de invitación de usuarios → v1.2.12
 **Maquina**: sesión Manager (Mac de Riki) · branch `main`
 

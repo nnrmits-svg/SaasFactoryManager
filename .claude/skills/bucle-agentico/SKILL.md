@@ -206,6 +206,7 @@ Next.js MCP:
 Playwright MCP:
   - screenshot -> Validar UI despues de cambios visuales
   - click/fill -> Probar flujos completos
+  - SOLO sobre TU app (localhost/preview). Nunca panel de plataforma ni auth/2FA. Con circuit-breaker.
 
 Supabase MCP:
   - apply_migration -> Crear/modificar tablas
@@ -272,6 +273,24 @@ Fase 1 completada -> Pasar directo a ejecutar Fase 2
 
 BIEN:
 Fase 1 completada -> MAPEAR contexto de Fase 2 -> Generar subtareas -> Ejecutar
+```
+
+### Error 4: El bucle visual se mete en la plataforma o no tiene freno
+
+```
+MAL:
+- Usar Playwright para "arreglar" algo en el panel de Vercel, configurar 2FA o loguearse.
+- Seguir navegando/clickeando cuando la pantalla no se entiende
+  -> cascada de navegaciones que cuelga el browser (el incidente Vercel/2FA).
+```
+
+```
+BIEN:
+- El bucle visual solo toca TU app (localhost/preview), NUNCA paneles de plataforma ni auth/2FA.
+- Circuit-breaker: misma pantalla 3x, sin avanzar en 5 iteraciones, o URL fuera del allowlist
+  -> PARA y avisa con un screenshot.
+- Ops de plataforma (deploy, env, dominios) = git push / Vercel CLI / token. Login/2FA lo hace el humano.
+  (Detalle en el skill playwright-cli -> "Limites y Seguridad".)
 ```
 
 ---
