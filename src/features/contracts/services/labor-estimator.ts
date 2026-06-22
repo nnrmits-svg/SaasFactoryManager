@@ -74,31 +74,55 @@ export async function estimateLaborHours(input: LaborEstimateInput): Promise<Lab
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) throw new Error('OPENROUTER_API_KEY no configurada');
 
-  const response = await fetch(OPENROUTER_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: input.model ?? DEFAULT_MODEL,
-      messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
-        { role: 'user', content: buildPrompt(input) },
-      ],
-      response_format: { type: 'json_object' },
-      max_tokens: 6000,
-      temperature: 0.2,
-    }),
-  });
+  // F2: timeout (sino el botón "Estimando…" puede colgar hasta 300s).
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 45_000);
+  let response: Response;
+  try {
+    response = await fetch(OPENROUTER_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+      },
+      signal: controller.signal,
+      body: JSON.stringify({
+        model: input.model ?? DEFAULT_MODEL,
+        messages: [
+          { role: 'system', content: SYSTEM_PROMPT },
+          { role: 'user', content: buildPrompt(input) },
+        ],
+        response_format: { type: 'json_object' },
+        max_tokens: 6000,
+        temperature: 0.2,
+      }),
+    });
+  } catch (e) {
+    if (e instanceof Error && e.name === 'AbortError') {
+      throw new Error('La estimación tardó demasiado (timeout 45s). Reintentá.');
+    }
+    throw e;
+  } finally {
+    clearTimeout(timeout);
+  }
 
   if (!response.ok) {
     throw new Error(`OpenRouter error: ${response.status} ${await response.text()}`);
   }
 
   const data = await response.json();
+  const finishReason: string | undefined = data?.choices?.[0]?.finish_reason;
   const content: string = data?.choices?.[0]?.message?.content ?? '{}';
   const raw = RawSchema.parse(extractJson(content));
+
+  // F1: NO degradar en silencio a 0h. Si truncó o vino vacío, error explícito
+  // (sino applySuggestedHours metería 0h al presupuesto sin avisar).
+  if (finishReason === 'length') {
+    throw new Error('La estimación se truncó (max_tokens). Reintentá o acotá el brief.');
+  }
+  if (raw.must_have_estimations.length === 0) {
+    throw new Error('La IA no devolvió features (respuesta vacía o corrupta). Reintentá.');
+  }
 
   const mustHave = raw.must_have_estimations.map(normalizeFeature);
   const niceToHave = raw.nice_to_have_estimations.map(normalizeFeature);
