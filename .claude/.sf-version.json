@@ -1,9 +1,9 @@
 {
-  "kit_version": "v1.48.0",
-  "kit_commit_sha": "4c8f60a9aaf55aae61b1110373365346047d6145",
-  "installed_at": "2026-06-16T18:30:36Z",
+  "kit_version": "v1.48.1",
+  "kit_commit_sha": "8af8562ca2fde83f2ac4837ec730e2e01f2f02de",
+  "installed_at": "2026-06-22T15:17:33Z",
   "installed_by": "ricardomarchetti",
-  "machine_name": "NNRM-iMac-275",
+  "machine_name": "MacBookPro-2016",
   "kit_repo": "nnrmits-svg/kit-comercial",
   "project_type": "saas_full",
   "template_id": "saas-nextjs-supabase",

@@ -72,3 +72,6 @@ Thumbs.db
 # Supabase
 supabase/.branches
 supabase/.temp
+
+# kit-update deja backups timestamped de .claude/ — no versionar
+.claude.backup-*/
