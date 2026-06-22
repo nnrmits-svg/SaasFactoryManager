@@ -87,7 +87,7 @@ export async function estimateLaborHours(input: LaborEstimateInput): Promise<Lab
         { role: 'user', content: buildPrompt(input) },
       ],
       response_format: { type: 'json_object' },
-      max_tokens: 2500,
+      max_tokens: 6000,
       temperature: 0.2,
     }),
   });
@@ -159,7 +159,7 @@ ${briefText}
 ${features}
 
 INSTRUCCIONES:
-Para cada feature must-have devolvé hours_min (optimista), hours_max (si se complica), confidence (0.0=no idea, 1.0=lo hice muchas veces) y complexity_notes (qué la hace fácil/difícil).
+Estimá las features must-have PRINCIPALES (no más de ~10). Para cada una devolvé hours_min (optimista), hours_max (si se complica), confidence (0.0=no idea, 1.0=lo hice muchas veces) y complexity_notes BREVE (máx ~10 palabras).
 Las nice-to-have estimalas igual (se harían en fase 2).
 REGLAS:
 - Feature vaga ("dashboard completo") → confidence ≤ 0.3.
@@ -198,11 +198,16 @@ function buildReasoning(
 }
 
 function extractJson(text: string): unknown {
-  const trimmed = text.trim();
+  // Claude suele envolver el JSON en ```json ... ``` aunque pidamos json_object.
+  const cleaned = text
+    .trim()
+    .replace(/^```(?:json)?\s*/i, '')
+    .replace(/\s*```$/i, '')
+    .trim();
   try {
-    return JSON.parse(trimmed);
+    return JSON.parse(cleaned);
   } catch {
-    const match = trimmed.match(/\{[\s\S]*\}/);
+    const match = cleaned.match(/\{[\s\S]*\}/);
     if (match) {
       try {
         return JSON.parse(match[0]);
