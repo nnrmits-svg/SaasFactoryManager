@@ -1,6 +1,7 @@
 import { Suspense } from 'react'
 import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
+import { Analytics } from '@vercel/analytics/next'
 import { NavbarAuth, NavbarSkeleton } from '@/shared/components/navbar'
 import { Footer } from '@/shared/components/footer'
 import { ChatbotWidget } from '@/features/help/components/ChatbotWidget'
@@ -36,6 +37,7 @@ export default function RootLayout({
         <main className="flex-1 pt-16">{children}</main>
         <Footer />
         <ChatbotWidget />
+        <Analytics />
       </body>
     </html>
   )
