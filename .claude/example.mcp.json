@@ -71,26 +71,6 @@
         "-y",
         "@modelcontextprotocol/server-sequential-thinking"
       ]
-    },
-    "_comment_google": "--- GOOGLE MCPs (Opcionales) --- Descomentar/agregar solo si el proyecto los necesita",
-    "firebase": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "firebase-tools@latest",
-        "mcp"
-      ]
-    },
-    "google-workspace": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@anthropic-ai/google-workspace-mcp@latest"
-      ],
-      "env": {
-        "GOOGLE_CLIENT_ID": "YOUR_GOOGLE_CLIENT_ID",
-        "GOOGLE_CLIENT_SECRET": "YOUR_GOOGLE_CLIENT_SECRET"
-      }
     }
   }
 }

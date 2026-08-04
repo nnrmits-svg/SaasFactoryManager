@@ -26,7 +26,7 @@ Un PRP es el **blueprint de una pieza de la fábrica**. Define QUÉ construir an
 2. IA: Investiga contexto y viabilidad
 3. IA: Genera PRP-XXX-nombre.md usando este template
 4. Humano: Revisa y aprueba
-5. IA: Ejecuta Blueprint fase por fase (skill `/bucle-agentico`)
+5. IA: Ejecuta Blueprint fase por fase (ver bucle-agentico-blueprint.md)
 6. IA: Documenta aprendizajes en el PRP (Self-Annealing)
 ```
 
@@ -169,4 +169,4 @@ ALTER TABLE [tabla] ENABLE ROW LEVEL SECURITY;
 | Backend | Supabase (Auth + DB) |
 | Validación | Zod |
 | Estado | Zustand |
-| Testing | Playwright CLI + MCP |
+| Testing | Playwright MCP |

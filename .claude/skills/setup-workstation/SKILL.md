@@ -343,6 +343,45 @@ fi
 
 ---
 
+## Paso 11.5: SaaS Factory Knowledge Base (~/.sf/)
+
+Configura el entorno de la KB **una vez por máquina de dev**. Habilita los skills
+`/buscar-conocimiento`, `/capturar-conocimiento` y la herramienta `sf-harvest`.
+
+```bash
+mkdir -p ~/.sf
+
+# 1) Instalar las tools de la KB (vienen en el kit: dev/saas-factory/.sf-tools/)
+KIT_TOOLS="$SF_DIR/dev/saas-factory/.sf-tools"   # ajustar si el kit está en otra ruta
+[ -d "$KIT_TOOLS" ] && cp "$KIT_TOOLS/harvest.mjs" ~/.sf/harvest.mjs \
+                    && cp "$KIT_TOOLS/aliases" ~/.sf/aliases
+
+# 2) Crear ~/.sf/env desde la plantilla (si no existe). EDITAR los secretos después.
+if [ ! -f ~/.sf/env ]; then
+  cp "$KIT_TOOLS/env.template" ~/.sf/env 2>/dev/null || cat > ~/.sf/env <<'ENV'
+export SF_MANAGER_URL="https://saasfactory.grupo-its.com.ar"
+export SF_KB_TOKEN="<PEGAR_TOKEN_DE_INGESTA>"
+export OPENROUTER_API_KEY="<solo-si-usas-sf-harvest>"
+ENV
+  chmod 600 ~/.sf/env
+  echo "⚠️  Editá ~/.sf/env y pegá SF_KB_TOKEN (lo da el Leader) antes de usar la KB."
+fi
+
+# 3) Sourcear env + aliases en el shell (idempotente)
+grep -q 'source ~/.sf/env' ~/.zshrc 2>/dev/null || echo '[ -f ~/.sf/env ] && source ~/.sf/env' >> ~/.zshrc
+grep -q 'source ~/.sf/aliases' ~/.zshrc 2>/dev/null || echo '[ -f ~/.sf/aliases ] && source ~/.sf/aliases' >> ~/.zshrc
+```
+
+**Implicancias / seguridad:**
+- Es **per-máquina**, no per-proyecto (el token NO se mete en cada repo).
+- `SF_KB_TOKEN` es **write-only** (solo encola conocimiento como `pending_review`; no lee datos ni toca la DB). Bajo riesgo. Rotación: cambiar en Vercel + en `~/.sf/env`.
+- `OPENROUTER_API_KEY` es la key de **billing** del LLM → ponela **solo** si vas a correr `sf-harvest` localmente.
+- Los **comerciales NO** necesitan nada de esto (no usan IDE). La web `/knowledge` anda sin env.
+
+Verificación: `sf-kb "rls"` debería devolver resultados.
+
+---
+
 ## Paso 12: Resumen Final
 
 Al terminar, muestra un reporte claro:
