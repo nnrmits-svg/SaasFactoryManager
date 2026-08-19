@@ -1,12 +1,9 @@
 {
-  "kit_version": "v1.48.0",
-  "kit_commit_sha": "1ebe6648d4391866fe3ab65f6b19477724049003",
-  "installed_at": "2026-06-15T20:00:50Z",
-  "installed_by": "rmarchetti",
-  "machine_name": "MB-Air-NNRM-2025",
+  "kit_version": "v1.50.0",
+  "kit_commit_sha": "c9ea07e6ce9d22968a135d33f8e0aee7dbcdcc1a",
   "kit_repo": "nnrmits-svg/kit-comercial",
   "project_type": "saas_full",
   "template_id": "saas-nextjs-supabase",
   "complexity_multiplier": 1.0,
-  "schema_version": 2
+  "schema_version": 3
 }
