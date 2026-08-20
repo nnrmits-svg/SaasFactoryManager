@@ -6,6 +6,62 @@
 
 ---
 
+## 2026-08-20 — Caida de ~10 min en produccion: Supabase Auth colgo el middleware
+**Maquina**: MacBookPro-2016.local · **diagnostico, sin cambios de codigo**
+
+### Que paso
+`saasfactory.grupo-its.com.ar` devolvio **504 Gateway time-out** (pantalla de Cloudflare:
+*Cloudflare Working / Host Error*) entre las **19:24 y las 19:35 UTC**. Se recupero solo. En la
+misma ventana de 4 horas hubo **127 respuestas 200 y 7 fallos** — fue un bache, no una caida
+sostenida.
+
+### La causa, textual de los logs de Vercel
+```
+19:28:41 GET / 504 [error/edge-middleware]
+    [Zn [AuthRetryableFetchError]: {"headers":{}}] {
+      __isAuthError: true,
+      status: 522,
+    }
+    [Error: Your function was stopped as it did not return an initial response within 25s]
+```
+
+**`522` es "Cloudflare no pudo conectar al origen" — pero del lado de Supabase, no del nuestro.**
+El middleware llama a Supabase Auth en cada request; Supabase dejo de responder, el cliente
+reintento, el middleware quedo esperando, y a los 25 s Vercel lo corto. **El 504 fue la
+consecuencia, no la causa.**
+
+### Dos cosas que el incidente destapa, y que SI son nuestras
+**1 · El middleware no tiene timeout propio.** En el `POST /login` el log dice literal
+*"Vercel Runtime Timeout Error: Task timed out after 300 seconds"*. Un proveedor lento no deberia
+poder colgar **cinco minutos** una request de login. Con un timeout de 3-5 s y un fallback, el
+usuario veria "no pudimos verificar tu sesion, reintenta" en vez de una pantalla de Cloudflare.
+
+**2 · Supabase Auth es punto unico de falla de TODA la app.** El `GET /` tambien fallo — el
+middleware corre antes que cualquier ruta, incluida la home. Si Supabase parpadea, no se cae solo
+lo autenticado: se cae todo.
+
+### Lo que NO fue
+Ese mismo dia se pusheo a `main` el commit `ac83c2a` (kit v1.50.0). **No tiene nada que ver**:
+toco 26 archivos de `.claude/` y el `.gitignore`, **ni una linea de codigo de la app**, su deploy
+quedo `READY`, y el 504 aparecio **90 minutos despues**. Un deploy que rompe, rompe al minuto.
+Se verifico antes de descartarlo, no despues.
+
+### Estado
+- Produccion **respondiendo**: HTTP 200 en 2,3 s al momento de escribir esto.
+- Deploy de produccion: `dpl_BNrZscQ2BcCTDFFWX5kHCpjPaS3h` (`ac83c2a`), READY.
+- `main` y `feat/motor-presupuesto` con kit **v1.50.0**; el manifiesto ya no lleva metadata de
+  maquina, asi que deja de conflictuar entre las Macs.
+
+### Pendiente — para quien tome el repo
+1. **Timeout + fallback en el middleware** para las llamadas a Supabase Auth. Es el fix con mas
+   retorno: convierte una caida total en un error legible.
+2. **Evaluar no depender de Auth en rutas publicas** (al menos la home), para que un parpadeo del
+   proveedor no tumbe todo.
+3. El proyecto free de Supabase (`fxlvexi...`) esta en el keep-alive de `portal-apps`, pero eso
+   evita la **pausa por inactividad** — no cubre un bache de disponibilidad como el de hoy.
+
+---
+
 ## 2026-06-18 — FYI cross-repo (lado Agent): port Windows + machine_id estable
 **Maquina**: nota informativa de Riki (trabajo del lado SF Agent, sin impacto Manager)
 
