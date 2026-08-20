@@ -75,3 +75,4 @@ supabase/.temp
 
 # kit-update deja backups timestamped de .claude/ — no versionar
 .claude.backup-*/
+.claude/.sf-version.local.json

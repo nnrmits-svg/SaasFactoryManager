@@ -30,7 +30,7 @@ curl -s -X POST "$SF_MANAGER_URL/api/pmo" \
   -H "Authorization: Bearer $SF_KB_TOKEN" \
   -H "Content-Type: application/json" \
   -d "{
-    \"machine\": \"$(scutil --get ComputerName 2>/dev/null || hostname -s)\",
+    \"machine\": \"$(scutil --get ComputerName 2>/dev/null || hostname -s 2>/dev/null || hostname 2>/dev/null || echo ${COMPUTERNAME:-unknown})\",
     \"project\": \"NOMBRE-DEL-PROYECTO\",
     \"role\": \"executor\",
     \"status\": \"working\",
