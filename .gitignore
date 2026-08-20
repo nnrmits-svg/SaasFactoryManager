@@ -72,3 +72,5 @@ Thumbs.db
 # Supabase
 supabase/.branches
 supabase/.temp
+.claude.backup-*/
+.claude/.sf-version.local.json

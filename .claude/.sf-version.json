@@ -1,12 +1,9 @@
 {
-  "kit_version": "v1.48.0",
-  "kit_commit_sha": "4c8f60a9aaf55aae61b1110373365346047d6145",
-  "installed_at": "2026-06-16T18:30:36Z",
-  "installed_by": "ricardomarchetti",
-  "machine_name": "NNRM-iMac-275",
+  "kit_version": "v1.50.0",
+  "kit_commit_sha": "c9ea07e6ce9d22968a135d33f8e0aee7dbcdcc1a",
   "kit_repo": "nnrmits-svg/kit-comercial",
   "project_type": "saas_full",
   "template_id": "saas-nextjs-supabase",
   "complexity_multiplier": 1.0,
-  "schema_version": 2
+  "schema_version": 3
 }
