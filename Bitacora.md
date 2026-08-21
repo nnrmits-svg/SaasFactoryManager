@@ -6,6 +6,48 @@
 
 ---
 
+## 2026-08-21 (2) — Motor de Presupuesto a main sin aprobar + higiene de ramas
+**Maquina**: MacBookPro-2016.local · branch `main`
+
+### Hecho
+
+**Motor de Presupuesto MVP mergeado a `main` SIN PROBAR NI APROBAR** (merge `8efa244`).
+Riki confirmo que no esta probada, no esta aprobada, y la retoma en varios dias — puede
+cambiarla o sacarla. **Si algo del Motor se comporta raro, es esperable, no es una regresion.**
+
+Se mergeo por una ventana del kit, no por estado de la feature: `main` y
+`feat/motor-presupuesto` actualizaron a kit v1.50.0 por separado y hoy los 26 archivos de
+`.claude/skills/` coinciden. Es suerte, no diseno — el proximo `/update-sf` de cualquier
+lado la rompe y quedan 26 archivos en conflicto. Ya paso una vez (hay un "fix: resolver
+merge conflict de kit-update" en la historia). **La ventana la cierra el kit, no la feature.**
+
+No lleva feature flag porque el estimador por IA no se auto-dispara: `runLaborEstimate` y
+`applySuggestedHours` estan cableados solo a `onClick` (`budget-step.tsx:263` y `:388`), y
+los tres `useEffect` del componente no lo invocan. Verificado leyendo el componente, no
+asumido. `npm run build` en verde antes del merge.
+
+**Dos entradas de bitacora rescatadas** (commit `84879cb`): el cierre del Sprint AI Fluya
+del 15-may y la limpieza de screenshots del 30-may vivian solo en
+`agent/macbookpro-2016-local` y nunca llegaron a `main`. El codigo de esos sprints si estaba;
+faltaba el registro. Van con nota de procedencia: un registro que finge haber estado siempre
+ahi es peor que no tenerlo.
+
+**Archivos generados destrackeados** (commit `3ef4273`): `next-env.d.ts` llevaba 14 commits
+en este repo y ninguno lo escribio una persona. Su contenido depende de si lo ultimo que
+corriste fue `next dev` o `next build`, asi que versionado hace flip-flop para siempre.
+
+### Decidido
+- Retirar `backup-main-12may`, `brand/fluya` y `agent/macbookpro-2016-local` renombrandolas
+  a `abandoned/<nombre>`, nunca borrando. Verificado a nivel de blob que ninguna tiene
+  codigo fuente unico.
+- `feat/quote-from-actuals` no se toca: Riki esta parado ahi.
+
+### Pendiente
+- El Motor de Presupuesto necesita prueba y aprobacion antes de considerarse vivo.
+- `feat/quote-from-actuals` esta 218 commits atras de main — la divergencia crece.
+
+---
+
 ## 2026-08-21 — Produccion caida por Supabase: del bache al corte total + fix del polling
 **Maquina**: NNRM-iMac-275.local · branch `main`
 
