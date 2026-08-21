@@ -8,6 +8,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import { computeQuoteTotals, computeLineItemTotal } from '../services/pricing';
 import { estimateAiCost } from '../services/ai-estimator';
+import { estimateLaborHoursAction } from '../services/labor-estimator-action';
+import type { LaborEstimate } from '../services/labor-estimator';
 import { getOperatorsAction, type Operator } from '../services/get-operators-action';
 import type {
   QuoteLineItem,
@@ -70,6 +72,9 @@ export function BudgetStep({ brief, onChange }: BudgetStepProps) {
   const [overheadPct, setOverheadPct] = useState<number>(10);
   const [profitMarginPct, setProfitMarginPct] = useState<number>(20);
   const [notes, setNotes] = useState<string>('');
+  const [laborEst, setLaborEst] = useState<LaborEstimate | null>(null);
+  const [estLoading, setEstLoading] = useState<boolean>(false);
+  const [estError, setEstError] = useState<string | null>(null);
 
   // Cargar operadores al montar
   useEffect(() => {
@@ -169,6 +174,25 @@ export function BudgetStep({ brief, onChange }: BudgetStepProps) {
     });
   }, [complexity, lineItems, profitMarginPct, totals, notes, onChange]);
 
+  async function runLaborEstimate() {
+    setEstLoading(true);
+    setEstError(null);
+    const res = await estimateLaborHoursAction({ brief, complexity });
+    if (res.ok) setLaborEst(res.data ?? null);
+    else setEstError(res.error ?? 'No se pudo estimar');
+    setEstLoading(false);
+  }
+
+  function applySuggestedHours() {
+    if (!laborEst) return;
+    const target = Math.round((laborEst.total_hours_min + laborEst.total_hours_max) / 2);
+    setLabors((prev) =>
+      prev.length === 0
+        ? [{ user_id: null, user_label: '', hourly_rate_usd: 0, estimated_hours: target }]
+        : prev.map((l, i) => (i === 0 ? { ...l, estimated_hours: target } : l)),
+    );
+  }
+
   return (
     <div className="space-y-6">
       <header>
@@ -233,18 +257,28 @@ export function BudgetStep({ brief, onChange }: BudgetStepProps) {
       <section className="bg-white/5 border border-white/10 rounded-2xl p-4 space-y-3">
         <div className="flex items-baseline justify-between">
           <h3 className="text-sm font-medium text-white">Labor (operadores)</h3>
-          <button
-            type="button"
-            onClick={() =>
-              setLabors([
-                ...labors,
-                { user_id: null, user_label: '', hourly_rate_usd: 0, estimated_hours: 0 },
-              ])
-            }
-            className="text-xs px-2 py-1 bg-white/5 text-gray-300 border border-white/10 rounded-lg hover:bg-white/10"
-          >
-            + Agregar operador
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={runLaborEstimate}
+              disabled={estLoading}
+              className="text-xs px-2 py-1 bg-purple-500/20 text-purple-200 border border-purple-500/40 rounded-lg hover:bg-purple-500/30 disabled:opacity-50"
+            >
+              {estLoading ? 'Estimando…' : '⚡ Estimar horas con IA'}
+            </button>
+            <button
+              type="button"
+              onClick={() =>
+                setLabors([
+                  ...labors,
+                  { user_id: null, user_label: '', hourly_rate_usd: 0, estimated_hours: 0 },
+                ])
+              }
+              className="text-xs px-2 py-1 bg-white/5 text-gray-300 border border-white/10 rounded-lg hover:bg-white/10"
+            >
+              + Agregar operador
+            </button>
+          </div>
         </div>
         {labors.length === 0 && (
           <p className="text-xs text-gray-500">Sin operadores asignados. Click "+ Agregar".</p>
@@ -313,6 +347,51 @@ export function BudgetStep({ brief, onChange }: BudgetStepProps) {
             </button>
           </div>
         ))}
+
+        {estError && (
+          <p className="text-xs text-red-400">⚠ {estError}</p>
+        )}
+        {laborEst && (
+          <div className="mt-1 rounded-xl border border-purple-500/30 bg-purple-500/5 p-3 space-y-2">
+            <div className="flex items-baseline justify-between">
+              <span className="text-sm font-medium text-white">
+                IA estima: {laborEst.total_hours_min}–{laborEst.total_hours_max} h
+              </span>
+              <span className="text-xs text-gray-400">
+                confianza {Math.round(laborEst.overall_confidence * 100)}%
+              </span>
+            </div>
+            <p className="text-xs text-gray-400">{laborEst.reasoning}</p>
+            <div className="space-y-1">
+              {laborEst.must_have.map((f, i) => (
+                <div key={i} className="flex items-center justify-between text-xs gap-2">
+                  <span className="text-gray-300 truncate">{f.feature}</span>
+                  <span
+                    className={`font-mono tabular-nums whitespace-nowrap ${
+                      f.confidence >= 0.7
+                        ? 'text-green-400'
+                        : f.confidence >= 0.5
+                          ? 'text-amber-400'
+                          : 'text-red-400'
+                    }`}
+                  >
+                    {f.hours_min}–{f.hours_max}h · {Math.round(f.confidence * 100)}%
+                  </span>
+                </div>
+              ))}
+            </div>
+            {laborEst.risk_flags.length > 0 && (
+              <p className="text-[11px] text-amber-400">⚠ {laborEst.risk_flags.join(' · ')}</p>
+            )}
+            <button
+              type="button"
+              onClick={applySuggestedHours}
+              className="text-xs px-2 py-1 bg-purple-500/20 text-purple-200 border border-purple-500/40 rounded-lg hover:bg-purple-500/30"
+            >
+              Aplicar horas sugeridas →
+            </button>
+          </div>
+        )}
       </section>
 
       {/* Fixed costs block */}

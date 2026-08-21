@@ -20,7 +20,10 @@ function formatMinutes(minutes: number): string {
 
 function formatDate(iso: string | null): string {
   if (!iso) return '—';
-  return new Date(iso).toLocaleDateString();
+  // Locale + timeZone fijos → server y client formatean IGUAL (evita hydration mismatch).
+  return new Date(iso).toLocaleDateString('es-AR', {
+    timeZone: 'America/Argentina/Buenos_Aires',
+  });
 }
 
 // Color de la sesión VIVA según su estado. Las sesiones no-vivas se pintan
