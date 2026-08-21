@@ -1,11 +1,12 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import {
   getMissionControlBoard,
   type ActiveSession,
   type MissionControlData,
 } from '@/features/mission-control/services/mission-control-actions';
+import { useVisibleInterval } from '@/shared/hooks/use-visible-interval';
 
 const STATUS = {
   working: { label: 'Working',   card: 'bg-fluya-green/[0.07] border-fluya-green/25', badge: 'bg-fluya-green/15 text-fluya-green', bar: 'bg-fluya-green' },
@@ -60,11 +61,9 @@ export function MissionControlBoard() {
     catch { /* mantené lo previo */ }
     finally { setLoading(false); }
   }, []);
-  useEffect(() => {
-    refresh();
-    const id = setInterval(refresh, 20000);
-    return () => clearInterval(id);
-  }, [refresh]);
+  // Solo refresca mientras la pestaña esta a la vista: una pestaña olvidada en
+  // segundo plano no le cuesta nada a Supabase (ver use-visible-interval).
+  useVisibleInterval(refresh, 20000);
 
   const { board, sessions, activity } = data;
 

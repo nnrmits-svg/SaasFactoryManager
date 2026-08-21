@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { useVisibleInterval } from '@/shared/hooks/use-visible-interval';
 import { getAgentInstances, sendAgentCommand } from '../services/agent-command-action';
 import type { AgentInstance, AgentCommandType } from '../types';
 
@@ -34,12 +35,8 @@ export function useAgentStatus() {
     setState((prev) => ({ ...prev, instances, loading: false }));
   }, []);
 
-  // Load agent instances on mount + poll every 30s
-  useEffect(() => {
-    loadInstances();
-    const interval = setInterval(loadInstances, 30_000);
-    return () => clearInterval(interval);
-  }, [loadInstances]);
+  // Carga al montar + poll cada 30s, solo con la pestaña a la vista.
+  useVisibleInterval(loadInstances, 30_000);
 
   function stopPolling() {
     if (pollRef.current) {
