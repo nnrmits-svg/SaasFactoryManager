@@ -76,3 +76,13 @@ supabase/.temp
 # kit-update deja backups timestamped de .claude/ — no versionar
 .claude.backup-*/
 .claude/.sf-version.local.json
+
+# Generados por Next — NO versionar.
+# `next-env.d.ts` incluye `import "./<distDir>/types/routes.d.ts"`, y distDir es
+# `.next/dev` con `next dev` pero `.next` con `next build`. O sea que su contenido
+# es funcion del ultimo comando que corriste: versionado hace flip-flop para
+# siempre. En SuscriptionMgmt eran 20 commits, todos la misma linea yendo y
+# viniendo, montados en commits que hablaban de otra cosa.
+# Cualquier `next dev` o `next build` lo regenera (medido: 8 segundos).
+next-env.d.ts
+tsconfig.tsbuildinfo
