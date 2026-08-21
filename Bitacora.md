@@ -6,6 +6,92 @@
 
 ---
 
+## 2026-08-21 — Produccion caida por Supabase: del bache al corte total + fix del polling
+**Maquina**: NNRM-iMac-275.local · branch `main`
+
+> Continuacion directa de la entrada de abajo (MacBookPro-2016, mismo dia). Esa cubre el **bache de
+> 19:24-19:35 UTC** que se recupero solo. Lo que sigue es lo que paso **despues**: el corte total.
+
+### Sintoma
+- Riki: "la app esta rota, no puedo ingresar". El POST del login nunca volvia.
+
+### El codigo NO estaba roto — y por que el primer chequeo engano
+- Build verde, dev local OK, prod sirviendo HTML, ultimo deploy `● Ready` en 45s.
+- **Los requests anonimos pasaban rapido**: sin cookie de sesion el middleware ni llama a Supabase.
+  Por eso `curl` a `/login` daba 200 y todo "parecia" sano. **Leccion: mirar los runtime logs de
+  Vercel, no los status code de la home.**
+
+### Causa: la instancia de Supabase dejo de responder (auth Y rest)
+Medido desde 2 redes distintas (local y edge de Vercel), 5/5 intentos colgados:
+```
+/auth/v1/user       http=000  t=30s
+/rest/v1/profiles   http=000  t=30s
+/auth/v1/settings   http=000  t=30s
+```
+- **El dashboard de Supabase tampoco podia**: *"Failed to run sql query: Connection terminated due to
+  connection timeout"*. Ese dato fue el que dirimio: el dashboard **no sale por el API Gateway
+  publico**, entra por dentro. Si desde ahi tampoco entra, el problema es **la instancia**, no el
+  gateway degradado de ellos.
+- Ruido de fondo descartado: status.supabase.com marcaba "Partially Degraded Service" (API Gateway)
+  con un incidente abierto desde las 16:37 UTC. Real, pero **no era la causa de nuestro corte**.
+- Aviso del dashboard: *"about to deplete its Disk IO Budget"* → al agotarse, el throughput cae al
+  baseline de **5 MB/s**; a esa velocidad las queries de ms pasan a decenas de segundos y GoTrue
+  (que lee `auth.users` en cada validacion) cuelga.
+
+### Como se recupero
+1. Cerrar las pestañas que hacian polling + **parar el SF Agent** en todas las maquinas.
+2. **Restart del proyecto** desde el dashboard (Project Settings → General).
+- Post-restart, verificado: `auth/v1/user` 403 en 0,22s · `rest/profiles` 200 · `/dashboard` 307 en
+  0,13s · latencia estabilizada en **~0,25s** (el primer 1,2s era arranque en frio).
+
+### Fix aplicado — el polling que quemaba IO 24/7
+`/mission-control` refrescaba cada 20s **mire alguien la pantalla o no**, y cada vuelta son **4 hits**
+a Supabase: `getUser()` contra `auth.users` + 3 queries (`mission-control-actions.ts:46-60`).
+≈ **17.000 requests/dia por pestaña olvidada**, por maquina. Peor: el `getUser()` corre ANTES de
+comprobar si hay sesion → una pestaña con login vencido **igual golpea Auth**.
+- **Nuevo hook `src/shared/hooks/use-visible-interval.ts`**: primera carga siempre, pero el intervalo
+  solo corre con `document.visibilityState === 'visible'`; al volver a la pestaña, refresh inmediato.
+- Aplicado en `mission-control-board.tsx` (20s) y `use-agent-status.ts` (30s).
+- Falso positivo descartado: `portfolio-grid.tsx:47` (15s) pega a `/api/tracking`, que devuelve un
+  JSON fijo **sin tocar la base**. Ese no consumia nada.
+
+### Tambien en esta sesion (otro tema, ya aplicado)
+- **`NEXT_PUBLIC_SUPABASE_URL` faltaba en el entorno Preview** (estaba solo en Production, mientras el
+  anon key si estaba en Preview) → `createClient(undefined)` → login roto en TODO preview.
+  **Agregada a Preview.** ⚠️ Apunta a la MISMA base de produccion. Los previews ya buildeados necesitan
+  redeploy para tomarla.
+- **Vercel Authentication**: `ssoProtection = all_except_custom_domains` → toda URL `*.vercel.app`
+  (incluida la de produccion) devuelve `302 → vercel.com/sso-api`. **Se deja asi por decision de Riki**;
+  entrar siempre por el dominio custom, que esta exento.
+- El CLI local (`vercel` 54.2.0) **no completa** el modo "todas las ramas" de `env add` (pide branch en
+  loop) → se uso `npx vercel@latest` (59.3.0). Conviene actualizar el CLI global.
+
+### Pendiente
+- **Diagnostico de IO con la base viva** (lo primero, antes de decidir si se paga):
+```sql
+select calls, shared_blks_read + local_blks_read + temp_blks_read as bloques_de_disco,
+       round(mean_exec_time::numeric,1) as ms_prom, left(query,100)
+from pg_stat_statements order by 2 desc limit 15;
+
+select relname, pg_size_pretty(pg_total_relation_size(relid)) as tamano,
+       seq_scan, seq_tup_read, idx_scan, n_live_tup
+from pg_stat_user_tables order by pg_total_relation_size(relid) desc limit 15;
+```
+  `seq_scan` alto + `idx_scan` en 0 sobre tabla grande = indice faltante (se arregla gratis).
+  Sospechosos por escritura constante sin poda: `audit_logs`, `project_activity_log`, `pmo_sessions`,
+  `commits`, `work_sessions`.
+- **Plan Supabase**: en Free no se puede subir compute (el add-on es desde Pro, ~US$25/mes). Para una
+  app de produccion con clientes se justifica igual (Free ademas pausa por inactividad y tiene backups
+  limitados) — **pero pagar sin encontrar la causa solo compra tiempo.**
+- **Blindar el middleware (NO aplicado)**: `src/middleware.ts:42` llama `getUser()` sin timeout ni
+  try/catch, y el matcher lo corre en TODAS las rutas → hasta la home publica dio 504. Con un timeout
+  de ~3s degradando a "no autenticado", la parte publica sobrevive el proximo incidente. **Es el
+  hallazgo #1 y #2 de la entrada de abajo — sigue abierto, ahora con dos incidentes que lo respaldan.**
+- MCP de Supabase **sin token** (`Unauthorized`) → todo el diagnostico se hizo desde afuera con `curl`.
+  Con un access token configurado, la proxima vez se llega a `pg_stat_statements` directo.
+- **Bitacora estuvo congelada 2 meses** (18/6 → 20/8): sin registrar el Motor de Presupuesto, Mission
+  Control kanban y kit v1.50.0. `project_plan.md` idem.
+
 ## 2026-08-20 — Caida de ~10 min en produccion: Supabase Auth colgo el middleware
 **Maquina**: MacBookPro-2016.local · **diagnostico, sin cambios de codigo**
 
