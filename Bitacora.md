@@ -57,8 +57,11 @@ from pg_stat_user_tables order by pg_total_relation_size(relid) desc limit 15;
    Agregar `requireRole(['leader','comercial'])`.
 
 ### Deuda de documentacion
-- **`project_plan.md` sigue congelado en 2026-06-11 (v1.2.12)**, 2 meses atras. No refleja Mission
-  Control, el Motor de Presupuesto ni nada de esta semana. La `Bitacora.md` si esta al dia.
+- ~~`project_plan.md` congelado~~ → **actualizado el 2026-08-22** (commit `204ca3d`): estado al dia,
+  proximos pasos repriorizados con la infra primero, y drift corregido (listaba Capa 2 y Capa 8 como
+  pendientes cuando ya estaban hechas, y PRP-005 en Fase 2 cuando iba por la 6). Los tres docs vivos
+  quedan alineados: `Bitacora.md` (cronologia), `project_plan.md` (estado y rumbo), changelog de
+  `/about` (v1.2.13).
 - MCP de Supabase **sin token** → todo el diagnostico de la caida se hizo desde afuera con `curl`.
   Con un access token configurado se llega a `pg_stat_statements` directo, sin pedir nada por chat.
 - El CLI `vercel` global esta en 54.2.0 (actual: 59.3.0) y **no completa** `env add` para "todas las
