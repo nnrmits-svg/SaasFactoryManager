@@ -11,7 +11,7 @@
 // REGLA: bumpear APP_VERSION con CADA cambio que llegue a prod. Sin wip silenciosos.
 // Cada deploy queda reflejado en el changelog que ve el founder en /about.
 
-export const APP_VERSION = '1.2.12';
+export const APP_VERSION = '1.2.13';
 
 export interface ChangelogEntry {
   version: string;
@@ -21,6 +21,13 @@ export interface ChangelogEntry {
 
 // Cronológico inverso: lo último arriba.
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.2.13',
+    date: '2026-08-22',
+    highlights: [
+      'Las pantallas que se refrescan solas (Mission Control y "Agentes Conectados" en Settings) ahora se pausan cuando la pestana no esta a la vista. Antes Mission Control consultaba la base cada 20 segundos aunque nadie estuviera mirando: 4 consultas por vuelta, unas 17.000 por dia por cada pestana olvidada, en cada maquina que la tuviera abierta. Ese goteo constante contribuyo a agotar el presupuesto de disco (Disk IO) del proyecto Supabase, que el 20/8 dejo la app sin login durante la noche: la base dejaba de responder, el middleware quedaba colgado esperando a Auth y produccion devolvia 504 hasta en la home publica. Ahora una pestana en segundo plano no consulta nada, y al volver a ella se refresca al instante. Nota: en este mismo deploy viaja el Motor de Presupuesto MVP, mergeado a main sin probar ni aprobar (ver Bitacora.md) — no se auto-dispara, solo corre si se lo invoca desde el wizard.',
+    ],
+  },
   {
     version: '1.2.12',
     date: '2026-06-11',

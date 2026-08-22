@@ -6,6 +6,64 @@
 
 ---
 
+## 2026-08-22 — Punto de retomada: todo commiteado, prod estable, que falta
+**Maquina**: NNRM-iMac-275.local · branch `main` · **v1.2.13**
+
+> Entrada de cierre para retomar en frio. Lo de ayer esta en las dos entradas de abajo.
+
+### Verificado HOY (no asumido)
+| Que | Estado |
+|---|---|
+| Supabase, 24h post-restart | **Sano y estable**: `rest/profiles` 200 en 0,27-0,38s · `auth/v1/user` 403 en 0,29s |
+| Produccion | `/` 200 · `/login` 200 · `/dashboard` 307 (0,14s) |
+| Working tree | Limpio, nada sin commitear |
+| `feat/motor-presupuesto` | Respaldada en origin (`3b32037`) — no vive solo en una Mac |
+
+**El Disk IO no volvio a dispararse** con el polling arreglado y el Agent parado. Es buena senial,
+pero **no es prueba**: falta correr el diagnostico de abajo para saber si habia una causa de fondo.
+
+### Estado del codigo
+- **v1.2.13** (bump de esta entrada): pausa del auto-refresh con la pestaña oculta
+  (`use-visible-interval`). Los deploys del 21/8 habian ido a prod **sin bump** — corregido aca con
+  un PATCH que cubre la sesion, igual que se hizo el 2026-06-04.
+- **El Motor de Presupuesto esta en `main` y por lo tanto en produccion**, mergeado sin probar ni
+  aprobar (`8efa244`, decision documentada en la entrada de abajo: la ventana la abria el kit, no la
+  feature). **No se auto-dispara** — solo corre por `onClick` en el wizard. Si se comporta raro, es
+  esperable, no es regresion.
+- `src/features/contracts/REVIEW-motor-presupuesto.md` **quedo en main** aunque el propio doc pedia
+  borrarlo antes del merge. Es un `.md`, no afecta build — pero sigue ahi.
+
+### Lo primero cuando vuelvas (en este orden)
+1. **Diagnostico de IO — antes de decidir si se paga Pro.** La base esta viva, se puede correr ya:
+```sql
+select calls, shared_blks_read + local_blks_read + temp_blks_read as bloques_de_disco,
+       round(mean_exec_time::numeric,1) as ms_prom, left(query,100)
+from pg_stat_statements order by 2 desc limit 15;
+
+select relname, pg_size_pretty(pg_total_relation_size(relid)) as tamano,
+       seq_scan, seq_tup_read, idx_scan, n_live_tup
+from pg_stat_user_tables order by pg_total_relation_size(relid) desc limit 15;
+```
+   `seq_scan` alto + `idx_scan` en 0 sobre tabla grande = **indice faltante, se arregla gratis**.
+   Si el IO esta repartido parejo entre tablas que solo crecieron → la instancia quedo chica y ahi si
+   Pro es la respuesta (en Free no se puede subir compute; el add-on es desde Pro, ~US$25/mes).
+2. **Blindar el middleware.** Sigue sin timeout: `src/middleware.ts:42` llama `getUser()` sin
+   `try/catch` y el matcher lo corre en TODAS las rutas → Supabase es punto unico de falla de la app
+   entera, home publica incluida. **Dos incidentes en 24h ya lo respaldan** (el bache de las 19:24 y
+   el corte total de la noche). Timeout ~3s degradando a "no autenticado" y la parte publica sobrevive.
+3. **Probar el Motor de Presupuesto** o sacarlo. Hoy esta en prod sin aprobar.
+4. **F3 del review del Motor**: `labor-estimator-action.ts` solo valida `getUser()`, sin rol. Ahora que
+   esta en main, cualquier autenticado que descubra la action puede quemar tokens de OpenRouter.
+   Agregar `requireRole(['leader','comercial'])`.
+
+### Deuda de documentacion
+- **`project_plan.md` sigue congelado en 2026-06-11 (v1.2.12)**, 2 meses atras. No refleja Mission
+  Control, el Motor de Presupuesto ni nada de esta semana. La `Bitacora.md` si esta al dia.
+- MCP de Supabase **sin token** → todo el diagnostico de la caida se hizo desde afuera con `curl`.
+  Con un access token configurado se llega a `pg_stat_statements` directo, sin pedir nada por chat.
+- El CLI `vercel` global esta en 54.2.0 (actual: 59.3.0) y **no completa** `env add` para "todas las
+  ramas". Se trabajo con `npx vercel@latest`.
+
 ## 2026-08-21 (2) — Motor de Presupuesto a main sin aprobar + higiene de ramas
 **Maquina**: MacBookPro-2016.local · branch `main`
 
